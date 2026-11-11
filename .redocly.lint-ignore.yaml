@@ -1,0 +1,7 @@
+# This file instructs Redocly's linter to ignore the rules contained for specific parts of your API.
+# See https://redocly.com/docs/cli/ for more information.
+#
+# The liveness check takes no input, so it has no client-error (4xx) response.
+api/openapi.yaml:
+  operation-4xx-response:
+    - '#/paths/~1healthz/get/responses'

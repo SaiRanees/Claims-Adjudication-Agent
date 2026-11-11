@@ -1,0 +1,3 @@
+# Redocly CLI settings for `go run ./cmd/dev lint-api` and CI.
+extends:
+  - recommended

@@ -1,0 +1,5 @@
+# Scripts run inside Linux containers, so keep LF line endings even on Windows.
+* text=auto eol=lf
+*.pdf binary
+*.png binary
+*.jpg binary

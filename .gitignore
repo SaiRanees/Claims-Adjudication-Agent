@@ -1,0 +1,22 @@
+# Build output
+/bin/
+/dist/
+
+# Local secrets: copy .env.example to .env
+/.env
+.env.*.local
+
+# Test and coverage output
+*.out
+*.test
+/coverage.*
+
+# Editors and OS files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Web app (from week 6)
+/web/node_modules/
+/web/dist/

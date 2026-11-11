@@ -1,0 +1,14 @@
+# oapi-codegen v2 configuration. `go run ./cmd/dev gen` runs it from this directory
+# through the go:generate line in doc.go.
+package: apigen
+output: apigen.gen.go
+generate:
+  models: true
+  std-http-server: true
+  # Typed request and response objects: a handler can only return a response the
+  # contract declares. text/event-stream responses flush per chunk.
+  strict-server: true
+  # The spec is embedded so request-validation middleware can check requests against it.
+  embedded-spec: true
+output-options:
+  name-normalizer: ToCamelCaseWithInitialisms

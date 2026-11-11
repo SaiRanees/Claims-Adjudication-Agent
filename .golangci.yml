@@ -1,0 +1,90 @@
+# golangci-lint v2. CI pins the same version (v2.15.0); `go run ./cmd/dev lint-go` runs it locally.
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  # standard: errcheck, govet, ineffassign, staticcheck, unused.
+  default: standard
+  enable:
+    - bodyclose
+    - depguard
+    - errorlint
+    - exhaustive
+    - forbidigo
+    - gosec
+    - misspell
+    - nilerr
+    - noctx
+    - nolintlint
+    - rowserrcheck
+    - sqlclosecheck
+    - unconvert
+  settings:
+    depguard:
+      rules:
+        # ADR-0005: the engine is pure, so it can't reach a database, the network,
+        # the filesystem or a random source.
+        rules-engine-is-pure:
+          list-mode: lax
+          files:
+            - "**/internal/rules/**"
+          deny:
+            - pkg: database/sql
+              desc: the rules engine does no I/O (ADR-0005)
+            - pkg: net
+              desc: the rules engine does no I/O (ADR-0005)
+            - pkg: os
+              desc: the rules engine does no I/O (ADR-0005)
+            - pkg: io/fs
+              desc: the rules engine does no I/O (ADR-0005)
+            - pkg: math/rand
+              desc: the rules engine is deterministic (ADR-0005)
+            - pkg: crypto/rand
+              desc: the rules engine is deterministic (ADR-0005)
+            - pkg: github.com/jackc/pgx
+              desc: the rules engine does no I/O (ADR-0005)
+            - pkg: go.temporal.io
+              desc: the engine is a library; workflows call it (ADR-0005)
+            - pkg: github.com/SaiRanees/Claims-Adjudication-Agent/internal/platform
+              desc: the rules engine does no I/O (ADR-0005)
+            - pkg: github.com/SaiRanees/Claims-Adjudication-Agent/internal/llm
+              desc: models never decide amounts (ADR-0005)
+    exhaustive:
+      # A switch over a status must name every status; a default case doesn't count.
+      default-signifies-exhaustive: false
+    forbidigo:
+      forbid:
+        - pattern: ^fmt\.Print(f|ln)?$
+          msg: log with log/slog, or write to an explicit io.Writer
+        - pattern: ^time\.(Now|Since|Until)$
+          msg: the rules engine takes dates as inputs (ADR-0005)
+      analyze-types: true
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - std-error-handling
+    rules:
+      # Reading the clock is fine everywhere except the engine.
+      - path-except: internal/rules/
+        linters: [forbidigo]
+        text: time\.(Now|Since|Until)
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/SaiRanees/Claims-Adjudication-Agent
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

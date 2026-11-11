@@ -1,0 +1,165 @@
+# Local development stack. `go run ./cmd/dev up` starts it, and `go run ./cmd/dev help`
+# lists the other tasks.
+#
+# Every port binds to 127.0.0.1, so nothing is reachable from the network.
+# Secrets come from .env, which the dev tool creates from .env.example.
+#
+# Profiles:
+#   (none)  postgres, seaweedfs, temporal, otel-lgtm
+#   tools   migrate          (go run ./cmd/dev migrate)
+#   app     api, relay, worker, built from ./Dockerfile (stubs until week 1, sessions 4 and 5)
+
+name: claims-agent
+
+x-app-env: &app-env
+  DATABASE_URL: postgres://claims_app:${CLAIMS_APP_PASSWORD:?copy .env.example to .env}@postgres:5432/claims?sslmode=disable
+  TEMPORAL_ADDRESS: temporal:7233
+  TEMPORAL_NAMESPACE: claims
+  S3_ENDPOINT: http://seaweedfs:8333
+  # Upload URLs are signed for the host the client calls, which is not the in-network name.
+  S3_PUBLIC_ENDPOINT: http://localhost:8333
+  S3_REGION: us-east-1
+  S3_BUCKET: ${S3_BUCKET:?copy .env.example to .env}
+  AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?copy .env.example to .env}
+  AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?copy .env.example to .env}
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+  OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+  LOG_LEVEL: debug
+
+x-app-depends-on: &app-depends-on
+  postgres:
+    condition: service_healthy
+  seaweedfs:
+    condition: service_healthy
+  temporal:
+    condition: service_healthy
+  otel-lgtm:
+    condition: service_started
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?copy .env.example to .env}
+      # Read by db/init/01-roles.sql on the first start of an empty volume.
+      CLAIMS_OWNER_PASSWORD: ${CLAIMS_OWNER_PASSWORD:?copy .env.example to .env}
+      CLAIMS_APP_PASSWORD: ${CLAIMS_APP_PASSWORD:?copy .env.example to .env}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # Postgres 18 images keep data under /var/lib/postgresql/18/docker; mount the parent.
+      - postgres-data:/var/lib/postgresql
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # Over TCP on purpose: during first-start init the server listens only on its socket,
+      # so this passes only once the roles and database exist.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.53
+    # `weed mini` runs master, volume, filer and the S3 gateway in one process.
+    # The entrypoint adds -dir=/data; telemetry is off for local development.
+    command: ["mini", "-master.telemetry=false"]
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?copy .env.example to .env}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?copy .env.example to .env}
+      S3_BUCKET: ${S3_BUCKET:?copy .env.example to .env}
+    ports:
+      - "127.0.0.1:8333:8333"
+    volumes:
+      - seaweedfs-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8333/healthz"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+      start_period: 10s
+
+  temporal:
+    image: temporalio/temporal:1.10.0
+    command:
+      - server
+      - start-dev
+      - --ip=0.0.0.0
+      - --namespace=claims
+      - --db-filename=/home/temporal/temporal.db
+    ports:
+      - "127.0.0.1:7233:7233" # gRPC frontend
+      - "127.0.0.1:8233:8233" # Web UI
+    volumes:
+      - temporal-data:/home/temporal
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "127.0.0.1:7233"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+      start_period: 10s
+
+  otel-lgtm:
+    image: grafana/otel-lgtm:0.37.0
+    ports:
+      - "127.0.0.1:3000:3000" # Grafana
+      - "127.0.0.1:4317:4317" # OTLP gRPC
+      - "127.0.0.1:4318:4318" # OTLP HTTP
+
+  migrate:
+    image: migrate/migrate:v4.20.1
+    profiles: [tools]
+    entrypoint:
+      - migrate
+      - -path=/migrations
+      - -database=postgres://claims_owner:${CLAIMS_OWNER_PASSWORD:?copy .env.example to .env}@postgres:5432/claims?sslmode=disable
+    command: ["up"]
+    volumes:
+      - ./db/migrations:/migrations:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    profiles: [app]
+    build:
+      context: .
+      args:
+        SERVICE: api
+    image: claims-agent/api:dev
+    environment:
+      <<: *app-env
+      OTEL_SERVICE_NAME: api
+      HTTP_ADDR: ":8080"
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on: *app-depends-on
+
+  relay:
+    profiles: [app]
+    build:
+      context: .
+      args:
+        SERVICE: relay
+    image: claims-agent/relay:dev
+    environment:
+      <<: *app-env
+      OTEL_SERVICE_NAME: relay
+    depends_on: *app-depends-on
+
+  worker:
+    profiles: [app]
+    build:
+      context: .
+      args:
+        SERVICE: worker
+    image: claims-agent/worker:dev
+    environment:
+      <<: *app-env
+      OTEL_SERVICE_NAME: worker
+    depends_on: *app-depends-on
+
+volumes:
+  postgres-data:
+  seaweedfs-data:
+  temporal-data:

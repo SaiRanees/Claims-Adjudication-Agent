@@ -1,0 +1,1093 @@
+openapi: 3.0.3
+info:
+  title: claims-agent API
+  version: 0.1.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  description: |
+    Reimbursement claims for Arogya Sanjeevani, adjudicated by an agent that gathers the
+    facts and a deterministic rules engine that decides every amount. All data is synthetic.
+
+    Conventions:
+
+    - Money is an integer number of paise (₹1 = 100 paise). Never a float, never rupees.
+    - IDs are UUIDs. Dates are ISO 8601 calendar dates; timestamps are RFC 3339 in UTC.
+    - Errors are RFC 9457 problem details (`application/problem+json`).
+    - Every endpoint except `/healthz` needs a bearer JWT. Roles: submitter, reviewer, admin.
+    - `POST /v1/claims` needs an `Idempotency-Key` header. A retry with the same key and
+      body returns the first response; the same key with a different body is a 422.
+servers:
+  - url: /
+    description: The host serving the API, such as http://localhost:8080 in local development
+security:
+  - bearerAuth: []
+tags:
+  - name: health
+    description: Process health.
+  - name: claims
+    description: Creating, submitting and following claims.
+  - name: documents
+    description: Uploading the bills, discharge summary and other documents for a claim.
+  - name: adjudication
+    description: The engine's result for a claim, line by line.
+  - name: review
+    description: The human review queue.
+  - name: audit
+    description: The append-only, hash-chained record of everything that happened to a claim.
+
+paths:
+  /healthz:
+    get:
+      operationId: getHealth
+      tags: [health]
+      summary: Check that the process is up
+      security: []
+      responses:
+        "200":
+          description: The process is up.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /v1/claims:
+    post:
+      operationId: createClaim
+      tags: [claims]
+      summary: Create a draft claim
+      description: |
+        Creates a claim in `draft` and, in the same transaction, queues the outbox message
+        that starts its workflow (`claim-<id>`). Role: submitter.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClaimRequest"
+      responses:
+        "201":
+          description: Created. A retry with the same Idempotency-Key and body gets this response again.
+          headers:
+            Location:
+              description: The new claim's URL.
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claim"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableContent"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/claims/{claimId}:
+    get:
+      operationId: getClaim
+      tags: [claims]
+      summary: Get a claim's status, timeline and totals
+      description: Roles - the submitter who created it, reviewer, admin.
+      parameters:
+        - $ref: "#/components/parameters/ClaimId"
+      responses:
+        "200":
+          description: The claim.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claim"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/claims/{claimId}/documents:
+    post:
+      operationId: createDocumentUpload
+      tags: [documents]
+      summary: Get a short-lived upload URL for one file
+      description: |
+        Registers a file the client is about to upload and returns a signed `PUT` URL for it.
+        Allowed while the claim is `draft` or `awaiting_documents`. The same file (same SHA-256)
+        can't be attached to a claim twice. Role: submitter.
+      parameters:
+        - $ref: "#/components/parameters/ClaimId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentUploadRequest"
+      responses:
+        "201":
+          description: Registered. Upload the file to `upload.url` before `upload.expiresAt`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentUpload"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/claims/{claimId}/documents/{documentId}/complete:
+    post:
+      operationId: completeDocumentUpload
+      tags: [documents]
+      summary: Confirm an upload so it can be checked
+      description: |
+        Checks the stored object against the declared size and SHA-256. A match marks the
+        document `uploaded` and tells the workflow; a mismatch marks it `rejected` with a
+        reason, and the client can upload the file again. Calling this twice is safe.
+        Role: submitter.
+      parameters:
+        - $ref: "#/components/parameters/ClaimId"
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: The document, now `uploaded` or `rejected`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/claims/{claimId}/submit:
+    post:
+      operationId: submitClaim
+      tags: [claims]
+      summary: Lock the documents and start adjudication
+      description: |
+        Moves a `draft` claim to `submitted`, or resubmits an `awaiting_documents` claim once
+        the missing documents are uploaded. The workflow hears about it through the outbox.
+        Submitting an already submitted claim returns its current state. Role: submitter.
+      parameters:
+        - $ref: "#/components/parameters/ClaimId"
+      responses:
+        "202":
+          description: Accepted. Follow progress with `GET /v1/claims/{claimId}/events`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claim"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/claims/{claimId}/events:
+    get:
+      operationId: streamClaimEvents
+      tags: [claims]
+      summary: Follow a claim's status as server-sent events
+      description: |
+        Sends a `status` event each time the claim's status changes, with a `ClaimStatusEvent`
+        as its data and the claim version as its ID. After a reconnect, events after
+        `Last-Event-ID` are replayed. A browser's `EventSource` can't send an `Authorization`
+        header, so the web app uses a fetch-based event-stream client.
+        Roles - the submitter who created it, reviewer, admin.
+      parameters:
+        - $ref: "#/components/parameters/ClaimId"
+        - name: Last-Event-ID
+          in: header
+          required: false
+          description: The ID of the last event the client received.
+          schema:
+            type: string
+            maxLength: 32
+      responses:
+        "200":
+          description: An event stream of `ClaimStatusEvent` messages.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/claims/{claimId}/adjudication:
+    get:
+      operationId: getAdjudication
+      tags: [adjudication]
+      summary: Get the line items, adjustments and clause references
+      description: |
+        The latest adjudication version for the claim. Every adjustment names the rule and the
+        policy clause behind it. Roles - the submitter who created it, reviewer, admin.
+      parameters:
+        - $ref: "#/components/parameters/ClaimId"
+      responses:
+        "200":
+          description: The latest adjudication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Adjudication"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/claims/{claimId}/audit:
+    get:
+      operationId: listAuditEvents
+      tags: [audit]
+      summary: Get a claim's audit trail
+      description: Events in chain order, oldest first. Roles - reviewer, admin.
+      parameters:
+        - $ref: "#/components/parameters/ClaimId"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: One page of events.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditEventPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/review-tasks:
+    get:
+      operationId: listReviewTasks
+      tags: [review]
+      summary: List the review queue
+      description: Oldest first. Role - reviewer.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ReviewTaskStatus"
+        - name: reasonCode
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ReasonCode"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: One page of tasks.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewTaskPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/review-tasks/{taskId}/claim:
+    post:
+      operationId: claimReviewTask
+      tags: [review]
+      summary: Take a review task under a time-limited lease
+      description: |
+        Gives the caller the task until `leaseExpiresAt`. Taking it again before then extends
+        the lease. Nobody can review a claim they created. Role - reviewer.
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      responses:
+        "200":
+          description: The task, leased to the caller.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewTask"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/review-tasks/{taskId}/decision:
+    post:
+      operationId: decideReviewTask
+      tags: [review]
+      summary: Approve, correct or override, with reason codes
+      description: |
+        Records the reviewer's decision while they hold the lease. Reviewers change inputs,
+        such as a misread amount or date, a category or a waiting-period decision, and never
+        totals: the engine recomputes the payable amount. Admins can't decide.
+        Role - reviewer.
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewDecisionRequest"
+      responses:
+        "200":
+          description: The decided task.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewTask"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableContent"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: A unique value for this logical request, such as a UUID.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+        pattern: "^[\\x21-\\x7E]+$"
+    ClaimId:
+      name: claimId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DocumentId:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: The `nextCursor` from the previous page.
+      schema:
+        type: string
+        maxLength: 200
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 50
+
+  headers:
+    RetryAfter:
+      description: Seconds to wait before retrying.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+    WWWAuthenticate:
+      description: The authentication scheme to use.
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: The request is malformed or fails validation. `errors` points at each field.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Unauthorized:
+      description: The bearer token is missing, expired or invalid.
+      headers:
+        WWW-Authenticate:
+          $ref: "#/components/headers/WWWAuthenticate"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Forbidden:
+      description: The caller's role can't do this, including the maker-checker rules.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: No such resource, or the caller can't see it.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Conflict:
+      description: |
+        The resource's state doesn't allow this, such as a claim that is past accepting
+        documents, a task leased to someone else, or a request with the same Idempotency-Key
+        that is still in progress.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnprocessableContent:
+      description: |
+        The request is valid but can't be applied, such as an Idempotency-Key reused with a
+        different body, or a member with no policy year covering the admission date.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    TooManyRequests:
+      description: The caller's rate limit is used up.
+      headers:
+        Retry-After:
+          $ref: "#/components/headers/RetryAfter"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ServiceUnavailable:
+      description: The process is shutting down.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Error:
+      description: An unexpected error. The response carries a trace ID to quote.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+
+    Problem:
+      type: object
+      description: RFC 9457 problem details, plus `code`, `errors` and `traceId`.
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          description: Identifies the problem type, such as `urn:claims-agent:problem:validation`.
+        title:
+          type: string
+          description: A short summary of the problem type.
+        status:
+          type: integer
+          format: int32
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          description: What went wrong with this request.
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+          description: A stable, machine-readable code, such as `idempotency_key_reused`.
+          pattern: "^[a-z][a-z0-9_]*$"
+        errors:
+          type: array
+          description: One entry per invalid field.
+          items:
+            $ref: "#/components/schemas/FieldError"
+        traceId:
+          type: string
+          pattern: "^[0-9a-f]{32}$"
+
+    FieldError:
+      type: object
+      required: [pointer, detail]
+      properties:
+        pointer:
+          type: string
+          description: A JSON Pointer to the field, such as `/claimedAmountPaise`.
+        detail:
+          type: string
+
+    ClaimStatus:
+      type: string
+      description: |
+        `rejected` means the packet can't be used. `failed` means retries ran out and an operator
+        must step in. A denial is a decision that people make, so it is `decided`, never automatic.
+      enum:
+        - draft
+        - submitted
+        - validating
+        - awaiting_documents
+        - extracting
+        - adjudicating
+        - in_review
+        - decided
+        - closed
+        - rejected
+        - failed
+
+    CreateClaimRequest:
+      type: object
+      additionalProperties: false
+      required: [memberId, admittedOn, dischargedOn, hospitalName, claimedAmountPaise]
+      properties:
+        memberId:
+          type: string
+          format: uuid
+        admittedOn:
+          type: string
+          format: date
+        dischargedOn:
+          type: string
+          format: date
+          description: On or after `admittedOn`.
+        hospitalName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        claimedAmountPaise:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The total the member is claiming, in paise.
+          example: 12500000
+
+    Claim:
+      type: object
+      required:
+        - id
+        - memberId
+        - status
+        - admittedOn
+        - dischargedOn
+        - hospitalName
+        - claimedAmountPaise
+        - version
+        - documents
+        - timeline
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        memberId:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/ClaimStatus"
+        admittedOn:
+          type: string
+          format: date
+        dischargedOn:
+          type: string
+          format: date
+        hospitalName:
+          type: string
+        claimedAmountPaise:
+          type: integer
+          format: int64
+          minimum: 1
+        version:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Goes up by one on every change.
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Document"
+        timeline:
+          type: array
+          description: Status changes, oldest first.
+          items:
+            $ref: "#/components/schemas/ClaimStatusEvent"
+        totals:
+          $ref: "#/components/schemas/ClaimTotals"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        submittedAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: string
+          format: date-time
+
+    ClaimStatusEvent:
+      type: object
+      required: [status, version, at]
+      properties:
+        status:
+          $ref: "#/components/schemas/ClaimStatus"
+        version:
+          type: integer
+          format: int32
+          minimum: 1
+        at:
+          type: string
+          format: date-time
+
+    ClaimTotals:
+      type: object
+      description: Present once the claim has an adjudication.
+      required: [claimedPaise, payablePaise, deductedPaise]
+      properties:
+        claimedPaise:
+          type: integer
+          format: int64
+          minimum: 0
+        payablePaise:
+          type: integer
+          format: int64
+          minimum: 0
+        deductedPaise:
+          type: integer
+          format: int64
+          minimum: 0
+
+    DocumentStatus:
+      type: string
+      enum: [pending_upload, uploaded, rejected]
+
+    DocumentContentType:
+      type: string
+      enum: [application/pdf, image/jpeg, image/png]
+
+    CreateDocumentUploadRequest:
+      type: object
+      additionalProperties: false
+      required: [fileName, contentType, sizeBytes, sha256]
+      properties:
+        fileName:
+          type: string
+          minLength: 1
+          maxLength: 255
+        contentType:
+          $ref: "#/components/schemas/DocumentContentType"
+        sizeBytes:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 26214400
+          description: At most 25 MiB.
+        sha256:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          description: The file's SHA-256 as lower-case hex. Only a file with this hash is accepted.
+
+    Document:
+      type: object
+      required: [id, claimId, status, fileName, contentType, sizeBytes, sha256, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        claimId:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/DocumentStatus"
+        fileName:
+          type: string
+        contentType:
+          $ref: "#/components/schemas/DocumentContentType"
+        sizeBytes:
+          type: integer
+          format: int64
+        sha256:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        pageCount:
+          type: integer
+          format: int32
+          minimum: 1
+        rejectionReason:
+          type: string
+          enum:
+            - missing_object
+            - size_mismatch
+            - checksum_mismatch
+            - unreadable
+            - encrypted
+            - too_many_pages
+        createdAt:
+          type: string
+          format: date-time
+        uploadedAt:
+          type: string
+          format: date-time
+
+    DocumentUpload:
+      type: object
+      required: [document, upload]
+      properties:
+        document:
+          $ref: "#/components/schemas/Document"
+        upload:
+          $ref: "#/components/schemas/UploadInstructions"
+
+    UploadInstructions:
+      type: object
+      required: [method, url, headers, expiresAt]
+      properties:
+        method:
+          type: string
+          enum: [PUT]
+        url:
+          type: string
+          format: uri
+        headers:
+          type: object
+          description: Send these headers exactly as given. They are part of the signature.
+          additionalProperties:
+            type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    Adjudication:
+      type: object
+      required:
+        - claimId
+        - version
+        - rulePack
+        - claimedPaise
+        - payablePaise
+        - lineItems
+        - adjustments
+        - createdAt
+      properties:
+        claimId:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          format: int32
+          minimum: 1
+          description: A new version is written on every recompute or reviewer change.
+        rulePack:
+          type: string
+          description: The pinned rule pack, such as `arogya-sanjeevani/godigit-2024@1`.
+        claimedPaise:
+          type: integer
+          format: int64
+          minimum: 0
+        payablePaise:
+          type: integer
+          format: int64
+          minimum: 0
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/LineItem"
+        adjustments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Adjustment"
+        createdAt:
+          type: string
+          format: date-time
+
+    LineItem:
+      type: object
+      required: [id, description, category, amountPaise, payablePaise, source]
+      properties:
+        id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        category:
+          type: string
+          description: The bill category the engine applies rules by, such as `room_rent`.
+        serviceDate:
+          type: string
+          format: date
+        amountPaise:
+          type: integer
+          format: int64
+          minimum: 0
+        payablePaise:
+          type: integer
+          format: int64
+          minimum: 0
+        source:
+          $ref: "#/components/schemas/SourceRef"
+
+    SourceRef:
+      type: object
+      description: Where on which document a value was read.
+      required: [documentId, page]
+      properties:
+        documentId:
+          type: string
+          format: uuid
+        page:
+          type: integer
+          format: int32
+          minimum: 1
+
+    Adjustment:
+      type: object
+      required: [id, ruleId, clauseId, deductedPaise, explanation]
+      properties:
+        id:
+          type: string
+          format: uuid
+        lineItemId:
+          type: string
+          format: uuid
+          description: Absent when the adjustment applies to the whole claim, such as co-payment.
+        ruleId:
+          type: string
+          description: The rule-pack rule that made the adjustment.
+        clauseId:
+          type: string
+          description: The policy clause the rule implements.
+        deductedPaise:
+          type: integer
+          format: int64
+          minimum: 0
+        explanation:
+          type: string
+
+    ReviewTaskStatus:
+      type: string
+      enum: [open, leased, decided]
+
+    ReasonCode:
+      type: string
+      description: Why the claim needs a person, such as `low_extraction_confidence`.
+      pattern: "^[a-z][a-z0-9_]*$"
+      maxLength: 64
+
+    ReviewOutcome:
+      type: string
+      enum: [approve, correct, override]
+
+    ReviewTask:
+      type: object
+      required: [id, claimId, status, reasonCodes, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        claimId:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/ReviewTaskStatus"
+        reasonCodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReasonCode"
+        assignee:
+          type: string
+          description: The reviewer holding the lease or who decided.
+        leaseExpiresAt:
+          type: string
+          format: date-time
+        outcome:
+          $ref: "#/components/schemas/ReviewOutcome"
+        decidedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    ReviewTaskPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewTask"
+        nextCursor:
+          type: string
+
+    ReviewDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [outcome, reasonCodes]
+      properties:
+        outcome:
+          $ref: "#/components/schemas/ReviewOutcome"
+        reasonCodes:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/ReasonCode"
+        changes:
+          type: array
+          description: Required for `correct` and `override`. Each change replaces one input.
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/InputChange"
+        note:
+          type: string
+          maxLength: 2000
+
+    InputChange:
+      type: object
+      additionalProperties: false
+      required: [field, value]
+      properties:
+        lineItemId:
+          type: string
+          format: uuid
+          description: Absent for a claim-level input, such as the admission date.
+        field:
+          type: string
+          description: The input to change, such as `amountPaise`, `serviceDate` or `category`.
+          pattern: "^[a-zA-Z][a-zA-Z0-9]*$"
+          maxLength: 64
+        value:
+          type: string
+          description: The new value, in the field's own format.
+          maxLength: 500
+
+    AuditEvent:
+      type: object
+      required: [seq, occurredAt, actorType, actorId, action, details, hash]
+      properties:
+        seq:
+          type: integer
+          format: int32
+          minimum: 1
+        occurredAt:
+          type: string
+          format: date-time
+        actorType:
+          type: string
+          enum: [user, service, model]
+        actorId:
+          type: string
+        action:
+          type: string
+          description: Such as `claim.submitted`.
+        details:
+          type: object
+          description: IDs and amounts only.
+          additionalProperties: true
+        prevHash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          description: The previous event's hash. Absent on the first event.
+        hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+
+    AuditEventPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEvent"
+        nextCursor:
+          type: string

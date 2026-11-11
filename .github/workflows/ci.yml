@@ -1,0 +1,162 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: "1.27.x"
+  GOLANGCI_LINT_VERSION: v2.15.0
+  MIGRATE_IMAGE: migrate/migrate:v4.20.1
+  REDOCLY_CLI: "@redocly/cli@2.77.0"
+
+jobs:
+  go:
+    name: Go
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Generated code matches the contract
+        run: |
+          go generate ./internal/api/apigen
+          if [ -n "$(git status --porcelain -- internal/api/apigen)" ]; then
+            git status --short -- internal/api/apigen
+            echo "::error::internal/api/apigen is stale. Run go run ./cmd/dev gen and commit the result."
+            exit 1
+          fi
+      - name: go.mod and go.sum are tidy
+        run: go mod tidy -diff
+      - name: Vet
+        run: go vet ./...
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+      - name: Test
+        run: go test -race -count=1 ./...
+
+  database:
+    name: Database
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: postgres-ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U postgres"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres-ci
+      CLAIMS_OWNER_PASSWORD: owner-ci
+      CLAIMS_APP_PASSWORD: app-ci
+      OWNER_URL: postgresql://claims_owner:owner-ci@localhost:5432/claims
+      APP_URL: postgresql://claims_app:app-ci@localhost:5432/claims
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create the roles and database
+        run: psql -X -d postgres -f db/init/01-roles.sql
+      - name: Apply the migrations
+        run: |
+          docker run --rm --network host -v "$PWD/db/migrations:/migrations:ro" "$MIGRATE_IMAGE" \
+            -path=/migrations -database="$OWNER_URL?sslmode=disable" up
+      - name: Applying them again is a no-op
+        run: |
+          out=$(docker run --rm --network host -v "$PWD/db/migrations:/migrations:ro" "$MIGRATE_IMAGE" \
+            -path=/migrations -database="$OWNER_URL?sslmode=disable" up 2>&1)
+          echo "$out"
+          grep -qx 'no change' <<<"$out"
+      - name: Load the seed twice
+        run: |
+          psql "$OWNER_URL" -X -q -v ON_ERROR_STOP=1 -f db/seed/dev.sql
+          psql "$OWNER_URL" -X -q -v ON_ERROR_STOP=1 -f db/seed/dev.sql
+      - name: Check the database guarantees
+        run: sh scripts/db-check.sh
+
+  openapi:
+    name: OpenAPI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Lint the contract
+        run: npx --yes "$REDOCLY_CLI" lint api/openapi.yaml
+
+  hygiene:
+    name: Scripts, Dockerfile, Compose and workflows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: ShellCheck
+        run: shellcheck -s sh scripts/*.sh
+      - name: Hadolint
+        run: docker run --rm -i hadolint/hadolint:v2.15.1 < Dockerfile
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
+      - name: Compose file is valid
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
+
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Vet
+        run: go vet ./...
+      - name: Build
+        run: go build ./...
+      - name: Test
+        run: go test -count=1 ./...
+      - name: The dev tool runs
+        run: go run ./cmd/dev help
+
+  images:
+    name: Image (${{ matrix.service }})
+    needs: go
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [api, relay, worker]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          build-args: SERVICE=${{ matrix.service }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
