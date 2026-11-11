@@ -2,7 +2,7 @@
 
 By the end of the week, one command starts the whole stack, and one claim travels from the API through the outbox into a running workflow, with a single trace end to end. The engine's money core starts alongside, because it needs no policy.
 
-Progress, 11 November: the scaffold is built and checked, and the ticked items below are done. The first run on a real Windows machine has passed: the stack, the database checks, code generation and `go run ./cmd/dev check`. Still to do: the Go code (handlers, relay, workflow, tracing, the money package). Everything runs natively on Windows (ADR 0007).
+Progress, 11 November: the scaffold is built and checked, and the ticked items below are done. The first run on a real Windows machine has passed: the stack, the database checks, code generation and `go run ./cmd/dev check`. The API skeleton is built (session 4). Still to do: the relay and the first workflow, tracing, and the money package. Everything runs natively on Windows (ADR 0007).
 
 ## Decide first
 
@@ -48,10 +48,12 @@ Checked on Postgres 16, and again locally on Postgres 18 on 11 November: all thr
 
 - [x] Write `api/openapi.yaml` for every endpoint in the plan: 12 operations, RFC 9457 problem details and the `Idempotency-Key` header. It passes Redocly's lint.
 - [x] Generate the Go server. oapi-codegen v2.8.2's strict server on `net/http` is configured: run `go run ./cmd/dev tools` once, then `go run ./cmd/dev gen`.
-- [ ] Implement `GET /healthz`, `POST /v1/claims` and `GET /v1/claims/{claimId}`. The other handlers return one sentinel error, and the strict handler's error hook turns it into a 501 problem: oapi-codegen's `net/http` output has no ready-made Unimplemented type.
-- [ ] `POST /v1/claims` writes the claim and its outbox row in one transaction, and a repeated `Idempotency-Key` returns the first response.
+- [x] Implement `GET /healthz`, `POST /v1/claims` and `GET /v1/claims/{claimId}`. The other handlers return one sentinel error, and the strict handler's error hook turns it into a 501 problem: oapi-codegen's `net/http` output has no ready-made Unimplemented type.
+- [x] `POST /v1/claims` writes the claim and its outbox row in one transaction, and a repeated `Idempotency-Key` returns the first response.
 
 Done when two identical create requests with the same key make one claim, and the spec passes a linter.
+
+Checked on 11 November. An acceptance test (`internal/api`, against Postgres) and a run of the api container both show two identical creates with one key making one claim and one outbox row, with the same response both times, and Redocly passes. A duplicate that arrives while the first request is still running gets a 409: claims_app can't update `idempotency_keys`, so a transaction-scoped advisory lock marks a key as taken. Bearer tokens are HS256 JWTs ([ADR 0008](../adr/0008-hs256-bearer-tokens.md)), and every request is checked against the contract before a handler runs.
 
 ## Session 5: outbox relay and first workflow
 

@@ -92,6 +92,15 @@ jobs:
           psql "$OWNER_URL" -X -q -v ON_ERROR_STOP=1 -f db/seed/dev.sql
       - name: Check the database guarantees
         run: sh scripts/db-check.sh
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      # The tests that need the migrated, seeded database, as claims_app. They skip
+      # themselves in the other jobs, which have no TEST_DATABASE_URL.
+      - name: Database tests
+        env:
+          TEST_DATABASE_URL: ${{ env.APP_URL }}?sslmode=disable
+        run: go test -race -count=1 ./internal/...
 
   openapi:
     name: OpenAPI

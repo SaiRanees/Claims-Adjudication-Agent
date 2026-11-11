@@ -8,7 +8,7 @@ The first product is Arogya Sanjeevani, on the Go Digit wording (UIN GODHLIP2417
 
 ## Status
 
-Week 1, the walking skeleton. In place: the local stack, the first migration with its database checks, the API contract, CI and the first ADRs. The `api`, `relay` and `worker` commands are stubs until sessions 4 and 5.
+Week 1, the walking skeleton. In place: the local stack, the first migration with its database checks, the API contract, CI, the first ADRs, and the API's first endpoints: `GET /healthz`, `POST /v1/claims` (idempotent, writing its workflow's outbox message in the same transaction) and `GET /v1/claims/{claimId}`. The other operations answer 501 for now, and the `relay` and `worker` commands are stubs until session 5.
 
 ## Prerequisites
 
@@ -38,6 +38,32 @@ Commit the generated code and `go.mod`/`go.sum`: CI fails if `go generate` or `g
 
 `go run ./cmd/dev help` lists every task, and `go run ./cmd/dev reset` deletes all local data. On Windows, the tests run without the race detector unless a C compiler such as MinGW-w64 is installed; CI always runs them with it.
 
+The tests that need the database skip themselves unless `TEST_DATABASE_URL` points at the migrated, seeded `claims` database as `claims_app`. With the stack up and the values from `.env.example`, in PowerShell:
+
+```powershell
+$env:TEST_DATABASE_URL = "postgres://claims_app:app-dev-only@localhost:5432/claims?sslmode=disable"
+go run ./cmd/dev test
+```
+
+They leave their test claims behind, because `claims_app` can't delete claims; `go run ./cmd/dev reset` clears them.
+
+### Calling the API
+
+Every operation except `/healthz` needs a bearer token ([ADR 0008](docs/adr/0008-hs256-bearer-tokens.md)). `go run ./cmd/dev token` prints a 12-hour token signed with the secret in `.env`; give it a role and a subject for someone else, such as `go run ./cmd/dev token reviewer rev-1`.
+
+```powershell
+go run ./cmd/dev app
+$token = go run ./cmd/dev token
+$claim = @{
+  memberId = "01930000-0000-7000-8000-000000000201"; admittedOn = "2026-10-01"; dischargedOn = "2026-10-05"
+  hospitalName = "Synthetic City Hospital"; claimedAmountPaise = 12500000
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post http://localhost:8080/v1/claims -ContentType application/json -Body $claim `
+  -Headers @{ Authorization = "Bearer $token"; "Idempotency-Key" = "first-claim" }
+```
+
+Sending the same request again with the same key returns the same claim instead of creating a second one.
+
 | What | Where |
 | --- | --- |
 | Postgres | `localhost:5432`, database `claims` |
@@ -46,7 +72,7 @@ Commit the generated code and `go.mod`/`go.sum`: CI fails if `go generate` or `g
 | SeaweedFS S3 API | http://localhost:8333 |
 | Grafana: traces, logs, metrics | http://localhost:3000 |
 | OTLP (gRPC / HTTP) | `localhost:4317` / `localhost:4318` |
-| API, from session 4 | http://localhost:8080 |
+| API (`go run ./cmd/dev app`) | http://localhost:8080 |
 
 Every port binds to 127.0.0.1 only.
 
@@ -63,7 +89,7 @@ Every port binds to 127.0.0.1 only.
 
 - Go on Linux: generated code is current, `go.mod` is tidy, `go vet`, golangci-lint, `go test -race`
 - Go on Windows: `go vet`, build, tests, and the dev tool
-- Database: roles, migrations applied twice (the second run is a no-op), the seed loaded twice, then `db-check`
+- Database: roles, migrations applied twice (the second run is a no-op), the seed loaded twice, `db-check`, then the Go tests that need the database, with `-race`
 - The OpenAPI contract, with Redocly
 - The database check script (ShellCheck), the Dockerfile (Hadolint), the workflow (actionlint) and the Compose file
 - An image build for each service
@@ -98,5 +124,6 @@ CLAUDE.md       project instructions that Claude Code reads at the start of ever
 | [0005](docs/adr/0005-pure-rules-engine-and-paise.md) | Make the rules engine a pure library, with money in paise |
 | [0006](docs/adr/0006-synthetic-data-only.md) | Use synthetic data only |
 | [0007](docs/adr/0007-go-task-runner.md) | Run development tasks with a Go program, not Make |
+| [0008](docs/adr/0008-hs256-bearer-tokens.md) | Authenticate API callers with HS256 bearer tokens |
 
 New decisions start from [the template](docs/adr/0000-template.md).

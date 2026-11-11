@@ -24,6 +24,7 @@ x-app-env: &app-env
   AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?copy .env.example to .env}
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
   OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+  AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?add AUTH_JWT_SECRET to .env, as in .env.example}
   LOG_LEVEL: debug
 
 x-app-depends-on: &app-depends-on

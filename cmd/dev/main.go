@@ -105,6 +105,8 @@ func tasks() []task {
 			help: "Build the api, relay and worker images"},
 		{name: "app", group: groupApp, run: compose("--profile", "app", "up", "--build", "--detach"),
 			help: "Build and start the api, relay and worker containers"},
+		{name: "token", args: "[role] [subject]", group: groupApp, run: token,
+			help: "Print a 12-hour bearer token for calling the API (role: submitter, reviewer or admin)"},
 
 		{name: "help", run: help, help: "List the tasks"},
 	}
@@ -342,25 +344,74 @@ func run(ctx context.Context, in io.Reader, name string, args ...string) error {
 	}
 }
 
-// ensureEnv creates .env from .env.example the first time, with LF line endings
-// whatever the checkout uses.
+// ensureEnv creates .env from .env.example the first time, with LF line endings whatever
+// the checkout uses. After that it appends any variable .env.example has gained since:
+// Compose checks every variable compose.yaml requires, even for services it isn't starting.
+// Values already in .env are never changed.
 func ensureEnv() error {
 	_, err := os.Stat(".env")
-	if err == nil {
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		example, err := os.ReadFile(".env.example")
+		if err != nil {
+			return err
+		}
+		//nolint:gosec // G703: the path is the constant .env, and the content comes from this repository's .env.example.
+		if err := os.WriteFile(".env", []byte(toLF(string(example))), 0o600); err != nil {
+			return err
+		}
+		fmt.Fprintln(os.Stderr, "Created .env from .env.example. Its passwords are for local development only.")
 		return nil
-	}
-	if !errors.Is(err, fs.ErrNotExist) {
+	case err != nil:
 		return err
 	}
+	return addNewVariables()
+}
+
+// addNewVariables appends to .env each variable in .env.example that .env lacks.
+func addNewVariables() error {
 	example, err := os.ReadFile(".env.example")
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
-	//nolint:gosec // G703: the path is the constant .env, and the content comes from this repository's .env.example.
-	if err := os.WriteFile(".env", []byte(toLF(string(example))), 0o600); err != nil {
+	current, err := os.ReadFile(".env")
+	if err != nil {
 		return err
 	}
-	fmt.Fprintln(os.Stderr, "Created .env from .env.example. Its passwords are for local development only.")
+	have := parseEnv(string(current))
+	var lines, names []string
+	for _, line := range strings.Split(toLF(string(example)), "\n") {
+		line = strings.TrimSpace(line)
+		name, _, ok := strings.Cut(line, "=")
+		if !ok || strings.HasPrefix(line, "#") {
+			continue
+		}
+		if name = strings.TrimSpace(name); name == "" {
+			continue
+		}
+		if _, ok := have[name]; ok {
+			continue
+		}
+		have[name] = ""
+		lines = append(lines, line)
+		names = append(names, name)
+	}
+	if len(lines) == 0 {
+		return nil
+	}
+	content := toLF(string(current))
+	if content != "" && !strings.HasSuffix(content, "\n") {
+		content += "\n"
+	}
+	content += "\n# Added from .env.example by the dev tool.\n" + strings.Join(lines, "\n") + "\n"
+	//nolint:gosec // G703: the path is the constant .env, and the added lines come from this repository's .env.example.
+	if err := os.WriteFile(".env", []byte(content), 0o600); err != nil {
+		return err
+	}
+	fmt.Fprintf(os.Stderr, "Added %s to .env from .env.example.\n", strings.Join(names, ", "))
 	return nil
 }
 
