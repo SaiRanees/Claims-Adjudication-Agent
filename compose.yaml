@@ -100,7 +100,7 @@ services:
       start_period: 10s
 
   otel-lgtm:
-    image: grafana/otel-lgtm:0.37.0
+    image: grafana/otel-lgtm:0.40.0
     ports:
       - "127.0.0.1:3000:3000" # Grafana
       - "127.0.0.1:4317:4317" # OTLP gRPC
