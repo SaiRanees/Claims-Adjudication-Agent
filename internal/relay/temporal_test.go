@@ -8,19 +8,22 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 	enumspb "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/converter"
-	sdklog "go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/worker"
 
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/platform"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/relay"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/workflow"
 )
 
 // TestTemporalDeliveryRunsTheClaimWorkflow takes one claim from its outbox rows to a
 // finished workflow, with the real relay, Temporal (TEST_TEMPORAL_ADDRESS, namespace
-// claims) and a worker running the real workflow code.
+// claims) and a worker running the real workflow code, all traced as the services are:
+// the workflow joins the trace of the request that created the claim.
 func TestTemporalDeliveryRunsTheClaimWorkflow(t *testing.T) {
 	addr := os.Getenv("TEST_TEMPORAL_ADDRESS")
 	if addr == "" {
@@ -28,10 +31,11 @@ func TestTemporalDeliveryRunsTheClaimWorkflow(t *testing.T) {
 	}
 	pool := connect(t)
 	ctx := context.Background()
+	spans := recordSpans(t)
 
-	c, err := client.Dial(client.Options{HostPort: addr, Namespace: "claims", Logger: sdklog.NewStructuredLogger(quiet)})
+	c, err := platform.DialTemporal(ctx, platform.TemporalConfig{Address: addr, Namespace: "claims"}, quiet)
 	if err != nil {
-		t.Fatalf("connecting to Temporal: %v", err)
+		t.Fatal(err)
 	}
 	defer c.Close()
 	w := worker.New(c, workflow.TaskQueue, worker.Options{})
@@ -42,7 +46,8 @@ func TestTemporalDeliveryRunsTheClaimWorkflow(t *testing.T) {
 	defer w.Stop()
 
 	tx := isolated(t, pool)
-	claim := newClaim(t, tx)
+	requestCtx, request := requestSpan(t)
+	claim := newClaimWith(t, requestCtx, tx)
 	start := startEvent(t, tx, claim)
 	id := "claim-" + claim.String()
 	temporal := relay.NewTemporal(c, workflow.TaskQueue)
@@ -85,12 +90,30 @@ func TestTemporalDeliveryRunsTheClaimWorkflow(t *testing.T) {
 		t.Fatalf("after a late start the latest run of %s is %v, want the completed one", id, got)
 	}
 
+	// The request, the relay's delivery, the start and the workflow run are one trace.
+	for _, name := range []string{"relay deliver " + relay.KindWorkflowStart, "StartWorkflow:" + workflow.ClaimWorkflowName,
+		"RunWorkflow:" + workflow.ClaimWorkflowName} {
+		if !inTrace(spans, name, request.TraceID()) {
+			t.Errorf("no %q span in the request's trace %s", name, request.TraceID())
+		}
+	}
+
 	// A signal for the closed workflow can never be delivered.
 	late := relay.Message{EventID: submitted, ClaimID: claim, Kind: relay.KindWorkflowSignal, WorkflowID: id,
 		Name: workflow.SignalSubmitted, Payload: fmt.Appendf(nil, `{"claimId":%q}`, claim)}
 	if err := temporal.Deliver(ctx, late); !errors.Is(err, relay.ErrUndeliverable) {
 		t.Fatalf("signalling the closed workflow: err = %v, want ErrUndeliverable", err)
 	}
+}
+
+// inTrace reports whether a finished span called name belongs to the trace.
+func inTrace(spans *tracetest.SpanRecorder, name string, id trace.TraceID) bool {
+	for _, s := range spans.Ended() {
+		if s.Name() == name && s.SpanContext().TraceID() == id {
+			return true
+		}
+	}
+	return false
 }
 
 func status(t *testing.T, c client.Client, id string) enumspb.WorkflowExecutionStatus {
