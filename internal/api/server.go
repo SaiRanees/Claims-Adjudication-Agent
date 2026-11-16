@@ -47,11 +47,11 @@ func NewServer(c Claims, log *slog.Logger) *Server {
 func (s *Server) Drain() { s.draining.Store(true) }
 
 // GetHealth reports whether the process is taking traffic.
-func (s *Server) GetHealth(context.Context, apigen.GetHealthRequestObject) (apigen.GetHealthResponseObject, error) {
+func (s *Server) GetHealth(ctx context.Context, _ apigen.GetHealthRequestObject) (apigen.GetHealthResponseObject, error) {
 	if s.draining.Load() {
 		return apigen.GetHealth503ApplicationProblemPlusJSONResponse{
 			ServiceUnavailableApplicationProblemPlusJSONResponse: apigen.ServiceUnavailableApplicationProblemPlusJSONResponse(
-				problem(http.StatusServiceUnavailable, typeUnavailable, "shutting_down", "The process is shutting down.")),
+				problem(ctx, http.StatusServiceUnavailable, typeUnavailable, "shutting_down", "The process is shutting down.")),
 		}, nil
 	}
 	return apigen.GetHealth200JSONResponse{Status: apigen.Ok}, nil
@@ -66,14 +66,14 @@ func (s *Server) CreateClaim(ctx context.Context, req apigen.CreateClaimRequestO
 	if caller.Role != platform.RoleSubmitter {
 		return apigen.CreateClaim403ApplicationProblemPlusJSONResponse{
 			ForbiddenApplicationProblemPlusJSONResponse: apigen.ForbiddenApplicationProblemPlusJSONResponse(
-				problem(http.StatusForbidden, typeForbidden, "role_not_allowed", "Only submitters can create claims.")),
+				problem(ctx, http.StatusForbidden, typeForbidden, "role_not_allowed", "Only submitters can create claims.")),
 		}, nil
 	}
 	body := req.Body
 	if body.DischargedOn.Before(body.AdmittedOn.Time) {
 		return apigen.CreateClaim400ApplicationProblemPlusJSONResponse{
 			BadRequestApplicationProblemPlusJSONResponse: apigen.BadRequestApplicationProblemPlusJSONResponse(
-				validationFailed(apigen.FieldError{Pointer: "/dischargedOn", Detail: "must be on or after admittedOn"})),
+				validationFailed(ctx, apigen.FieldError{Pointer: "/dischargedOn", Detail: "must be on or after admittedOn"})),
 		}, nil
 	}
 	hash, err := requestHash("createClaim", body)
@@ -98,17 +98,17 @@ func (s *Server) CreateClaim(ctx context.Context, req apigen.CreateClaimRequestO
 	case errors.Is(err, claims.ErrIdempotencyKeyInUse):
 		return apigen.CreateClaim409ApplicationProblemPlusJSONResponse{
 			ConflictApplicationProblemPlusJSONResponse: apigen.ConflictApplicationProblemPlusJSONResponse(
-				problem(http.StatusConflict, typeConflict, "idempotency_key_in_use",
+				problem(ctx, http.StatusConflict, typeConflict, "idempotency_key_in_use",
 					"A request with this Idempotency-Key is still in progress. Retry it shortly.")),
 		}, nil
 	case errors.Is(err, claims.ErrIdempotencyKeyReused):
-		return unprocessable(problem(http.StatusUnprocessableEntity, typeUnprocessable, "idempotency_key_reused",
+		return unprocessable(problem(ctx, http.StatusUnprocessableEntity, typeUnprocessable, "idempotency_key_reused",
 			"This Idempotency-Key was already used for a different request. Use a new key.")), nil
 	case errors.Is(err, claims.ErrMemberNotFound):
-		return unprocessable(withErrors(problem(http.StatusUnprocessableEntity, typeUnprocessable, "member_not_found",
+		return unprocessable(withErrors(problem(ctx, http.StatusUnprocessableEntity, typeUnprocessable, "member_not_found",
 			"No member has this ID."), apigen.FieldError{Pointer: "/memberId", Detail: "no such member"})), nil
 	case errors.Is(err, claims.ErrNoPolicyYear):
-		return unprocessable(withErrors(problem(http.StatusUnprocessableEntity, typeUnprocessable, "no_policy_year",
+		return unprocessable(withErrors(problem(ctx, http.StatusUnprocessableEntity, typeUnprocessable, "no_policy_year",
 			"No policy year of the member's policy covers the admission date."),
 			apigen.FieldError{Pointer: "/admittedOn", Detail: "outside every policy year"})), nil
 	case err != nil:
@@ -143,7 +143,7 @@ func (s *Server) GetClaim(ctx context.Context, req apigen.GetClaimRequestObject)
 		return nil, errors.New("no caller on an authenticated operation")
 	}
 	notFound := apigen.GetClaim404ApplicationProblemPlusJSONResponse{
-		NotFoundApplicationProblemPlusJSONResponse: apigen.NotFoundApplicationProblemPlusJSONResponse(notFoundProblem()),
+		NotFoundApplicationProblemPlusJSONResponse: apigen.NotFoundApplicationProblemPlusJSONResponse(notFoundProblem(ctx)),
 	}
 	c, err := s.claims.Get(ctx, req.ClaimID)
 	if errors.Is(err, claims.ErrNotFound) {

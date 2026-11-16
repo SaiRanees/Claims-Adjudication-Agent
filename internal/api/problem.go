@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/api/apigen"
 )
@@ -31,11 +33,16 @@ var (
 	typeUnavailable      = problemType{"urn:claims-agent:problem:unavailable", "Unavailable"}
 )
 
-// problem builds a problem. traceId joins it with tracing (week 1, session 6).
-func problem(status int32, t problemType, code, detail string) apigen.Problem {
+// problem builds a problem. Its traceId is the request's trace, so a caller reporting
+// the problem points straight at the trace in Grafana.
+func problem(ctx context.Context, status int32, t problemType, code, detail string) apigen.Problem {
 	p := apigen.Problem{Type: t.uri, Title: t.title, Status: status, Code: &code}
 	if detail != "" {
 		p.Detail = &detail
+	}
+	if sc := trace.SpanContextFromContext(ctx); sc.HasTraceID() {
+		id := sc.TraceID().String()
+		p.TraceID = &id
 	}
 	return p
 }
@@ -47,13 +54,13 @@ func withErrors(p apigen.Problem, errs ...apigen.FieldError) apigen.Problem {
 	return p
 }
 
-func validationFailed(errs ...apigen.FieldError) apigen.Problem {
-	return withErrors(problem(http.StatusBadRequest, typeValidation, "validation_failed",
+func validationFailed(ctx context.Context, errs ...apigen.FieldError) apigen.Problem {
+	return withErrors(problem(ctx, http.StatusBadRequest, typeValidation, "validation_failed",
 		"The request doesn't match the contract. Each entry in errors points at a field."), errs...)
 }
 
-func notFoundProblem() apigen.Problem {
-	return problem(http.StatusNotFound, typeNotFound, "not_found", "No such resource, or you can't see it.")
+func notFoundProblem(ctx context.Context) apigen.Problem {
+	return problem(ctx, http.StatusNotFound, typeNotFound, "not_found", "No such resource, or you can't see it.")
 }
 
 func writeProblem(w http.ResponseWriter, p apigen.Problem) {
