@@ -7,7 +7,7 @@
 # Profiles:
 #   (none)  postgres, seaweedfs, temporal, otel-lgtm
 #   tools   migrate          (go run ./cmd/dev migrate)
-#   app     api, relay, worker, built from ./Dockerfile (stubs until week 1, sessions 4 and 5)
+#   app     api, relay, worker, built from ./Dockerfile
 
 name: claims-agent
 

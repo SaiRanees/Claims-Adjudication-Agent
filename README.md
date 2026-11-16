@@ -8,7 +8,7 @@ The first product is Arogya Sanjeevani, on the Go Digit wording (UIN GODHLIP2417
 
 ## Status
 
-Week 1, the walking skeleton. In place: the local stack, the first migration with its database checks, the API contract, CI, the first ADRs, and the API's first endpoints: `GET /healthz`, `POST /v1/claims` (idempotent, writing its workflow's outbox message in the same transaction) and `GET /v1/claims/{claimId}`. The other operations answer 501 for now, and the `relay` and `worker` commands are stubs until session 5.
+Week 1, the walking skeleton. In place: the local stack, the first migration with its database checks, the API contract, CI, the first ADRs, and the API's first endpoints: `GET /healthz`, `POST /v1/claims` (idempotent, writing its workflow's outbox message in the same transaction) and `GET /v1/claims/{claimId}`. The other operations answer 501 for now. The `relay` delivers each outbox message to Temporal, and the `worker` runs a placeholder `ClaimWorkflow`, so a new claim starts its workflow `claim-<id>`.
 
 ## Prerequisites
 

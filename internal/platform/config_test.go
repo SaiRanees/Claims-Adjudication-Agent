@@ -2,6 +2,7 @@ package platform_test
 
 import (
 	"log/slog"
+	"maps"
 	"strings"
 	"testing"
 
@@ -73,4 +74,138 @@ func TestLoadAPIConfigRejectsUnknownLogLevel(t *testing.T) {
 	if err == nil {
 		t.Fatal("LoadAPIConfig accepted LOG_LEVEL=loud")
 	}
+}
+
+func TestLoadRelayConfig(t *testing.T) {
+	full := map[string]string{
+		"DATABASE_URL":       "postgres://claims_app@db:5432/claims",
+		"TEMPORAL_ADDRESS":   "temporal:7233",
+		"TEMPORAL_NAMESPACE": "claims",
+		"LOG_LEVEL":          "debug",
+	}
+	tests := []struct {
+		name     string
+		vars     map[string]string
+		want     platform.RelayConfig
+		errNames []string // each must appear in the error; nil means no error
+	}{
+		{
+			name: "reads every variable",
+			vars: full,
+			want: platform.RelayConfig{
+				DatabaseURL: "postgres://claims_app@db:5432/claims",
+				Temporal:    platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
+				LogLevel:    slog.LevelDebug,
+			},
+		},
+		{
+			name: "defaults the log level to info",
+			vars: unsetVar(full, "LOG_LEVEL"),
+			want: platform.RelayConfig{
+				DatabaseURL: "postgres://claims_app@db:5432/claims",
+				Temporal:    platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
+				LogLevel:    slog.LevelInfo,
+			},
+		},
+		{
+			name:     "names every missing variable",
+			vars:     nil,
+			errNames: []string{"DATABASE_URL", "TEMPORAL_ADDRESS", "TEMPORAL_NAMESPACE"},
+		},
+		{
+			name:     "rejects an unknown log level",
+			vars:     setVar(full, "LOG_LEVEL", "loud"),
+			errNames: []string{"LOG_LEVEL"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := platform.LoadRelayConfig(env(tt.vars))
+			checkErr(t, err, tt.errNames)
+			if err == nil && got != tt.want {
+				t.Errorf("LoadRelayConfig = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLoadWorkerConfig(t *testing.T) {
+	full := map[string]string{
+		"TEMPORAL_ADDRESS":   "temporal:7233",
+		"TEMPORAL_NAMESPACE": "claims",
+		"LOG_LEVEL":          "warn",
+	}
+	tests := []struct {
+		name     string
+		vars     map[string]string
+		want     platform.WorkerConfig
+		errNames []string
+	}{
+		{
+			name: "reads every variable",
+			vars: full,
+			want: platform.WorkerConfig{
+				Temporal: platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
+				LogLevel: slog.LevelWarn,
+			},
+		},
+		{
+			name: "needs no database",
+			vars: unsetVar(full, "LOG_LEVEL"),
+			want: platform.WorkerConfig{
+				Temporal: platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
+				LogLevel: slog.LevelInfo,
+			},
+		},
+		{
+			name:     "names every missing variable",
+			vars:     nil,
+			errNames: []string{"TEMPORAL_ADDRESS", "TEMPORAL_NAMESPACE"},
+		},
+		{
+			name:     "rejects an unknown log level",
+			vars:     setVar(full, "LOG_LEVEL", "loud"),
+			errNames: []string{"LOG_LEVEL"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := platform.LoadWorkerConfig(env(tt.vars))
+			checkErr(t, err, tt.errNames)
+			if err == nil && got != tt.want {
+				t.Errorf("LoadWorkerConfig = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
+
+// checkErr fails unless err is nil when want is empty, or names everything in want.
+func checkErr(t *testing.T, err error, want []string) {
+	t.Helper()
+	if len(want) == 0 {
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		return
+	}
+	if err == nil {
+		t.Fatalf("no error, want one naming %v", want)
+	}
+	for _, name := range want {
+		if !strings.Contains(err.Error(), name) {
+			t.Errorf("error %q doesn't name %s", err, name)
+		}
+	}
+}
+
+func unsetVar(vars map[string]string, name string) map[string]string {
+	out := maps.Clone(vars)
+	delete(out, name)
+	return out
+}
+
+func setVar(vars map[string]string, name, value string) map[string]string {
+	out := maps.Clone(vars)
+	out[name] = value
+	return out
 }
