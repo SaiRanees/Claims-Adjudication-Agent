@@ -16,8 +16,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"go.temporal.io/sdk/client"
-	temporallog "go.temporal.io/sdk/log"
 
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/platform"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/relay"
@@ -39,10 +37,16 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	log := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: cfg.LogLevel}))
+	log := platform.NewLogger(os.Stderr, cfg.LogLevel)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	stopTelemetry, err := platform.StartTelemetry(ctx, cfg.Telemetry, log)
+	if err != nil {
+		return err
+	}
+	defer stopTelemetry()
 
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -53,13 +57,9 @@ func run() error {
 		return fmt.Errorf("reaching the database: %w", err)
 	}
 
-	tc, err := client.DialContext(ctx, client.Options{
-		HostPort:  cfg.Temporal.Address,
-		Namespace: cfg.Temporal.Namespace,
-		Logger:    temporallog.NewStructuredLogger(log),
-	})
+	tc, err := platform.DialTemporal(ctx, cfg.Temporal, log)
 	if err != nil {
-		return fmt.Errorf("connecting to Temporal: %w", err)
+		return err
 	}
 	defer tc.Close()
 

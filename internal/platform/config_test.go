@@ -51,6 +51,9 @@ func TestLoadAPIConfigDefaultsOptionalVariables(t *testing.T) {
 	if cfg.LogLevel != slog.LevelInfo {
 		t.Errorf("LogLevel = %v, want INFO", cfg.LogLevel)
 	}
+	if want := (platform.TelemetryConfig{ServiceName: "api"}); cfg.Telemetry != want {
+		t.Errorf("Telemetry = %+v, want %+v", cfg.Telemetry, want)
+	}
 }
 
 func TestLoadAPIConfigNamesEveryMissingVariable(t *testing.T) {
@@ -78,10 +81,13 @@ func TestLoadAPIConfigRejectsUnknownLogLevel(t *testing.T) {
 
 func TestLoadRelayConfig(t *testing.T) {
 	full := map[string]string{
-		"DATABASE_URL":       "postgres://claims_app@db:5432/claims",
-		"TEMPORAL_ADDRESS":   "temporal:7233",
-		"TEMPORAL_NAMESPACE": "claims",
-		"LOG_LEVEL":          "debug",
+		"DATABASE_URL":                "postgres://claims_app@db:5432/claims",
+		"TEMPORAL_ADDRESS":            "temporal:7233",
+		"TEMPORAL_NAMESPACE":          "claims",
+		"LOG_LEVEL":                   "debug",
+		"OTEL_SERVICE_NAME":           "relay-1",
+		"OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-lgtm:4318",
+		"OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
 	}
 	tests := []struct {
 		name     string
@@ -96,6 +102,7 @@ func TestLoadRelayConfig(t *testing.T) {
 				DatabaseURL: "postgres://claims_app@db:5432/claims",
 				Temporal:    platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
 				LogLevel:    slog.LevelDebug,
+				Telemetry:   platform.TelemetryConfig{ServiceName: "relay-1", OTLPEndpoint: "http://otel-lgtm:4318"},
 			},
 		},
 		{
@@ -105,7 +112,23 @@ func TestLoadRelayConfig(t *testing.T) {
 				DatabaseURL: "postgres://claims_app@db:5432/claims",
 				Temporal:    platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
 				LogLevel:    slog.LevelInfo,
+				Telemetry:   platform.TelemetryConfig{ServiceName: "relay-1", OTLPEndpoint: "http://otel-lgtm:4318"},
 			},
+		},
+		{
+			name: "defaults the service name and exports nothing without an endpoint",
+			vars: unsetVar(unsetVar(full, "OTEL_SERVICE_NAME"), "OTEL_EXPORTER_OTLP_ENDPOINT"),
+			want: platform.RelayConfig{
+				DatabaseURL: "postgres://claims_app@db:5432/claims",
+				Temporal:    platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
+				LogLevel:    slog.LevelDebug,
+				Telemetry:   platform.TelemetryConfig{ServiceName: "relay"},
+			},
+		},
+		{
+			name:     "rejects an OTLP protocol other than http/protobuf",
+			vars:     setVar(full, "OTEL_EXPORTER_OTLP_PROTOCOL", "grpc"),
+			errNames: []string{"OTEL_EXPORTER_OTLP_PROTOCOL"},
 		},
 		{
 			name:     "names every missing variable",
@@ -145,16 +168,18 @@ func TestLoadWorkerConfig(t *testing.T) {
 			name: "reads every variable",
 			vars: full,
 			want: platform.WorkerConfig{
-				Temporal: platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
-				LogLevel: slog.LevelWarn,
+				Temporal:  platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
+				LogLevel:  slog.LevelWarn,
+				Telemetry: platform.TelemetryConfig{ServiceName: "worker"},
 			},
 		},
 		{
 			name: "needs no database",
 			vars: unsetVar(full, "LOG_LEVEL"),
 			want: platform.WorkerConfig{
-				Temporal: platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
-				LogLevel: slog.LevelInfo,
+				Temporal:  platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
+				LogLevel:  slog.LevelInfo,
+				Telemetry: platform.TelemetryConfig{ServiceName: "worker"},
 			},
 		},
 		{

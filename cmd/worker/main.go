@@ -15,8 +15,6 @@ import (
 	"syscall"
 	"time"
 
-	"go.temporal.io/sdk/client"
-	temporallog "go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/worker"
 
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/platform"
@@ -38,18 +36,20 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	log := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: cfg.LogLevel}))
+	log := platform.NewLogger(os.Stderr, cfg.LogLevel)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	tc, err := client.DialContext(ctx, client.Options{
-		HostPort:  cfg.Temporal.Address,
-		Namespace: cfg.Temporal.Namespace,
-		Logger:    temporallog.NewStructuredLogger(log),
-	})
+	stopTelemetry, err := platform.StartTelemetry(ctx, cfg.Telemetry, log)
 	if err != nil {
-		return fmt.Errorf("connecting to Temporal: %w", err)
+		return err
+	}
+	defer stopTelemetry()
+
+	tc, err := platform.DialTemporal(ctx, cfg.Temporal, log)
+	if err != nil {
+		return err
 	}
 	defer tc.Close()
 

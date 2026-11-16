@@ -17,7 +17,8 @@ type APIConfig struct {
 	// HTTPAddr is the listen address. Default ":8080".
 	HTTPAddr string
 	// LogLevel is debug, info, warn or error. Default info.
-	LogLevel slog.Level
+	LogLevel  slog.Level
+	Telemetry TelemetryConfig
 }
 
 // RelayConfig is the relay's configuration, read from the environment as compose.yaml
@@ -27,7 +28,8 @@ type RelayConfig struct {
 	DatabaseURL string
 	Temporal    TemporalConfig
 	// LogLevel is debug, info, warn or error. Default info.
-	LogLevel slog.Level
+	LogLevel  slog.Level
+	Telemetry TelemetryConfig
 }
 
 // WorkerConfig is the worker's configuration, read from the environment as compose.yaml
@@ -35,7 +37,8 @@ type RelayConfig struct {
 type WorkerConfig struct {
 	Temporal TemporalConfig
 	// LogLevel is debug, info, warn or error. Default info.
-	LogLevel slog.Level
+	LogLevel  slog.Level
+	Telemetry TelemetryConfig
 }
 
 // TemporalConfig says where Temporal is. Both values are required: the claims namespace
@@ -45,6 +48,15 @@ type TemporalConfig struct {
 	Address string
 	// Namespace is TEMPORAL_NAMESPACE.
 	Namespace string
+}
+
+// TelemetryConfig says where traces go. Only OTLP over HTTP (http/protobuf) is supported.
+type TelemetryConfig struct {
+	// ServiceName is OTEL_SERVICE_NAME, defaulting to the service's own name.
+	ServiceName string
+	// OTLPEndpoint is OTEL_EXPORTER_OTLP_ENDPOINT, the collector's base URL. Empty means
+	// spans are still created, so logs and outbox rows carry trace IDs, but not exported.
+	OTLPEndpoint string
 }
 
 // LoadAPIConfig reads the configuration through getenv, which is os.Getenv outside tests.
@@ -61,6 +73,9 @@ func LoadAPIConfig(getenv func(string) string) (APIConfig, error) {
 	}
 	var err error
 	if cfg.LogLevel, err = logLevel(getenv); err != nil {
+		return APIConfig{}, err
+	}
+	if cfg.Telemetry, err = telemetry(getenv, "api"); err != nil {
 		return APIConfig{}, err
 	}
 	if cfg.HTTPAddr == "" {
@@ -83,6 +98,9 @@ func LoadRelayConfig(getenv func(string) string) (RelayConfig, error) {
 	if cfg.LogLevel, err = logLevel(getenv); err != nil {
 		return RelayConfig{}, err
 	}
+	if cfg.Telemetry, err = telemetry(getenv, "relay"); err != nil {
+		return RelayConfig{}, err
+	}
 	return cfg, nil
 }
 
@@ -95,6 +113,9 @@ func LoadWorkerConfig(getenv func(string) string) (WorkerConfig, error) {
 	}
 	var err error
 	if cfg.LogLevel, err = logLevel(getenv); err != nil {
+		return WorkerConfig{}, err
+	}
+	if cfg.Telemetry, err = telemetry(getenv, "worker"); err != nil {
 		return WorkerConfig{}, err
 	}
 	return cfg, nil
@@ -138,4 +159,16 @@ func logLevel(getenv func(string) string) (slog.Level, error) {
 		}
 	}
 	return level, nil
+}
+
+// telemetry reads the OTEL variables. service is the default service name.
+func telemetry(getenv func(string) string, service string) (TelemetryConfig, error) {
+	cfg := TelemetryConfig{ServiceName: getenv("OTEL_SERVICE_NAME"), OTLPEndpoint: getenv("OTEL_EXPORTER_OTLP_ENDPOINT")}
+	if cfg.ServiceName == "" {
+		cfg.ServiceName = service
+	}
+	if p := getenv("OTEL_EXPORTER_OTLP_PROTOCOL"); p != "" && p != "http/protobuf" {
+		return TelemetryConfig{}, fmt.Errorf("OTEL_EXPORTER_OTLP_PROTOCOL must be http/protobuf, got %q", p)
+	}
+	return cfg, nil
 }
