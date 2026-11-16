@@ -156,8 +156,11 @@ func next(ctx context.Context, tx pgx.Tx) (Message, error) {
 func (r *Relay) Run(ctx context.Context, idle time.Duration) error {
 	for {
 		handled, err := r.DeliverNext(ctx)
-		if ctx.Err() != nil {
+		select {
+		case <-ctx.Done():
+			// Stopping is not a failure, and any error now is the cancellation itself.
 			return nil
+		default:
 		}
 		if err != nil {
 			r.log.Error("delivering the outbox", "error", err)

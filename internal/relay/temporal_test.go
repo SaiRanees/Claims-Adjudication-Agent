@@ -95,11 +95,11 @@ func TestTemporalDeliveryRunsTheClaimWorkflow(t *testing.T) {
 
 func status(t *testing.T, c client.Client, id string) enumspb.WorkflowExecutionStatus {
 	t.Helper()
-	desc, err := c.DescribeWorkflowExecution(context.Background(), id, "")
+	desc, err := c.DescribeWorkflow(context.Background(), id, "")
 	if err != nil {
 		t.Fatalf("describing %s: %v", id, err)
 	}
-	return desc.GetWorkflowExecutionInfo().GetStatus()
+	return desc.Status
 }
 
 // startInput reads the workflow's input from its first history event.

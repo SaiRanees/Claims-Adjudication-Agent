@@ -57,15 +57,17 @@ Checked on 11 November. An acceptance test (`internal/api`, against Postgres) an
 
 ## Session 5: outbox relay and first workflow
 
-- [ ] The relay takes unpublished rows with `SELECT … FOR UPDATE SKIP LOCKED`, starts workflow `claim-<id>`, and marks the row published.
-- [ ] Store the trace context on the outbox row, so the trace continues across the hop.
-- [ ] A placeholder `ClaimWorkflow` runs one no-op activity, then waits for the `submitted` signal. The schema keeps a claim in `draft` until it has a submission time.
+- [x] The relay takes unpublished rows with `SELECT … FOR UPDATE SKIP LOCKED`, starts workflow `claim-<id>`, and marks the row published. A claim's messages go out in order without holding up other claims; a failure backs off from 1 second, doubling to a 5-minute cap; a message Temporal can never accept, such as a signal to a closed workflow, stops being retried.
+- [x] A placeholder `ClaimWorkflow` runs one no-op activity, then waits for the `submitted` signal. The schema keeps a claim in `draft` until it has a submission time.
 
 Done when a new claim appears as a running workflow in the Temporal UI. If this slips, it is the first job of week 2.
+
+Checked on 16 November. With `dev up` and `dev app`, a claim created through the API had its outbox row published on the first attempt, and `claim-<id>` showed as Running on http://localhost:8233, waiting for its submission after the one activity. The relay and worker exit cleanly on SIGTERM. The relay's tests run against Postgres, and an end-to-end test runs the relay, Temporal and the workflow together; CI's Database job now starts Temporal for it. Carrying the trace context across the hop moved to session 6, where tracing arrives.
 
 ## Session 6: tracing and CI
 
 - [ ] OTEL SDK in the API, relay and worker, exporting to `otel-lgtm`; JSON logs from `slog` carry the trace ID.
+- [ ] Fill the outbox row's `traceparent` column (it exists since migration 000001) and continue that trace in the relay, so it runs across the hop to Temporal. Moved here from session 5.
 - [x] GitHub Actions: `go vet`, golangci-lint, `go test -race`, migrations and `db-check` against a Postgres 18 service, an OpenAPI lint, ShellCheck, Hadolint, actionlint, a Windows job, and image builds.
 
 Done when CI is green on main, and one create-claim trace shows in Grafana from the HTTP request to the workflow start.

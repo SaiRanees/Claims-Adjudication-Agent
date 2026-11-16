@@ -8,6 +8,7 @@ import (
 
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/worker"
 
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/workflow"
 )
@@ -35,6 +36,11 @@ func newEnv(t *testing.T) (*testsuite.TestWorkflowEnvironment, *acknowledged) {
 	t.Helper()
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()
+	// The deadlock detector measures wall time, and its default of 1s fails the workflow
+	// (TMPRL1101) whenever a busy machine leaves its goroutine unscheduled that long, as
+	// it can under -race or alongside other test binaries. 10s still catches a real
+	// deadlock.
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: 10 * time.Second})
 	ack := &acknowledged{}
 	env.RegisterActivityWithOptions(ack.activity, activity.RegisterOptions{Name: "AcknowledgeClaim"})
 	return env, ack
