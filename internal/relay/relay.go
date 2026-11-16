@@ -10,6 +10,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/platform"
 )
 
 // The kinds of outbox message, as the outbox table's CHECK constraint lists them.
@@ -29,6 +35,8 @@ const (
 	firstBackoff = time.Second
 	maxBackoff   = 5 * time.Minute
 	maxErrorLen  = 1000
+
+	tracerName = "github.com/SaiRanees/Claims-Adjudication-Agent/internal/relay"
 )
 
 // Message is one outbox row: a workflow start or a signal for one claim.
@@ -41,6 +49,9 @@ type Message struct {
 	Name       string // the workflow type to start, or the signal to send
 	Payload    []byte // a JSON object of IDs (ADR-0004)
 	Attempts   int    // failed deliveries so far
+	// Traceparent is the trace of the change that queued the message, or "" for none.
+	// The delivery continues it, so the workflow joins that trace.
+	Traceparent string
 }
 
 // Deliverer hands a message to its workflow. A message reaches Temporal at least once
@@ -91,9 +102,26 @@ func (r *Relay) DeliverNext(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("reading the outbox: %w", err)
 	}
 
+	// The delivery is a child of the span that queued the message. Every attempt gets its
+	// own span, so retries show in the trace.
+	ctx, span := otel.Tracer(tracerName).Start(platform.ContextWithTraceparent(ctx, m.Traceparent),
+		"relay deliver "+m.Kind,
+		trace.WithSpanKind(trace.SpanKindProducer),
+		trace.WithAttributes(
+			attribute.String("claim.id", m.ClaimID.String()),
+			attribute.String("outbox.event_id", m.EventID.String()),
+			attribute.String("outbox.name", m.Name),
+			attribute.Int("outbox.attempt", m.Attempts+1),
+		))
+	defer span.End()
+
 	callCtx, cancel := context.WithTimeout(ctx, callTimeout)
 	deliverErr := r.deliverer.Deliver(callCtx, m)
 	cancel()
+	if deliverErr != nil {
+		span.RecordError(deliverErr)
+		span.SetStatus(codes.Error, "delivery failed")
+	}
 	if deliverErr != nil && ctx.Err() != nil {
 		// Shutting down, which is no fault of the message: leave its attempts alone.
 		// The rollback unlocks it for the next relay.
@@ -108,13 +136,13 @@ func (r *Relay) DeliverNext(ctx context.Context) (bool, error) {
 	case deliverErr == nil:
 		_, err = tx.Exec(rec, `UPDATE outbox SET published_at = now(), last_error = NULL WHERE id = $1`, m.ID)
 	case errors.Is(deliverErr, ErrUndeliverable):
-		r.log.Warn("giving up on an outbox message", "eventId", m.EventID, "claimId", m.ClaimID,
+		r.log.WarnContext(ctx, "giving up on an outbox message", "eventId", m.EventID, "claimId", m.ClaimID,
 			"kind", m.Kind, "name", m.Name, "error", deliverErr)
 		_, err = tx.Exec(rec, `UPDATE outbox SET published_at = now(), last_error = $2 WHERE id = $1`,
 			m.ID, truncate(deliverErr.Error()))
 	default:
 		wait := backoff(m.Attempts + 1)
-		r.log.Warn("delivering an outbox message failed; will retry", "eventId", m.EventID, "claimId", m.ClaimID,
+		r.log.WarnContext(ctx, "delivering an outbox message failed; will retry", "eventId", m.EventID, "claimId", m.ClaimID,
 			"kind", m.Kind, "name", m.Name, "attempt", m.Attempts+1, "retryIn", wait.String(), "error", deliverErr)
 		_, err = tx.Exec(rec, `
 			UPDATE outbox SET attempts = attempts + 1, next_attempt_at = now() + $2::interval, last_error = $3
@@ -135,7 +163,8 @@ func (r *Relay) DeliverNext(ctx context.Context) (bool, error) {
 func next(ctx context.Context, tx pgx.Tx) (Message, error) {
 	var m Message
 	err := tx.QueryRow(ctx, `
-		SELECT o.id, o.event_id, o.claim_id, o.kind, o.workflow_id, o.name, o.payload, o.attempts
+		SELECT o.id, o.event_id, o.claim_id, o.kind, o.workflow_id, o.name, o.payload, o.attempts,
+		       coalesce(o.traceparent, '')
 		FROM outbox o
 		WHERE o.published_at IS NULL
 		  AND o.next_attempt_at <= now()
@@ -147,7 +176,8 @@ func next(ctx context.Context, tx pgx.Tx) (Message, error) {
 		ORDER BY o.id
 		LIMIT 1
 		FOR UPDATE OF o SKIP LOCKED`).
-		Scan(&m.ID, &m.EventID, &m.ClaimID, &m.Kind, &m.WorkflowID, &m.Name, &m.Payload, &m.Attempts)
+		Scan(&m.ID, &m.EventID, &m.ClaimID, &m.Kind, &m.WorkflowID, &m.Name, &m.Payload, &m.Attempts,
+			&m.Traceparent)
 	return m, err
 }
 

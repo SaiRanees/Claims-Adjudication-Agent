@@ -439,6 +439,7 @@ One claim is one trace. The workflow, every activity, every model call and every
 
 - Claude's Go SDK emits an OpenTelemetry span per API request once a tracer provider is registered ([source](https://platform.claude.com/docs/en/cli-sdks-libraries/sdks/go)). Tool calls, engine runs and other providers' calls get their own spans.
 - Traces, metrics and logs go through an OTEL Collector to Grafana (Tempo, Prometheus, Loki).
+- The trace crosses the outbox: each outbox row stores the W3C `traceparent` of the change that wrote it, the relay starts its delivery span as a child of it, and Temporal's tracing interceptor carries the context in workflow headers to the worker. Only the trace context propagates, never baggage, so nothing but IDs crosses a process boundary.
 - Key metrics: claims by state and time in state, review queue depth and age, auto-finalize rate, override rate, extraction schema failures, tokens and cost per claim, settlement-deadline breaches.
 - Alerts: cost per claim over budget, a spike in schema failures, review tasks older than target, failed workflows.
 

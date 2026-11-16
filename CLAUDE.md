@@ -78,13 +78,14 @@ An AI agent that adjudicates Indian health insurance reimbursement claims, start
 - Errors are `application/problem+json` (RFC 9457), with `code`, `errors[]` and `traceId`.
 - Handlers not built yet return one sentinel error, and the strict handler's response-error hook maps it to a 501 problem.
 - Bearer tokens are HS256 JWTs (ADR 0008): `sub` is the caller, `role` is submitter, reviewer or admin, and the audience is `claims-api`. Handlers read the caller from the context, never the token.
-- Handlers check only what the contract can't express, such as discharge on or after admission. Field errors point into the body (`/claimedAmountPaise`) or at a parameter (`/header/Idempotency-Key`). `traceId` arrives with tracing in session 6.
+- Handlers check only what the contract can't express, such as discharge on or after admission. Field errors point into the body (`/claimedAmountPaise`) or at a parameter (`/header/Idempotency-Key`). Every problem's `traceId` is the request's trace ID.
 - Sign upload URLs for `S3_PUBLIC_ENDPOINT` (reachable from the host), not `S3_ENDPOINT` (the in-network name).
 - A browser's `EventSource` can't send an `Authorization` header, so the web app will use a fetch-based client for `/v1/claims/{claimId}/events`.
 
 ## Go conventions
 
-- Logs: `log/slog` JSON with trace IDs. No `fmt.Print*`.
+- Logs: `log/slog` JSON from `platform.NewLogger`, which adds `trace_id` and `span_id` when you log with a context (`InfoContext` and the like). No `fmt.Print*`.
+- Tracing: `platform.StartTelemetry` sets up OpenTelemetry (W3C `traceparent` only, no baggage), exporting over OTLP/HTTP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Dial Temporal with `platform.DialTemporal`, which adds Temporal's tracing interceptor. Span names and attributes carry IDs, never content.
 - Wrap errors with `%w`; check them with `errors.Is` and `errors.As`.
 - A switch over a status lists every value; `default` doesn't count (the exhaustive linter).
 - Tests are table-driven. The money package also gets a fuzz test.
@@ -98,4 +99,5 @@ An AI agent that adjudicates Indian health insurance reimbursement claims, start
 - Session 4, the API skeleton: `GET /healthz`, idempotent `POST /v1/claims` (claim, outbox row and key in one transaction) and `GET /v1/claims/{claimId}` are built and tested, including against Postgres; the other nine operations answer 501. The api container was run against the stack and shut down cleanly on SIGTERM.
 - Published at https://github.com/SaiRanees/Claims-Adjudication-Agent under the MIT licence. The Go module path matches the repo; `claims-agent` remains the local Compose project name.
 - Session 5, the relay and first workflow: `cmd/relay` delivers the outbox to Temporal (`SKIP LOCKED`, per-claim order, backoff to a 5-minute cap) and `cmd/worker` runs the placeholder `ClaimWorkflow` on the `claims` task queue. With `dev up` and `dev app`, a new claim's `claim-<id>` shows as Running in the Temporal UI, and both services exit cleanly on SIGTERM. CI's Database job starts Temporal for the relay's end-to-end test (`TEST_TEMPORAL_ADDRESS`).
-- Next, in order: session 6, tracing, including the trace context on outbox rows; session 7, the money package and the gate. Details are in `docs/plan/week-1.md`.
+- Session 6, tracing: the API, relay and worker export traces to `otel-lgtm`. The API writes the request's `traceparent` on the outbox row, the relay continues it around each delivery, and Temporal's interceptor carries it into the workflow, so one create-claim trace runs from `POST /v1/claims` through the relay to the workflow and its activity in Tempo.
+- Next: session 7, the money package and the gate. Details are in `docs/plan/week-1.md`.

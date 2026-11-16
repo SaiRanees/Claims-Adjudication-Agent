@@ -2,7 +2,7 @@
 
 By the end of the week, one command starts the whole stack, and one claim travels from the API through the outbox into a running workflow, with a single trace end to end. The engine's money core starts alongside, because it needs no policy.
 
-Progress, 11 November: the scaffold is built and checked, and the ticked items below are done. The first run on a real Windows machine has passed: the stack, the database checks, code generation and `go run ./cmd/dev check`. The API skeleton is built (session 4). Still to do: the relay and the first workflow, tracing, and the money package. Everything runs natively on Windows (ADR 0007).
+Progress, 16 November: the scaffold is built and checked, and the ticked items below are done. The first run on a real Windows machine has passed: the stack, the database checks, code generation and `go run ./cmd/dev check`. The API skeleton (session 4), the relay and first workflow (session 5) and tracing (session 6) are built. Still to do: the money package. Everything runs natively on Windows (ADR 0007).
 
 ## Decide first
 
@@ -66,8 +66,8 @@ Checked on 16 November. With `dev up` and `dev app`, a claim created through the
 
 ## Session 6: tracing and CI
 
-- [ ] OTEL SDK in the API, relay and worker, exporting to `otel-lgtm`; JSON logs from `slog` carry the trace ID.
-- [ ] Fill the outbox row's `traceparent` column (it exists since migration 000001) and continue that trace in the relay, so it runs across the hop to Temporal. Moved here from session 5.
+- [x] OTEL SDK in the API, relay and worker, exporting to `otel-lgtm`; JSON logs from `slog` carry the trace ID.
+- [x] Fill the outbox row's `traceparent` column (it exists since migration 000001) and continue that trace in the relay, so it runs across the hop to Temporal. Moved here from session 5.
 - [x] GitHub Actions: `go vet`, golangci-lint, `go test -race`, migrations and `db-check` against a Postgres 18 service, an OpenAPI lint, ShellCheck, Hadolint, actionlint, a Windows job, and image builds.
 
 Done when CI is green on main, and one create-claim trace shows in Grafana from the HTTP request to the workflow start.

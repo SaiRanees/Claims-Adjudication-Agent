@@ -12,6 +12,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/platform"
 )
 
 // Status is a claim's place in its lifecycle. The database's CHECK list is the authority;
@@ -283,7 +285,7 @@ func insertClaim(ctx context.Context, tx pgx.Tx, req CreateRequest) (Claim, erro
 }
 
 // insertWorkflowStart queues the message that starts the claim's workflow. The payload
-// carries IDs only (ADR-0004).
+// carries IDs only (ADR-0004); the row also carries the request's trace context.
 func insertWorkflowStart(ctx context.Context, tx pgx.Tx, c Claim) error {
 	eventID, err := uuid.NewV7()
 	if err != nil {
@@ -295,10 +297,11 @@ func insertWorkflowStart(ctx context.Context, tx pgx.Tx, c Claim) error {
 	if err != nil {
 		return fmt.Errorf("encoding the workflow payload: %w", err)
 	}
+	// traceparent lets the relay continue this request's trace into the workflow.
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO outbox (event_id, claim_id, kind, workflow_id, name, payload)
-		VALUES ($1, $2, 'workflow_start', $3, $4, $5)`,
-		eventID, c.ID, c.WorkflowID, WorkflowType, payload); err != nil {
+		INSERT INTO outbox (event_id, claim_id, kind, workflow_id, name, payload, traceparent)
+		VALUES ($1, $2, 'workflow_start', $3, $4, $5, $6)`,
+		eventID, c.ID, c.WorkflowID, WorkflowType, payload, platform.Traceparent(ctx)); err != nil {
 		return fmt.Errorf("queueing the workflow start: %w", err)
 	}
 	return nil

@@ -13,6 +13,9 @@ import (
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers"
 	"github.com/getkin/kin-openapi/routers/legacy"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/api/apigen"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/platform"
@@ -29,7 +32,7 @@ var registerFormats sync.Once
 // NewHandler returns the API as an http.Handler. Every request is matched against the
 // contract, its bearer token checked where the contract asks for one, and the request
 // validated against the contract before a handler sees it. Every error is an RFC 9457
-// problem.
+// problem carrying the request's trace ID.
 func NewHandler(s *Server, auth *platform.Authenticator, log *slog.Logger) (http.Handler, error) {
 	registerFormats.Do(func() {
 		// The services generate version 7 UUIDs; kin-openapi's RFC 4122 pattern stops at
@@ -48,24 +51,29 @@ func NewHandler(s *Server, auth *platform.Authenticator, log *slog.Logger) (http
 		return nil, fmt.Errorf("building the router: %w", err)
 	}
 
-	badRequest := func(w http.ResponseWriter, _ *http.Request, err error) {
-		writeProblem(w, validationFailed(apigen.FieldError{Pointer: "", Detail: err.Error()}))
+	badRequest := func(w http.ResponseWriter, r *http.Request, err error) {
+		ctx := r.Context()
+		writeProblem(w, validationFailed(ctx, apigen.FieldError{Pointer: "", Detail: err.Error()}))
 	}
 	strict := apigen.NewStrictHandlerWithOptions(s, nil, apigen.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: badRequest,
 		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			ctx := r.Context()
 			if errors.Is(err, ErrNotImplemented) {
-				writeProblem(w, problem(http.StatusNotImplemented, typeNotImplemented, "not_implemented",
+				writeProblem(w, problem(ctx, http.StatusNotImplemented, typeNotImplemented, "not_implemented",
 					"This operation isn't built yet."))
 				return
 			}
 			log.ErrorContext(r.Context(), "request failed", "method", r.Method, "path", r.URL.Path, "error", err)
-			writeProblem(w, problem(http.StatusInternalServerError, typeInternal, "internal_error",
+			writeProblem(w, problem(ctx, http.StatusInternalServerError, typeInternal, "internal_error",
 				"Something went wrong on our side."))
 		},
 	})
 	handler := apigen.HandlerWithOptions(strict, apigen.StdHTTPServerOptions{ErrorHandlerFunc: badRequest})
-	return &contract{router: router, auth: auth, next: handler}, nil
+	// Every request gets a server span, continuing the caller's trace when it sends a
+	// traceparent header; the contract names the span after the matched route.
+	return otelhttp.NewHandler(&contract{router: router, auth: auth, next: handler}, "api",
+		otelhttp.WithPropagators(platform.Propagator)), nil
 }
 
 // contract enforces api/openapi.yaml in front of the generated handler.
@@ -76,19 +84,25 @@ type contract struct {
 }
 
 func (c *contract) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	route, pathParams, ok := c.findRoute(r)
 	if !ok {
 		// The router can't be trusted to tell a wrong method from a wrong path (it only
 		// does so for paths without parameters), so ask it which methods the path has.
 		if allowed := c.allowedMethods(r); len(allowed) > 0 {
 			w.Header().Set("Allow", strings.Join(allowed, ", "))
-			writeProblem(w, problem(http.StatusMethodNotAllowed, typeMethodNotAllowed, "method_not_allowed",
+			writeProblem(w, problem(ctx, http.StatusMethodNotAllowed, typeMethodNotAllowed, "method_not_allowed",
 				r.Method+" isn't allowed on this path."))
 			return
 		}
-		writeProblem(w, notFoundProblem())
+		writeProblem(w, notFoundProblem(ctx))
 		return
 	}
+	// Name the server span after the route, not the path, so every claim's requests group
+	// together in Grafana and no ID ends up in a span name.
+	span := trace.SpanFromContext(ctx)
+	span.SetName(r.Method + " " + route.Path)
+	span.SetAttributes(attribute.String("http.route", route.Path))
 
 	if needsBearer(route) {
 		caller, ok := c.authenticate(w, r)
@@ -114,11 +128,11 @@ func (c *contract) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}); err != nil {
 		var tooLarge *http.MaxBytesError
 		if errors.As(err, &tooLarge) {
-			writeProblem(w, problem(http.StatusRequestEntityTooLarge, typeTooLarge, "body_too_large",
+			writeProblem(w, problem(ctx, http.StatusRequestEntityTooLarge, typeTooLarge, "body_too_large",
 				fmt.Sprintf("Request bodies are limited to %d bytes.", maxBodyBytes)))
 			return
 		}
-		writeProblem(w, validationFailed(fieldErrors(err)...))
+		writeProblem(w, validationFailed(ctx, fieldErrors(err)...))
 		return
 	}
 	c.next.ServeHTTP(w, r)
@@ -136,17 +150,18 @@ func needsBearer(route *routers.Route) bool {
 
 // authenticate checks the bearer token. On failure it writes the 401 and returns false.
 func (c *contract) authenticate(w http.ResponseWriter, r *http.Request) (platform.Principal, bool) {
+	ctx := r.Context()
 	scheme, token, found := strings.Cut(r.Header.Get("Authorization"), " ")
 	if !found || !strings.EqualFold(scheme, "Bearer") || strings.TrimSpace(token) == "" {
 		w.Header().Set("WWW-Authenticate", authChallenge)
-		writeProblem(w, problem(http.StatusUnauthorized, typeUnauthenticated, "missing_token",
+		writeProblem(w, problem(ctx, http.StatusUnauthorized, typeUnauthenticated, "missing_token",
 			"Send a bearer token in the Authorization header."))
 		return platform.Principal{}, false
 	}
 	caller, err := c.auth.Authenticate(strings.TrimSpace(token))
 	if err != nil {
 		w.Header().Set("WWW-Authenticate", authChallenge+`, error="invalid_token"`)
-		writeProblem(w, problem(http.StatusUnauthorized, typeUnauthenticated, "invalid_token",
+		writeProblem(w, problem(ctx, http.StatusUnauthorized, typeUnauthenticated, "invalid_token",
 			"The bearer token is invalid or has expired."))
 		return platform.Principal{}, false
 	}

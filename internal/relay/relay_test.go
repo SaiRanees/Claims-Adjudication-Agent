@@ -45,11 +45,13 @@ func connect(t *testing.T) *pgxpool.Pool {
 // test does outlasts it. The relay delivers the oldest due row in the whole outbox, and
 // the test database is shared: earlier runs and other packages' tests leave unpublished
 // rows. Inside this transaction only, those rows are marked published, so the relay sees
-// just the rows the test makes, plus those of the claims in keep.
+// just the rows the test makes, plus those of the claims in keep. It is REPEATABLE READ,
+// so rows that tests in other packages, running at the same time, commit later stay
+// out of sight too.
 func isolated(t *testing.T, pool *pgxpool.Pool, keep ...uuid.UUID) pgx.Tx {
 	t.Helper()
 	ctx := context.Background()
-	tx, err := pool.Begin(ctx)
+	tx, err := pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +69,14 @@ func isolated(t *testing.T, pool *pgxpool.Pool, keep ...uuid.UUID) pgx.Tx {
 // newClaim creates a claim through the claims store, which queues its workflow start.
 func newClaim(t *testing.T, db claims.DB) uuid.UUID {
 	t.Helper()
-	res, err := claims.NewStore(db).Create(context.Background(), claims.CreateRequest{
+	return newClaimWith(t, context.Background(), db)
+}
+
+// newClaimWith creates a claim as newClaim does, in ctx, so the start row carries ctx's
+// trace.
+func newClaimWith(t *testing.T, ctx context.Context, db claims.DB) uuid.UUID {
+	t.Helper()
+	res, err := claims.NewStore(db).Create(ctx, claims.CreateRequest{
 		Principal:      "test-" + uuid.NewString(),
 		IdempotencyKey: "k",
 		RequestHash:    sha256.Sum256([]byte(uuid.NewString())),

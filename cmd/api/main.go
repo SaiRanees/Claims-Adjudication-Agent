@@ -39,10 +39,16 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	log := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: cfg.LogLevel}))
+	log := platform.NewLogger(os.Stderr, cfg.LogLevel)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	stopTelemetry, err := platform.StartTelemetry(ctx, cfg.Telemetry, log)
+	if err != nil {
+		return err
+	}
+	defer stopTelemetry()
 
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
