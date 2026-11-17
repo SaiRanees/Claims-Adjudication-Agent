@@ -135,6 +135,10 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
     depends_on: *app-depends-on
+    # The services exit non-zero when a dependency such as Temporal isn't
+    # reachable yet; Docker restarts them, with backoff, until it is. A clean
+    # exit (SIGTERM, exit 0) stays stopped.
+    restart: on-failure
 
   relay:
     profiles: [app]
@@ -147,6 +151,7 @@ services:
       <<: *app-env
       OTEL_SERVICE_NAME: relay
     depends_on: *app-depends-on
+    restart: on-failure
 
   worker:
     profiles: [app]
@@ -159,6 +164,7 @@ services:
       <<: *app-env
       OTEL_SERVICE_NAME: worker
     depends_on: *app-depends-on
+    restart: on-failure
 
 volumes:
   postgres-data:
