@@ -74,10 +74,11 @@ Done when CI is green on main, and one create-claim trace shows in Grafana from 
 
 ## Session 7: money core, ADRs and the gate
 
-- [ ] `internal/rules/money`: `int64` paise, basis points, half-up rounding, largest-remainder allocation.
-- [ ] Table tests, plus a Go fuzz test proving allocations always add up to the total.
+- [x] `internal/rules/money`: `int64` paise, basis points, half-up rounding, largest-remainder allocation.
+- [x] Table tests, plus a Go fuzz test proving allocations always add up to the total.
 - [x] ADRs 0001 to 0006: Go, Temporal, the outbox for every workflow message, only IDs through Temporal, the engine as a pure library, synthetic data only.
 - [ ] Gate: from a fresh clone, `go run ./cmd/dev up`, `go run ./cmd/dev migrate` and `go run ./cmd/dev test` all pass. Record a one-minute demo.
+  - 17 November: passed from a fresh clone of `session-7-money-gate` under its own Compose project (`COMPOSE_PROJECT_NAME=claims-agent-gate`): `up`, `migrate`, `seed`, `db-check` (all checks passed) and `test`, which ran the database and Temporal tests against the stack: 198 passed, 0 skipped, 0 failed. The demo is still to record.
 
 ## Done by the end of week 1
 
