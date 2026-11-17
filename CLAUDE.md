@@ -45,7 +45,7 @@ An AI agent that adjudicates Indian health insurance reimbursement claims, start
 | Add oapi-codegen as a Go tool (once) | `go run ./cmd/dev tools` |
 | Regenerate `internal/api/apigen` | `go run ./cmd/dev gen` |
 | Vet, lint and tests | `go run ./cmd/dev check` |
-| Include the database tests | set `TEST_DATABASE_URL` to `claims` as `claims_app` (README, "First run"), then `check` or `test` |
+| Include the database and Temporal tests | automatic in `check` and `test` when the stack is up and `dev app`'s relay and worker aren't running (README, "First run") |
 | Lint the API contract | `go run ./cmd/dev lint-api` |
 | Format the Go code | `go run ./cmd/dev fmt` |
 | Run api, relay and worker in containers | `go run ./cmd/dev app` |

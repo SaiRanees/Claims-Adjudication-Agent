@@ -89,7 +89,7 @@ func tasks() []task {
 		{name: "vet", group: groupGo, run: goTool("vet", "./..."),
 			help: "Run go vet"},
 		{name: "test", args: "[packages]", group: groupGo, run: test,
-			help: "Run the tests, with the race detector where this machine supports it"},
+			help: "Run the tests, with the race detector where this machine supports it, and against the local stack when it's up"},
 		{name: "lint", group: groupGo, run: inOrder(lintGo, lintAPI),
 			help: "Run golangci-lint and the OpenAPI lint"},
 		{name: "lint-go", group: groupGo, run: lintGo,
@@ -239,6 +239,9 @@ func test(ctx context.Context, args []string) error {
 	}
 	if len(args) == 0 {
 		args = []string{"./..."}
+	}
+	if err := useLocalStack(ctx); err != nil {
+		return err
 	}
 	return run(ctx, nil, "go", append(goArgs, args...)...)
 }
