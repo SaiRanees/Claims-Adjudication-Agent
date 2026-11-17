@@ -38,14 +38,9 @@ Commit the generated code and `go.mod`/`go.sum`: CI fails if `go generate` or `g
 
 `go run ./cmd/dev help` lists every task, and `go run ./cmd/dev reset` deletes all local data. On Windows, the tests run without the race detector unless a C compiler such as MinGW-w64 is installed; CI always runs them with it.
 
-The tests that need the database skip themselves unless `TEST_DATABASE_URL` points at the migrated, seeded `claims` database as `claims_app`. With the stack up and the values from `.env.example`, in PowerShell:
+The tests that need the database or Temporal skip themselves unless `TEST_DATABASE_URL` (the migrated, seeded `claims` database as `claims_app`) and `TEST_TEMPORAL_ADDRESS` are set. When they aren't, `go run ./cmd/dev test` and `check` set them for the local stack, using the password in `.env`, and print a note saying so. They're left unset, with a note, when the stack isn't answering or when `dev app`'s relay or worker is running, since those would race the tests; `docker compose stop relay worker` clears that. To skip those tests on purpose, set either variable to an empty value.
 
-```powershell
-$env:TEST_DATABASE_URL = "postgres://claims_app:app-dev-only@localhost:5432/claims?sslmode=disable"
-go run ./cmd/dev test
-```
-
-They leave their test claims behind, because `claims_app` can't delete claims; `go run ./cmd/dev reset` clears them.
+The database tests leave their test claims behind, because `claims_app` can't delete claims; `go run ./cmd/dev reset` clears them.
 
 ### Calling the API
 
