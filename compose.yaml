@@ -81,7 +81,7 @@ services:
       start_period: 10s
 
   temporal:
-    image: temporalio/temporal:1.10.0
+    image: temporalio/temporal:1.10.1
     command:
       - server
       - start-dev
