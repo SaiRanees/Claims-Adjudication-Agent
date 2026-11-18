@@ -45,14 +45,15 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
 - [ ] The order of operations, as a list of step names:
   1. check eligibility;
   2. drop listed items;
-  3. apply daily caps;
-  4. apply proportionate deduction;
-  5. apply sub-limits;
-  6. cap at the cover left;
-  7. take the co-payment (ADR 0009);
-  8. take the bill discount.
+  3. set aside unmodelled lines;
+  4. apply daily caps;
+  5. apply proportionate deduction;
+  6. apply sub-limits;
+  7. cap at the cover left;
+  8. take the co-payment (ADR 0009);
+  9. take the bill discount.
 
-  Eligibility is a pass-through until session 5, but it is declared now so the step checks cover it. This plan numbers the six wording steps (2 to 7 in the list) as steps 1 to 6, as architecture.md does. The engine runs the order the pack declares, so changing the order means a new pack version.
+  Eligibility is a pass-through until session 5, but it is declared now so the step checks cover it. This plan numbers the six wording steps (2 and 4 to 8 in the list) as steps 1 to 6, as architecture.md does. Eligibility, setting aside unmodelled lines and the discount have no wording step number. The engine runs the order the pack declares, so changing the order means a new pack version.
 - [ ] A strict parser in `internal/rules`. It takes bytes, so it stays pure, and it decodes through `yaml.Node` so each check sees the source text. Each of these is an error that names the field:
   - an unknown field;
   - a float;
@@ -95,8 +96,8 @@ Done when the pack loads and validates, each malformed variant in a table test f
   | --- | --- | --- | --- |
   | `room_days_mismatch` | Line | A bucket line's days billed are neither the segment's calendar days nor one fewer | None |
   | `undated_line` | Line | A line has no date in a stay with more than one rate | None |
-  | `outside_stay` | Line | A line is dated outside the stay | None |
-  | `package_rate` | Line | A line is billed at a package rate | None |
+  | `outside_stay` | Line | The unmodelled-lines step deducts a line dated outside the stay | None |
+  | `package_rate` | Line | The unmodelled-lines step deducts a line billed at a package rate | None |
   | `bill_discount` | Claim | The bill carries a discount | The discount |
   | `differential_billing_unknown` | Claim | The facts don't say whether the hospital uses differential billing | None |
   | `no_room_charge` | Claim | A segment has no room or ICU charge, so it has no ratio | None |
@@ -118,12 +119,14 @@ Done when the pack loads and validates, each malformed variant in a table test f
 
 Done when money's new functions pass their table and fuzz tests, the input-check table tests pass, the CSV test matches your rows for every checked case, and the golden runner loads all 10 cases and reports each one failing against the stub engine.
 
-## Session 3: item lists, daily caps and proportionate deduction (steps 1 to 3)
+## Session 3: item lists, unmodelled lines, daily caps and proportionate deduction (steps 1 to 3)
 
 - [ ] Step 1: a line matched to an Annexure A list pays nothing, with an adjustment that cites that list.
-- [ ] Lines the engine can't model pay nothing for now, which is at or below every reading of them, and a reviewer decides. A package-rate line raises `package_rate`, and a line dated outside the stay raises `outside_stay`.
-  - Each is deducted in full by one adjustment under its own rule ID, `unmodelled-package-rate` or `unmodelled-outside-stay`.
-  - Neither rests on a clause of the wording, so their clause field is empty. The pack marks both rules unmodelled, which is the only way a rule may cite no clause, and a comment points to architecture.md's review triggers.
+- [ ] Setting aside unmodelled lines, a declared step of its own, after dropping listed items and before the daily caps. Lines the engine can't model pay nothing for now, which is at or below every reading of them, and a reviewer decides.
+  - The step deducts what is left of each package-rate line, and of each line dated outside the stay, by one adjustment under its own rule ID, `unmodelled-package-rate` or `unmodelled-outside-stay`.
+  - It raises `package_rate` or `outside_stay` only for a line it actually deducts. A line an Annexure list already zeroed keeps the list's adjustment as its reason, and raises neither flag.
+  - Because the step runs before the daily caps, a set-aside line adds nothing to a bucket's total or a segment's ratio.
+  - Neither rule rests on a clause of the wording, so their clause field is empty. The pack marks both rules unmodelled, which is the only way a rule may cite no clause, and a comment points to architecture.md's review triggers.
 - [ ] Step 2: each bucket is capped per day, at the lower of a share of the eligible sum insured and a rupee ceiling: 2% or ₹5,000 for the room bucket, and 5% or ₹10,000 for ICU.
   - The daily cap is multiplied by the smaller of the days billed and the segment's calendar days, so billing extra days never raises the allowance.
   - The days billed may equal the segment's calendar days or be one fewer, because hospitals often skip the discharge day. Anything else raises `room_days_mismatch`, including a lump-sum line billed as one unit for a longer stay.
