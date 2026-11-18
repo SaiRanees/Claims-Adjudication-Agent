@@ -122,7 +122,7 @@ Missing documents and every raised flag leave the main path, and come back only 
 
 **What sends a claim to review** (checked in code after the engine runs; any one is enough)
 
-- A proposed denial: an exclusion, a waiting period, a pre-existing disease, or a claim with nothing payable.
+- A proposed denial, where the policy makes the claim pay nothing: an exclusion, a waiting period, a pre-existing disease, or nothing payable under the rules. A claim that pays nothing only because the engine couldn't model a line isn't one; it goes to review as a case the engine doesn't model.
 - A failed cross-check: lines don't add up to the bill total, an amount is missing from the page text, or names and dates don't match the policy.
 - A disagreement between the agent and the code-side item lookup, or a line the agent flagged.
 - A billed or payable amount above a set value, or a payable within a small margin of a limit.
@@ -217,7 +217,7 @@ All money math runs in one pure Go package. Claim facts and a versioned rule pac
 
 - Money is `int64` paise and percentages are basis points. No floats on the money path.
 - Rounding happens once per line, with one documented rule (half up, to the paisa), covered by tests. Claim-level amounts such as co-payment are spread across lines by largest remainder, so lines always add up to the total.
-- Each adjustment records line ID, rule ID, clause ID, inputs and amount. That record is the explanation reviewers and letters show.
+- Each adjustment records line ID, rule ID, clause ID, inputs and amount. That record is the explanation reviewers and letters show. Every reduction is an adjustment, so for every line, billed less payable equals the sum of its adjustments. A rule for a case the engine doesn't model, such as a package-rate line, rests on no clause, so its clause ID is empty.
 - The rule pack is chosen by the policy version in force on the admission date, then pinned on the claim, so re-running an old claim reproduces the old answer.
 
 **Rule pack: one YAML file per policy wording version.** The first one encodes Go Digit's wording of Arogya Sanjeevani ([wording](https://www.godigit.com/content/dam/godigit/directportal/en/downloads/health/policy-wordings-arogya-sanjeevani-policy-go-digit.pdf)):
@@ -297,7 +297,7 @@ Postgres is the system of record; Temporal holds only in-flight workflow state. 
 | `agent_runs`, `agent_messages` | The agent conversation per claim, turn by turn | Turn numbers unique per run |
 | `extractions` | Model output per document and page range, schema version, link to its model call | Never updated; re-extraction adds a row |
 | `line_items` | Description, category, service date, quantity, unit price, amount in paise, source page, package flag | Amount at least zero; quantity × unit price matches amount |
-| `adjudications`, `adjustments` | Versioned results; one adjustment per rule applied, with its clause ID | New version on every recompute or override |
+| `adjudications`, `adjustments` | Versioned results; one adjustment per rule applied, with its clause ID (empty for a rule the engine doesn't model) | New version on every recompute or override |
 | `review_tasks` | Reason codes, assignee, lease expiry, decision | One open task per claim |
 | `audit_events` | Every state change, model call, tool call and human action, as IDs and amounts | Insert-only database role; hash-chained per claim |
 | `outbox` | Messages for workflows (start, documents added, review decided) and notifications, each with an event ID | Written in the same transaction as the change |

@@ -20,7 +20,7 @@ Cap first, then take the co-payment.
 - Step 5 caps the admissible total at the cover left: the eligible sum insured plus the cumulative bonus granted for the year, less the total paid this policy year, and never below zero.
 - Step 6 takes 5% of the capped amount, computed once for the claim with `money.Percent`, and spreads it across the lines with `money.Allocate`.
 - The ledger debits only what is paid, never the co-payment (Definition 10).
-- The order matters only for a claim whose admissible total exceeds the cover left. Every such claim, and no other, raises a `cover_exceeded` flag that carries the payable the co-pay-first order would give, so a reviewer sees both figures. That figure is never lower than the payable, and can equal it: when no cover is left, or when rounding closes the gap. For example, 29 paise of cover against 30 paise admissible pays 28 paise either way.
+- The order matters only for a claim whose admissible total exceeds the cover left. Every such claim, and no other, raises a `cover_exceeded` flag that carries the payable the co-pay-first order would give after the same bill discount, so a reviewer sees two figures that compare like for like. That figure is never lower than the payable, because taking the smaller of the discount and the payable from each never reverses their order. It can equal the payable: when no cover is left, or when rounding or the discount closes the gap. For example, 29 paise of cover against 30 paise admissible pays 28 paise either way.
 - The rule pack lists its steps in this order. Two golden cases pin it: one with an admissible amount just over the cover left, and one just under it.
 
 ## Consequences

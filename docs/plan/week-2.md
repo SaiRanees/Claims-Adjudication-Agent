@@ -6,7 +6,7 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
 
 ## Decide first
 
-- [x] Co-payment after the cap ([ADR 0009](../adr/0009-cap-before-co-payment.md)). Step 5 caps the admissible total at the cover left. Step 6 takes 5% of the capped amount, with `Percent` once and then `Allocate`. E.II.28(c) applies the 5% to the amount "admissible and payable", and Definition 10 says a co-payment doesn't reduce the sum insured, so the ledger records only what's paid. The two orders can differ only when the admissible amount exceeds the cover left. Every such claim gets a `cover_exceeded` flag carrying the co-pay-first figure, which is never lower than the payable.
+- [x] Co-payment after the cap ([ADR 0009](../adr/0009-cap-before-co-payment.md)). Step 5 caps the admissible total at the cover left. Step 6 takes 5% of the capped amount, with `Percent` once and then `Allocate`. E.II.28(c) applies the 5% to the amount "admissible and payable", and Definition 10 says a co-payment doesn't reduce the sum insured, so the ledger records only what's paid. The two orders can differ only when the admissible amount exceeds the cover left. Every such claim gets a `cover_exceeded` flag carrying the co-pay-first payable after the same bill discount, which is never lower than the payable.
 - [x] ICU and proportionate deduction ([ADR 0010](../adr/0010-cap-icu-charges-flag-icu-scaling.md)). ICU charge lines are capped per day and never scaled. Scaling other lines by an ICU ratio follows the wording (C.I.1 Note 2) under its own rule ID, and raises `icu_ratio_scaling`.
   - IRDAI's 2020 circular (IRDAI/HLT/REG/CIR/151/06/2020, para 7) barred this scaling.
   - The 2024 master circular supersedes that circular (Annexure-6, entry 19). Neither the master circular nor the 2024 Insurance Products Regulations restates the bar.
@@ -29,13 +29,13 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
   - A flag about one line has one row carrying that line's ID. A claim-level flag has at most one row per claim, with `line_id` empty.
   - `(case_id, kind, line_id, code)` is unique.
 
-  The CSV test sorts both sides before comparing. It accepts a UTF-8 byte-order mark and CRLF line endings, because Excel on Windows writes both, and it fails on rows for a case that doesn't exist.
+  The CSV test sorts both sides before comparing. It accepts a UTF-8 byte-order mark and CRLF line endings, because Excel on Windows writes both, and it fails on rows for a case that doesn't exist. It also checks the identity from session 2 on your rows: for each line, its billed amount in the case file, less its `line_payable` row, equals the sum of its `adjustment` rows.
 - [x] Scope. Pre- and post-hospitalisation expenses stay out, as a v1 non-goal in architecture.md, and the engine flags any line dated outside the stay. A same-day stay (day care) is valid input with one day, and gets a cataract day-care golden case. AYUSH has no limit of its own in this pack; whether the hospital qualifies is a fact for M3.
 
 ## Session 1: the rule pack
 
 - [ ] `rulepacks/arogya-sanjeevani/godigit-2024.yaml` holds the pack ID, its version, the wording's UIN (GODHLIP24179V022324) and the wording's validity dates. It also holds every limit in paise or basis points, each citing its clause ID and page. Rule IDs, like clause IDs, never change once published.
-- [ ] Confirm the page numbers of the passages quoted in ADRs 0009 and 0010: E.II.28(c) and Definition 10 in the wording, and para 7 of the 2020 circular. The pack cites pages.
+- [ ] Confirm the page numbers of the passages this plan and ADRs 0009 and 0010 quote: E.II.28(c), Definition 10 and Definition 26 in the wording (Definition 26 is on page 4 of 25 in your copy), and para 7 of the 2020 circular. The pack cites pages.
 - [ ] Each line category is listed exactly once, under one of three treatments:
   - Capped per day, in a bucket. The room bucket takes room rent, boarding and nursing, which C.I.1 (i) caps together, so separate nursing and patient-diet lines count toward its daily cap. ICU charges form the ICU bucket.
   - Scaled by proportionate deduction.
@@ -58,7 +58,7 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
   - a float;
   - an integer that doesn't match `^(0|[1-9][0-9]*)$`. A lone 0 is valid; a sign, a leading zero, `0x`, `0o` or an underscore is not;
   - a second document, an anchor, an alias or a merge key;
-  - a rule that cites an undefined clause;
+  - a rule that cites an undefined clause, or cites none without being marked unmodelled (session 3);
   - a category listed twice or not at all;
   - a step that is missing or repeated.
 - [ ] A small `rulepacks` package embeds the YAML with `go:embed`, because `internal/rules` can't import `io/fs`. A pack's identity is its ID, its version and the SHA-256 of its bytes. Every result carries that identity, so a replay can prove it used the same pack. A published pack never changes; from the M1 gate onward, a test pins each published version's SHA-256 (session 7).
@@ -85,7 +85,7 @@ Done when the pack loads and validates, each malformed variant in a table test f
     - C.I.6 use.
 
     Until session 5, every tranche counts.
-  - Result: each line's billed and payable amounts, the adjustments (line ID, rule ID, clause ID, inputs and amount), the flags, the totals, the pack's identity, and the claim's ledger effects.
+  - Result: each line's billed and payable amounts, the adjustments (line ID, rule ID, clause ID, inputs and amount), the flags, the totals, the pack's identity, and the claim's ledger effects. Every reduction is an adjustment, including a line's share of a claim-level reduction, so for every line, billed less payable equals the sum of its adjustments.
 - [ ] The ledger effects use the same terms as the cover, so the next claim reads back what this one wrote:
   - The sum insured and bonus consumed equal the payable (Definition 10).
   - Cataract use per eye, and C.I.6 use, are what those lines were admitted at before the co-payment. The sub-limit applies before the co-payment, so counting the paid amount would let an eye's total pass its limit.
@@ -101,9 +101,9 @@ Done when the pack loads and validates, each malformed variant in a table test f
   | `differential_billing_unknown` | Claim | The facts don't say whether the hospital uses differential billing | None |
   | `no_room_charge` | Claim | A segment has no room or ICU charge, so it has no ratio | None |
   | `icu_ratio_scaling` | Claim | Lines are scaled by an ICU ratio | The total ICU-ratio deduction |
-  | `cover_exceeded` | Claim | The admissible total exceeds the cover left | The co-pay-first payable |
+  | `cover_exceeded` | Claim | The admissible total exceeds the cover left | The co-pay-first payable, after the same discount |
   | `tranche_excluded` | Claim | A sum-insured tranche is still inside a waiting period | The total excluded sum insured |
-  | `proposed_denial` | Claim | Nothing is payable, or a waiting period applies | None |
+  | `proposed_denial` | Claim | Every tranche is excluded; or the payable is zero, no line was zeroed as unmodelled (`package_rate`, `outside_stay`), and the discount didn't take it to zero | None |
 - [ ] Input checks:
   - Line IDs are unique.
   - Amounts and the discount are at least zero.
@@ -113,7 +113,7 @@ Done when the pack loads and validates, each malformed variant in a table test f
   Bad input is an error; a flag is for valid input that the engine can't decide.
 - [ ] Determinism: the result path never ranges over a map. It uses slices in a fixed order, or sorts a map's keys first.
 - [ ] The golden-case format, in `evals/engine/golden/`: one YAML file per case, holding the facts, the expected result, and the worked arithmetic as comments. The facts half has the shape of a scenario spec, which M2's generator will reuse; that is the plan's answer to the risk of the generator running late. Every case is synthetic (ADR 0006).
-- [ ] A test outside `internal/rules`, which can't read files, embeds every case and runs it. On a failure it prints a diff per line and per adjustment. A second test compares `golden-cases.csv` with the expected figures in the case files, following the row rules above.
+- [ ] A test outside `internal/rules`, which can't read files, embeds every case and runs it. On a failure it prints a diff per line and per adjustment. A second test compares `golden-cases.csv` with the expected figures in the case files, following the row rules and the identity check above.
 - [ ] I write the first 10 cases, starting with the plan's worked example, and you check them and export their CSV rows before any step is coded.
 
 Done when money's new functions pass their table and fuzz tests, the input-check table tests pass, the CSV test matches your rows for every checked case, and the golden runner loads all 10 cases and reports each one failing against the stub engine.
@@ -122,6 +122,8 @@ Done when money's new functions pass their table and fuzz tests, the input-check
 
 - [ ] Step 1: a line matched to an Annexure A list pays nothing, with an adjustment that cites that list.
 - [ ] Lines the engine can't model pay nothing for now, which is at or below every reading of them, and a reviewer decides. A package-rate line raises `package_rate`, and a line dated outside the stay raises `outside_stay`.
+  - Each is deducted in full by one adjustment under its own rule ID, `unmodelled-package-rate` or `unmodelled-outside-stay`.
+  - Neither rests on a clause of the wording, so their clause field is empty. The pack marks both rules unmodelled, which is the only way a rule may cite no clause, and a comment points to architecture.md's review triggers.
 - [ ] Step 2: each bucket is capped per day, at the lower of a share of the eligible sum insured and a rupee ceiling: 2% or ₹5,000 for the room bucket, and 5% or ₹10,000 for ICU.
   - The daily cap is multiplied by the smaller of the days billed and the segment's calendar days, so billing extra days never raises the allowance.
   - The days billed may equal the segment's calendar days or be one fewer, because hospitals often skip the discharge day. Anything else raises `room_days_mismatch`, including a lump-sum line billed as one unit for a longer stay.
@@ -154,13 +156,15 @@ Done when every golden case for steps 1 to 3 is checked and passes, including th
   - Listed modern treatments (C.I.6): 50% of the sum insured, less what has already been used.
   - Road ambulance: ₹2,000 per hospitalisation.
 - [ ] Step 5 caps the admissible total at the cover left: the eligible sum insured plus the cumulative bonus granted for the year, less the total paid this policy year, and never below zero.
-  - When the admissible total exceeds the cover left, the engine raises `cover_exceeded`, carrying the co-pay-first figure (ADR 0009).
+  - When the admissible total exceeds the cover left, the engine raises `cover_exceeded`, carrying the co-pay-first payable after the same discount, so the two figures compare like for like (ADR 0009).
   - That figure is never lower than the payable, and can equal it: when no cover is left, or when rounding closes the gap. For example, 29 paise of cover against 30 paise admissible pays 28 paise either way.
 - [ ] Step 6: a co-payment of 5% of the capped amount, computed once with `Percent`.
-- [ ] The bill discount, declared last, comes off the payable whole and raises `bill_discount`. It is spread across the lines with `Allocate`, and never takes a line below zero. Deducting all of it after the co-payment is at or below every reading of where the discount fell, and a reviewer decides. Its rule cites the wording's cover for expenses incurred; session 1 confirms that clause's ID and page.
+- [ ] The bill discount, declared last, deducts the smaller of the discount and the payable, spreads it across the lines with `Allocate`, and raises `bill_discount`. No line goes below zero, because the deduction never exceeds the lines' total. Deducting it after the co-payment is at or below every reading of where the discount fell, and a reviewer decides. Its rule cites Definition 26, "Medical Expenses", which covers only what was "necessarily and actually incurred"; a discount was never incurred.
 - [ ] Every claim-level reduction is spread across the lines with `Allocate`, weighted by each line's amount so far. The lines are sorted by ID first, so the input order never moves a paisa. `Allocate` returns `ErrNoWeight` whenever every weight is zero, even for a zero total, so the engine skips allocation when there is nothing to spread.
 - [ ] The ledger effects are filled in: the payable is the sum insured and bonus consumed, and the cataract and C.I.6 lines' amounts before the co-payment are their sub-limit use.
-- [ ] A claim with nothing payable raises `proposed_denial`. It is a valid result, not an error, and a person decides (rule 6).
+- [ ] `proposed_denial` means the policy makes the claim pay nothing. The engine raises it when every tranche is excluded (session 5), or when the payable is zero, no line was zeroed as unmodelled, and the discount didn't take it to zero.
+  - A claim that pays nothing only because a line is billed at a package rate or dated outside the stay isn't a proposed denial. Calling it one would steer a reviewer toward denying a claim the engine couldn't read. Its `package_rate` or `outside_stay` flag sends it to review instead.
+  - A proposed denial is a valid result, not an error, and a person decides (rule 6).
 - [ ] Golden cases:
   - the worked example through to ₹1,16,375;
   - an admissible amount just over the cover left (flagged, with the co-payment taken on the cover left) and one just under it (no flag);
@@ -170,7 +174,8 @@ Done when every golden case for steps 1 to 3 is checked and passes, including th
   - a modern treatment over its limit;
   - a claim where 5% taken line by line would round differently from 5% of the total;
   - a bill-level discount;
-  - a claim where every line is non-payable, which is a proposed denial, not an error.
+  - a claim where every line is non-payable, which is a proposed denial, not an error;
+  - a package-billed cataract claim whose only payable line is the package line, which pays zero and raises `package_rate`, not `proposed_denial`.
 
 Done when every golden case written so far is checked and passes, and the worked example matches the plan's table line by line.
 
@@ -189,7 +194,7 @@ Done when every golden case written so far is checked and passes, and the worked
   - The admission date decides only when no onset date is known.
 
   A comment in the pack records this.
-- [ ] When no tranche is eligible, the claim gets a proposed denial: payable zero, an adjustment citing Excl01, Excl02 or Excl03, and `proposed_denial`. The engine never denies.
+- [ ] When no tranche is eligible, the claim gets a proposed denial: payable zero, each line's billed amount deducted by an adjustment citing Excl01, Excl02 or Excl03, and `proposed_denial`. The engine never denies.
 - [ ] Golden cases:
   - the last day inside each period and the first day after it;
   - for Excl03, an admission on day 30 and on day 31 with no onset date, and an onset inside the 30 days with an admission after them (a proposed denial, flagged);
@@ -206,6 +211,7 @@ Done when every boundary case is checked and passes on both sides, and every pro
 - [ ] Property tests over generated claims, using native fuzzing so no dependency is added:
   - No line pays more than it billed or less than zero.
   - The lines add up to the totals.
+  - For every line, billed less payable equals the sum of its adjustments.
   - Raising the sum insured never lowers the payable.
   - Shuffling the lines changes nothing.
   - The same input run twice gives identical results.
