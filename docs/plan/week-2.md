@@ -2,7 +2,7 @@
 
 By the end of the week, one versioned rule pack encodes Go Digit's wording of Arogya Sanjeevani, the pure engine in `internal/rules` turns a claim's facts into a payable amount with one adjustment per rule applied, and 40 hand-checked golden cases pass from a CLI. Nothing touches the database, Temporal or a model this week: the engine is a library, and the workflow starts calling it in M3.
 
-Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010 are accepted. Nothing is built yet.
+Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010 are accepted. Session 1 is done: the rule pack loads, validates and is selected through the policy period.
 
 ## Decide first
 
@@ -34,15 +34,16 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
 
 ## Session 1: the rule pack
 
-- [ ] `rulepacks/arogya-sanjeevani/godigit-2024.yaml` holds the pack ID, its version, the wording's UIN (GODHLIP24179V022324) and the wording's validity dates. It also holds every limit in paise or basis points, each citing its clause ID and page. Rule IDs, like clause IDs, never change once published.
-- [ ] Confirm the page numbers of the passages this plan and ADRs 0009 and 0010 quote: E.II.28(c), Definition 10 and Definition 26 in the wording (Definition 26 is on page 4 of 25 in your copy), and para 7 of the 2020 circular. The pack cites pages.
-- [ ] Each line category is listed exactly once, under one of three treatments:
+- [x] `rulepacks/arogya-sanjeevani/godigit-2024.yaml` holds the pack ID, its version, the wording's UIN (GODHLIP24179V022324) and the wording's validity dates. It also holds every limit in paise or basis points, each citing its clause ID and page. Rule IDs, like clause IDs, never change once published.
+  - The wording states no validity dates. `valid_from` is the "Offer to public from" date in Go Digit's list of products, which is the product's launch and may predate this version of the wording; a pack comment records the source.
+- [x] Confirm the page numbers of the passages this plan and ADRs 0009 and 0010 quote: E.II.28(c), Definition 10 and Definition 26 in the wording (Definition 26 is on page 4 of 25 in your copy), and para 7 of the 2020 circular. The pack cites pages.
+- [x] Each line category is listed exactly once, under one of three treatments:
   - Capped per day, in a bucket. The room bucket takes room rent, boarding and nursing, which C.I.1 (i) caps together, so separate nursing and patient-diet lines count toward its daily cap. ICU charges form the ICU bucket.
   - Scaled by proportionate deduction.
   - Exempt: pharmacy and consumables, implants and devices, and diagnostics (Note 2), plus road ambulance. A comment in the pack says why ambulance is exempt: it has its own limit, and Note 2 scales only expenses "incurred at the Hospital".
-- [ ] The room ratio. Note 2 doesn't say whether the ratio uses the bucket's daily total or the room rent alone. The pack uses the bucket's daily total, because that is what the cap measures, so the ratio and the cap can't disagree. A comment in the pack records this, and a golden case in session 3 pins it.
-- [ ] Annexure A Lists I to V, as list IDs with their effect: not payable, or folded into room, procedure or treatment charges. The item text gets transcribed in M3, when code-side item matching needs it.
-- [ ] The order of operations, as a list of step names:
+- [x] The room ratio. Note 2 doesn't say whether the ratio uses the bucket's daily total or the room rent alone. The pack uses the bucket's daily total, because that is what the cap measures, so the ratio and the cap can't disagree. A comment in the pack records this, and a golden case in session 3 pins it.
+- [x] Annexure A Lists I to V, as list IDs with their effect: not payable, or folded into room, procedure or treatment charges. The item text gets transcribed in M3, when code-side item matching needs it.
+- [x] The order of operations, as a list of step names:
   1. check eligibility;
   2. drop listed items;
   3. set aside unmodelled lines;
@@ -54,7 +55,7 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
   9. take the bill discount.
 
   Eligibility is a pass-through until session 5, but it is declared now so the step checks cover it. This plan numbers the six wording steps (2 and 4 to 8 in the list) as steps 1 to 6, as architecture.md does. Eligibility, setting aside unmodelled lines and the discount have no wording step number. The engine runs the order the pack declares, so changing the order means a new pack version.
-- [ ] A strict parser in `internal/rules`. It takes bytes, so it stays pure, and it decodes through `yaml.Node` so each check sees the source text. Each of these is an error that names the field:
+- [x] A strict parser in `internal/rules`. It takes bytes, so it stays pure, and it decodes through `yaml.Node` so each check sees the source text. Each of these is an error that names the field:
   - an unknown field;
   - a float;
   - an integer that doesn't match `^(0|[1-9][0-9]*)$`. A lone 0 is valid; a sign, a leading zero, `0x`, `0o` or an underscore is not;
@@ -62,8 +63,8 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
   - a rule that cites an undefined clause, or cites none without being marked unmodelled (session 3);
   - a category listed twice or not at all;
   - a step that is missing or repeated.
-- [ ] A small `rulepacks` package embeds the YAML with `go:embed`, because `internal/rules` can't import `io/fs`. A pack's identity is its ID, its version and the SHA-256 of its bytes. Every result carries that identity, so a replay can prove it used the same pack. A published pack never changes; from the M1 gate onward, a test pins each published version's SHA-256 (session 7).
-- [ ] Pack selection goes through the policy period, because architecture.md picks the pack by policy version. The period that contains the admission date names its wording's UIN, and the newest published pack for that UIN applies; M3 pins it on the claim. The pack's validity dates are checked against the period's start date. Selecting by admission date alone would apply a revised wording to a policy that hasn't renewed onto it. These are errors: no pack for the UIN, a period that starts outside the pack's validity, and two packs with the same UIN and version.
+- [x] A small `rulepacks` package embeds the YAML with `go:embed`, because `internal/rules` can't import `io/fs`. A pack's identity is its ID, its version and the SHA-256 of its bytes. Every result carries that identity, so a replay can prove it used the same pack. A published pack never changes; from the M1 gate onward, a test pins each published version's SHA-256 (session 7).
+- [x] Pack selection goes through the policy period, because architecture.md picks the pack by policy version. The period that contains the admission date names its wording's UIN, and the newest published pack for that UIN applies; M3 pins it on the claim. The pack's validity dates are checked against the period's start date. Selecting by admission date alone would apply a revised wording to a policy that hasn't renewed onto it. These are errors: no pack for the UIN, a period that starts outside the pack's validity, and two packs with the same UIN and version.
 
 Done when the pack loads and validates, each malformed variant in a table test fails with an error naming its field, a fuzz test on the parser finds no panic, the selection tests pass (including a period that started before a revised wording), and `go run ./cmd/dev check` passes.
 
