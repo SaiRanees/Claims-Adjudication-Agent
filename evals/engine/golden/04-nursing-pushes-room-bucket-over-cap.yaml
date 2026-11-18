@@ -1,0 +1,68 @@
+# A separate nursing line pushes the room bucket over its cap, which pins
+# the ratio choice: the pack divides by the bucket's daily total, not the
+# room rent alone.
+#
+# Sum insured ₹5,00,000, so the room cap is ₹5,000 a day. Stay 3 to 6
+# November: 4 calendar days, 3 billed. Room ₹4,500 a day and nursing ₹1,000
+# a day: ₹5,500 a day in the room bucket.
+#
+# Step 2, daily caps: bucket billed 1,350,000 + 300,000 = 1,650,000 paise;
+#   capped at 3 × ₹5,000 = 1,500,000. The 150,000 reduction is spread across
+#   the bucket's lines by amount:
+#     L01 150,000 × 1,350,000 ÷ 1,650,000 = 122,727.2727
+#     L02 150,000 ×   300,000 ÷ 1,650,000 =  27,272.7273
+#   The floors add to 149,999; the paisa left goes to L02 (.7273).
+#   daily-cap-room: L01 122,727, L02 27,273.
+# Step 3, proportionate deduction: ratio = capped bucket ÷ billed bucket =
+#   1,500,000 ÷ 1,650,000 (₹5,000 ÷ ₹5,500). Room rent alone (₹4,500) is
+#   under the cap, so that reading would scale nothing.
+#     L03 3,000,000 × 1,500,000 ÷ 1,650,000 = 2,727,272.7273 → 2,727,273,
+#       proportionate-deduction-room 272,727
+#   L04 diagnostics is exempt.
+# Subtotal: 1,227,273 + 272,727 + 2,727,273 + 500,000 = 4,727,273 paise.
+# Step 6, co-payment: 5% of 4,727,273 = 236,363.65 → 236,364, spread:
+#     L01 61,363.7409   L02 13,636.3702   L03 136,363.8519   L04 25,000.0370
+#   The floors add to 236,362; the 2 paise left go to L03 (.8519) and
+#   L01 (.7409): 61,364, 13,636, 136,364 and 25,000.
+# Payable: 4,727,273 − 236,364 = 4,490,909 paise (₹44,909.09).
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2025-11-03
+  discharge: 2025-11-06
+  segments:
+    - {from: 2025-11-03, to: 2025-11-06, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2025-11-03, quantity: 3, unit_price_paise: 450000, amount_paise: 1350000}
+    - {id: L02, category: nursing, service_date: 2025-11-03, quantity: 3, unit_price_paise: 100000, amount_paise: 300000}
+    - {id: L03, category: professional-fees, service_date: 2025-11-04, quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+    - {id: L04, category: diagnostics, service_date: 2025-11-03, quantity: 1, unit_price_paise: 500000, amount_paise: 500000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 1165909}
+    - {id: L02, payable_paise: 259091}
+    - {id: L03, payable_paise: 2590909}
+    - {id: L04, payable_paise: 475000}
+  adjustments:
+    - {line: L01, rule: daily-cap-room, paise: 122727}
+    - {line: L02, rule: daily-cap-room, paise: 27273}
+    - {line: L03, rule: proportionate-deduction-room, paise: 272727}
+    - {line: L01, rule: co-payment, paise: 61364}
+    - {line: L02, rule: co-payment, paise: 13636}
+    - {line: L03, rule: co-payment, paise: 136364}
+    - {line: L04, rule: co-payment, paise: 25000}
+  flags: []
+  claim_payable_paise: 4490909
+  ledger:
+    paid_paise: 4490909

@@ -27,7 +27,7 @@ func variant(t *testing.T, uin string, version int, id, validFrom, validUntil st
 	if validUntil != "" {
 		validity += "  valid_until: " + validUntil + "\n"
 	}
-	src = edit(t, src, "  valid_from: 2020-04-16\n", validity)
+	src = edit(t, src, "  valid_from: 2023-04-01\n", validity)
 	p, err := rules.ParsePack([]byte(src))
 	if err != nil {
 		t.Fatal(err)
@@ -45,8 +45,8 @@ func date(t *testing.T, s string) rules.Date {
 }
 
 func TestSelect(t *testing.T) {
-	original := variant(t, goDigitUIN, 1, "original", "2020-04-16", "")
-	originalV2 := variant(t, goDigitUIN, 2, "original", "2020-04-16", "")
+	original := variant(t, goDigitUIN, 1, "original", "2023-04-01", "")
+	originalV2 := variant(t, goDigitUIN, 2, "original", "2023-04-01", "")
 	revised := variant(t, revisedUIN, 1, "revised", "2025-01-01", "")
 	closed := variant(t, "TESTUIN00003V012021", 1, "closed", "2020-01-01", "2022-12-31")
 
@@ -156,7 +156,7 @@ func identity(p *rules.Pack) string {
 }
 
 func TestSelectZeroPeriod(t *testing.T) {
-	r, err := rules.NewRegistry(variant(t, goDigitUIN, 1, "original", "2020-04-16", ""))
+	r, err := rules.NewRegistry(variant(t, goDigitUIN, 1, "original", "2023-04-01", ""))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,12 +172,12 @@ func TestNewRegistryDuplicates(t *testing.T) {
 	}{
 		{
 			name: "same UIN and version",
-			a:    variant(t, goDigitUIN, 1, "first", "2020-04-16", ""),
-			b:    variant(t, goDigitUIN, 1, "second", "2020-04-16", ""),
+			a:    variant(t, goDigitUIN, 1, "first", "2023-04-01", ""),
+			b:    variant(t, goDigitUIN, 1, "second", "2023-04-01", ""),
 		},
 		{
 			name: "same ID and version",
-			a:    variant(t, goDigitUIN, 1, "same", "2020-04-16", ""),
+			a:    variant(t, goDigitUIN, 1, "same", "2023-04-01", ""),
 			b:    variant(t, revisedUIN, 1, "same", "2025-01-01", ""),
 		},
 	}

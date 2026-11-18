@@ -1,0 +1,80 @@
+# A cataract done as day care, in a same-day stay, over its sub-limit.
+#
+# Sum insured ₹1,00,000. The cataract limit is the lower of 25% (₹25,000)
+# and ₹40,000, per eye per policy year: ₹25,000, with nothing used yet on
+# the right eye. Cataract has a 24-month wait (Excl02); cover has run since
+# 1 April 2022, so it ended on 1 April 2024, before this claim.
+# The stay is 12 August only: one segment of one day, with a day-care bed
+# billed for 1 day. The room cap is the lower of 2% (₹2,000) and ₹5,000:
+# ₹2,000 a day.
+#
+# Step 2, daily caps: L01 billed ₹1,500, under 1 × ₹2,000. No deduction.
+# Step 3, proportionate deduction: the ratio is ₹1,500 ÷ ₹1,500 = 1, so
+#   nothing is scaled.
+# Step 4, sub-limits: every line is tied to the right eye's cataract.
+#   Tied total ₹39,500, limit ₹25,000: the ₹14,500 (1,450,000 paise)
+#   reduction is spread by amount:
+#     L01   55,063.2911   L02 660,759.4937   L03 440,506.3291
+#     L04  220,253.1646   L05  73,417.7215
+#   The floors add to 1,449,998. The 2 paise left go to L05 (.7215) and
+#   L02 (.4937). sub-limit-cataract: 55,063, 660,760, 440,506, 220,253 and
+#   73,418. The lines are now 94,937 + 1,139,240 + 759,494 + 379,747 +
+#   126,582 = 2,500,000 paise.
+# Step 6, co-payment: 5% of ₹25,000 = ₹1,250 (125,000 paise), spread:
+#     L01 4,746.85   L02 56,962.00   L03 37,974.70   L04 18,987.35
+#     L05 6,329.10
+#   The floors add to 124,998; the 2 paise left go to L01 (.85) and
+#   L03 (.70).
+# Payable: ₹25,000 − ₹1,250 = ₹23,750.
+# Ledger: the right eye's cataract use is what its lines were admitted at
+# before the co-payment, ₹25,000, so its limit is used up for the year.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 10000000
+      continuous_since: 2022-04-01
+
+facts:
+  admission: 2025-08-12
+  discharge: 2025-08-12
+  segments:
+    - {from: 2025-08-12, to: 2025-08-12, kind: room}
+  differential_billing: yes
+  condition:
+    listed_group: listed-24-months
+  lines:
+    - {id: L01, category: room-rent, service_date: 2025-08-12, quantity: 1, unit_price_paise: 150000, amount_paise: 150000, treatment: {kind: cataract, eye: right}}
+    - {id: L02, category: professional-fees, service_date: 2025-08-12, quantity: 1, unit_price_paise: 1800000, amount_paise: 1800000, treatment: {kind: cataract, eye: right}}
+    # The intraocular lens.
+    - {id: L03, category: implants-devices, service_date: 2025-08-12, quantity: 1, unit_price_paise: 1200000, amount_paise: 1200000, treatment: {kind: cataract, eye: right}}
+    - {id: L04, category: operation-theatre, service_date: 2025-08-12, quantity: 1, unit_price_paise: 600000, amount_paise: 600000, treatment: {kind: cataract, eye: right}}
+    - {id: L05, category: pharmacy-consumables, service_date: 2025-08-12, quantity: 1, unit_price_paise: 200000, amount_paise: 200000, treatment: {kind: cataract, eye: right}}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 90190}
+    - {id: L02, payable_paise: 1082278}
+    - {id: L03, payable_paise: 721519}
+    - {id: L04, payable_paise: 360760}
+    - {id: L05, payable_paise: 120253}
+  adjustments:
+    - {line: L01, rule: sub-limit-cataract, paise: 55063}
+    - {line: L02, rule: sub-limit-cataract, paise: 660760}
+    - {line: L03, rule: sub-limit-cataract, paise: 440506}
+    - {line: L04, rule: sub-limit-cataract, paise: 220253}
+    - {line: L05, rule: sub-limit-cataract, paise: 73418}
+    - {line: L01, rule: co-payment, paise: 4747}
+    - {line: L02, rule: co-payment, paise: 56962}
+    - {line: L03, rule: co-payment, paise: 37975}
+    - {line: L04, rule: co-payment, paise: 18987}
+    - {line: L05, rule: co-payment, paise: 6329}
+  flags: []
+  claim_payable_paise: 2375000
+  ledger:
+    paid_paise: 2375000
+    cataract_used_paise: {left: 0, right: 2500000}

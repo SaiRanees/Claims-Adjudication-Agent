@@ -1,0 +1,55 @@
+# A bill-level discount, taken last, after the co-payment, and flagged.
+#
+# Sum insured ₹5,00,000, so the room cap is ₹5,000 a day; the room is
+# ₹3,000. Stay 2 to 5 February: 4 calendar days, 3 billed. The hospital took
+# ₹1,000 off the whole bill.
+#
+# Steps 1 to 5 change nothing: ₹9,000 + ₹15,000 + ₹6,000 = ₹30,000.
+# Step 6, co-payment: 5% of ₹30,000 = ₹1,500. Every share is exact:
+#   L01 ₹450, L02 ₹750, L03 ₹300. The lines are now ₹8,550, ₹14,250 and
+#   ₹5,700: ₹28,500.
+# The bill discount: the smaller of the discount (₹1,000) and the payable
+#   (₹28,500), spread by amount. Every share is exact: L01 ₹300, L02 ₹500,
+#   L03 ₹200. It cites Definition 26: a discount was never "actually
+#   incurred". bill_discount carries the discount, ₹1,000.
+# Payable: ₹28,500 − ₹1,000 = ₹27,500.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2026-02-02
+  discharge: 2026-02-05
+  segments:
+    - {from: 2026-02-02, to: 2026-02-05, kind: room}
+  differential_billing: yes
+  bill_discount_paise: 100000
+  lines:
+    - {id: L01, category: room-rent, service_date: 2026-02-02, quantity: 3, unit_price_paise: 300000, amount_paise: 900000}
+    - {id: L02, category: professional-fees, service_date: 2026-02-03, quantity: 1, unit_price_paise: 1500000, amount_paise: 1500000}
+    - {id: L03, category: pharmacy-consumables, service_date: 2026-02-03, quantity: 1, unit_price_paise: 600000, amount_paise: 600000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 825000}
+    - {id: L02, payable_paise: 1375000}
+    - {id: L03, payable_paise: 550000}
+  adjustments:
+    - {line: L01, rule: co-payment, paise: 45000}
+    - {line: L02, rule: co-payment, paise: 75000}
+    - {line: L03, rule: co-payment, paise: 30000}
+    - {line: L01, rule: bill-discount, paise: 30000}
+    - {line: L02, rule: bill-discount, paise: 50000}
+    - {line: L03, rule: bill-discount, paise: 20000}
+  flags:
+    - {code: bill_discount, paise: 100000}
+  claim_payable_paise: 2750000
+  ledger:
+    paid_paise: 2750000
