@@ -1,0 +1,49 @@
+# The co-payment is rounded once for the claim, then spread. Taking 5% of
+# each line and rounding each would take a paisa more.
+#
+# Sum insured ₹5,00,000, so the room cap is ₹5,000 a day; the room is
+# ₹1,010.10. Stay 2 to 4 March: 3 calendar days, 2 billed.
+#
+# Steps 1 to 5 change nothing: 202,020 + 101,010 + 101,010 = 404,040 paise.
+# Step 6, co-payment: 5% of 404,040 = 20,202 paise, exactly.
+#   Line by line it would be 10,101 + 5,050.5 → 5,051 + 5,050.5 → 5,051 =
+#   20,203: a paisa more.
+#   Spread by amount: L01 10,101, L02 5,050.5, L03 5,050.5. The floors add
+#   to 20,201; the paisa left goes to the earlier of the tied lines, L02:
+#   10,101, 5,051 and 5,050.
+# Payable: 404,040 − 20,202 = 383,838 paise (₹3,838.38).
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2026-03-02
+  discharge: 2026-03-04
+  segments:
+    - {from: 2026-03-02, to: 2026-03-04, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2026-03-02, quantity: 2, unit_price_paise: 101010, amount_paise: 202020}
+    - {id: L02, category: pharmacy-consumables, service_date: 2026-03-02, quantity: 1, unit_price_paise: 101010, amount_paise: 101010}
+    - {id: L03, category: diagnostics, service_date: 2026-03-02, quantity: 1, unit_price_paise: 101010, amount_paise: 101010}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 191919}
+    - {id: L02, payable_paise: 95959}
+    - {id: L03, payable_paise: 95960}
+  adjustments:
+    - {line: L01, rule: co-payment, paise: 10101}
+    - {line: L02, rule: co-payment, paise: 5051}
+    - {line: L03, rule: co-payment, paise: 5050}
+  flags: []
+  claim_payable_paise: 383838
+  ledger:
+    paid_paise: 383838

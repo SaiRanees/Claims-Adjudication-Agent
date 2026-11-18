@@ -2,7 +2,7 @@
 
 By the end of the week, one versioned rule pack encodes Go Digit's wording of Arogya Sanjeevani, the pure engine in `internal/rules` turns a claim's facts into a payable amount with one adjustment per rule applied, and 40 hand-checked golden cases pass from a CLI. Nothing touches the database, Temporal or a model this week: the engine is a library, and the workflow starts calling it in M3.
 
-Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010 are accepted. Session 1 is done: the rule pack loads, validates and is selected through the policy period.
+Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010 are accepted. Session 1 is done: the rule pack loads, validates and is selected through the policy period. Session 2's code is done, with the three fixes from the session 1 review; its first 10 golden cases wait for your check.
 
 ## Decide first
 
@@ -35,7 +35,7 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
 ## Session 1: the rule pack
 
 - [x] `rulepacks/arogya-sanjeevani/godigit-2024.yaml` holds the pack ID, its version, the wording's UIN (GODHLIP24179V022324) and the wording's validity dates. It also holds every limit in paise or basis points, each citing its clause ID and page. Rule IDs, like clause IDs, never change once published.
-  - The wording states no validity dates. `valid_from` is the "Offer to public from" date in Go Digit's list of products, which is the product's launch and may predate this version of the wording; a pack comment records the source.
+  - The wording states no validity dates, and no source gives this version's start date. `valid_from` is 2023-04-01, a lower bound: the UIN's suffix 2324 is the financial year this version was filed, so it can't apply before 1 April 2023. A pack comment records this.
 - [x] Confirm the page numbers of the passages this plan and ADRs 0009 and 0010 quote: E.II.28(c), Definition 10 and Definition 26 in the wording (Definition 26 is on page 4 of 25 in your copy), and para 7 of the 2020 circular. The pack cites pages.
 - [x] Each line category is listed exactly once, under one of three treatments:
   - Capped per day, in a bucket. The room bucket takes room rent, boarding and nursing, which C.I.1 (i) caps together, so separate nursing and patient-diet lines count toward its daily cap. ICU charges form the ICU bucket.
@@ -70,9 +70,15 @@ Done when the pack loads and validates, each malformed variant in a table test f
 
 ## Session 2: engine types, money and the golden-case format
 
-- [ ] Money gains a checked `Add`, `Sum` and `Sub`, which return an error on overflow or a negative result. It also gains `MulDiv` for ratios such as 5,000 ÷ 8,000, half-up in 128 bits, so a ratio is never rounded to basis points first. A zero divisor is an error, never a panic. Each function gets table tests and a fuzz test against `math/big`, like `Percent` and `Allocate`.
-- [ ] A civil `Date` type with no time zone. It counts days and adds months, with one documented rule for month ends: 31 January plus one month is 28 or 29 February. Tests cover leap years.
-- [ ] Input and output types for `Adjudicate(pack, facts, cover)`.
+Three fixes from the review of session 1 come first. The pack is unpublished, so its version stays 1.
+
+- [x] ICU days can overpay. Definition 24 counts critical-care nursing and intensivist charges as ICU charges, but the pack put every nursing line in the room bucket, so an ICU day billed ₹12,000 for the ICU, ₹2,000 for an intensivist and ₹1,000 for nursing paid about ₹12,667 instead of ₹10,000. A bucket line dated in a segment of the other kind (nursing or patient diet on an ICU day, or ICU charges on a room day) now raises `bucket_segment_mismatch` and is held to both caps: its own bucket's first, then the segment's bucket, which it joins. Putting such a line only in the segment's bucket can pay more than the other reading: ₹8,000 of nursing on an ICU day with no ICU charge would pay ₹8,000 under the ICU cap but ₹5,000 under the room cap. Both caps together are at or below either reading, and a person decides. Session 3 codes it, and the example becomes a golden case.
+- [x] A later pack can drop ICU scaling (ADR 0010). A proportionate-deduction rule now has an `effect`, `scale` or `no-scaling`. A no-scaling rule still covers its target and cites its reason (for ICU, para 7 of the 2020 circular), so every step keeps covering room and ICU and dropping ICU scaling changes only the pack. A parser test parses that variant; the engine side lands in session 3.
+- [x] `valid_from` is 2023-04-01, the start of the financial year in the UIN's suffix, as a lower bound. The real start date is unknown.
+
+- [x] Money gains a checked `Add`, `Sum` and `Sub`, which return an error on overflow or a negative result. It also gains `MulDiv` for ratios such as 5,000 ÷ 8,000, half-up in 128 bits, so a ratio is never rounded to basis points first. A zero divisor is an error, never a panic. Each function gets table tests and a fuzz test against `math/big`, like `Percent` and `Allocate`.
+- [x] A civil `Date` type with no time zone. It counts days and adds months, with one documented rule for month ends: 31 January plus one month is 28 or 29 February. Tests cover leap years.
+- [x] Input and output types for `Adjudicate(pack, facts, cover)`.
   - Facts:
     - the stay: admission, discharge and stay segments;
     - whether the hospital uses differential billing: yes, no or unknown;
@@ -88,14 +94,15 @@ Done when the pack loads and validates, each malformed variant in a table test f
 
     Until session 5, every tranche counts.
   - Result: each line's billed and payable amounts, the adjustments (line ID, rule ID, clause ID, inputs and amount), the flags, the totals, the pack's identity, and the claim's ledger effects. Every reduction is an adjustment, including a line's share of a claim-level reduction, so for every line, billed less payable equals the sum of its adjustments.
-- [ ] The ledger effects use the same terms as the cover, so the next claim reads back what this one wrote:
+- [x] The ledger effects use the same terms as the cover, so the next claim reads back what this one wrote:
   - The sum insured and bonus consumed equal the payable (Definition 10).
   - Cataract use per eye, and C.I.6 use, are what those lines were admitted at before the co-payment. The sub-limit applies before the co-payment, so counting the paid amount would let an eye's total pass its limit.
-- [ ] Flags, as one closed list of reason codes. A flag about one line carries its line ID, and a claim-level flag appears at most once per claim.
+- [x] Flags, as one closed list of reason codes. A flag about one line carries its line ID, and a claim-level flag appears at most once per claim.
 
   | Code | About | Raised when | Figure |
   | --- | --- | --- | --- |
   | `room_days_mismatch` | Line | A bucket line's days billed are neither the segment's calendar days nor one fewer | None |
+  | `bucket_segment_mismatch` | Line | A bucket line is dated in a segment of the other kind: nursing or patient diet on an ICU day, or ICU charges on a room day | None |
   | `undated_line` | Line | A line has no date in a stay with more than one rate | None |
   | `outside_stay` | Line | The unmodelled-lines step deducts a line dated outside the stay | None |
   | `package_rate` | Line | The unmodelled-lines step deducts a line billed at a package rate | None |
@@ -106,17 +113,20 @@ Done when the pack loads and validates, each malformed variant in a table test f
   | `cover_exceeded` | Claim | The admissible total exceeds the cover left | The co-pay-first payable, after the same discount |
   | `tranche_excluded` | Claim | A sum-insured tranche is still inside a waiting period | The total excluded sum insured |
   | `proposed_denial` | Claim | Every tranche is excluded; or the payable is zero, no line was zeroed as unmodelled (`package_rate`, `outside_stay`), and the discount didn't take it to zero | None |
-- [ ] Input checks:
+- [x] Input checks:
   - Line IDs are unique.
   - Amounts and the discount are at least zero.
   - Quantity × unit price equals the amount.
   - Stay segments are inclusive date ranges that tile the stay from admission to discharge, so each date falls in exactly one segment. A transfer day belongs to the new room, and a same-day stay is one segment of one day.
 
   Bad input is an error; a flag is for valid input that the engine can't decide.
-- [ ] Determinism: the result path never ranges over a map. It uses slices in a fixed order, or sorts a map's keys first.
-- [ ] The golden-case format, in `evals/engine/golden/`: one YAML file per case, holding the facts, the expected result, and the worked arithmetic as comments. The facts half has the shape of a scenario spec, which M2's generator will reuse; that is the plan's answer to the risk of the generator running late. Every case is synthetic (ADR 0006).
-- [ ] A test outside `internal/rules`, which can't read files, embeds every case and runs it. On a failure it prints a diff per line and per adjustment. A second test compares `golden-cases.csv` with the expected figures in the case files, following the row rules and the identity check above.
+- [x] Determinism: the result path never ranges over a map. It uses slices in a fixed order, or sorts a map's keys first.
+- [x] The golden-case format, in `evals/engine/golden/`: one YAML file per case, holding the facts, the expected result, and the worked arithmetic as comments. The facts half has the shape of a scenario spec, which M2's generator will reuse; that is the plan's answer to the risk of the generator running late. Every case is synthetic (ADR 0006).
+- [x] A test outside `internal/rules`, which can't read files, embeds every case and runs it. On a failure it prints a diff per line and per adjustment. A second test compares `golden-cases.csv` with the expected figures in the case files, following the row rules and the identity check above.
+  - Until every step is coded, the runner compares a figure only once the engine codes its step and every step before it in the pack (`rules.Implemented`). Payables and the ledger need every step. Eligibility counts as coded for a case that expects no eligibility adjustment and no `tranche_excluded`, because until session 5 it passes every tranche, which is what such a case expects. A checked case fails the test when a compared figure differs; otherwise it is reported as pending, with every figure that differs. Once session 5 codes eligibility, every figure is compared.
+  - Each case file is also checked against itself: one payable per line, billed less payable equal to the line's adjustments, lines adding up to the claim, and every rule and flag known.
 - [ ] I write the first 10 cases, starting with the plan's worked example, and you check them and export their CSV rows before any step is coded.
+  - Written, with their arithmetic in comments, in `evals/engine/golden/`. Waiting for your check.
 
 Done when money's new functions pass their table and fuzz tests, the input-check table tests pass, the CSV test matches your rows for every checked case, and the golden runner loads all 10 cases and reports each one failing against the stub engine.
 
@@ -133,8 +143,10 @@ Done when money's new functions pass their table and fuzz tests, the input-check
   - The days billed may equal the segment's calendar days or be one fewer, because hospitals often skip the discharge day. Anything else raises `room_days_mismatch`, including a lump-sum line billed as one unit for a longer stay.
   - A bucket line's service date is its first billed day, and that picks its segment.
   - The bucket's reduction is spread across its lines with `Allocate`, sorted by ID, in the same way as the claim-level reductions.
+  - A bucket line dated in a segment of the other kind raises `bucket_segment_mismatch` and is held to both caps. First its own bucket's cap applies, under that bucket's rule. Then it joins the segment's bucket at what that cap left, and the segment's cap applies under the segment's rule. Per day that pays min(segment lines + min(line, own cap), segment cap). Its billed amount counts in the segment's ratio.
 - [ ] Step 3: each scaled line is multiplied by its segment's ratio, the capped bucket total over the billed bucket total, in one `MulDiv`, so it's rounded once.
   - The room ratio and the ICU ratio are separate rules, and the ICU rule raises `icu_ratio_scaling` (ADR 0010). ICU charge lines are capped but never scaled.
+  - A rule whose effect is `no-scaling` skips scaling in segments of its kind, deducts nothing and raises nothing. A test runs a pack variant whose ICU rule is `no-scaling`.
   - A segment with no room or ICU charge has no ratio: scaling is skipped there, and the engine raises `no_room_charge`.
   - For a hospital without differential billing, the step is skipped (Note 3). When the facts don't say, the step follows the wording and raises `differential_billing_unknown`.
 - [ ] An undated line in a stay with more than one rate gets the lowest ratio in the stay and raises `undated_line`, so its interim figure is never above any reading of the bill. A reviewer supplies the date.
@@ -145,6 +157,7 @@ Done when money's new functions pass their table and fuzz tests, the input-check
   - a separate nursing line that pushes the room bucket over its cap, which pins the ratio choice;
   - a room billed one day short (accepted), a lump-sum room line (flagged), and a hospital billing more days than the segment has (the cap uses the segment's days);
   - a move from ward to ICU, with the transfer day and the ICU-ratio flag;
+  - ICU days billed ₹12,000 for the ICU, ₹2,000 for an intensivist (classed `icu-charges`) and ₹1,000 for nursing, which pay ₹10,000 a day and raise `bucket_segment_mismatch` on the nursing line;
   - a segment with no room charge;
   - an undated line;
   - a package-rate line;
@@ -243,6 +256,7 @@ Done when all 40 golden cases are checked and pass, which is M1's exit gate.
 - M3 takes the cover and the pack from the policy period that contains the admission date, even when the stay runs past renewal.
 - The workflow doesn't call the engine until M3. That is also where the review-routing thresholds get set: a billed or payable amount above a set value, or a payable near a limit.
 - Code-side item matching against the Annexure A text waits for M3, and rendering synthetic packets from scenario specs waits for M2.
+- M3's extraction must class intensivist and critical-care nursing charges as `icu-charges` (Definition 24), because the engine can't tell them from other doctors' fees or ward nursing.
 - Differential billing judged per expense (para 6 of the 2020 circular), and pre- and post-hospitalisation expenses, are not modelled.
 
 ## Done by the end of week 2

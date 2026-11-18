@@ -77,7 +77,7 @@ var malformedCases = []malformed{
 		wantErr: rules.ErrUnknownField, wantPath: "steps[5].ratio_basis"},
 	{name: "duplicate key", old: "version: 1\n", new: "version: 1\nversion: 2\n",
 		wantErr: rules.ErrDuplicateKey, wantPath: "version"},
-	{name: "missing field", old: "  valid_from: 2020-04-16\n", new: "",
+	{name: "missing field", old: "  valid_from: 2023-04-01\n", new: "",
 		wantErr: rules.ErrMissingField, wantPath: "wording.valid_from"},
 
 	// Floats.
@@ -168,9 +168,9 @@ var malformedCases = []malformed{
 		wantErr: rules.ErrDuplicateID, wantPath: "steps[1].rules[4].id"},
 
 	// Values.
-	{name: "invalid date", old: "valid_from: 2020-04-16\n", new: "valid_from: 2021-02-29\n",
+	{name: "invalid date", old: "valid_from: 2023-04-01\n", new: "valid_from: 2021-02-29\n",
 		wantErr: rules.ErrInvalidValue, wantPath: "wording.valid_from"},
-	{name: "valid_until before valid_from", old: "  valid_from: 2020-04-16\n", new: "  valid_from: 2020-04-16\n  valid_until: 2020-04-15\n",
+	{name: "valid_until before valid_from", old: "  valid_from: 2023-04-01\n", new: "  valid_from: 2023-04-01\n  valid_until: 2020-04-15\n",
 		wantErr: rules.ErrInvalidValue, wantPath: "wording.valid_until"},
 	{name: "list where a value goes", old: "    pages: 25\n", new: "    pages: [25]\n",
 		wantErr: rules.ErrType, wantPath: "documents[0].pages"},
@@ -186,7 +186,24 @@ var malformedCases = []malformed{
 		wantErr: rules.ErrInvalidValue, wantPath: "steps[4].ratio_basis"},
 	{name: "lower-case UIN", old: "  uin: GODHLIP24179V022324\n", new: "  uin: godhlip24179v022324\n",
 		wantErr: rules.ErrInvalidValue, wantPath: "wording.uin"},
+
+	// Proportionate-deduction effects.
+	{name: "proportionate-deduction rule with no effect", old: "        applies_to: icu\n        effect: scale\n", new: "        applies_to: icu\n",
+		wantErr: rules.ErrMissingField, wantPath: "steps[4].rules[1].effect"},
+	{name: "unknown scaling effect", old: "        applies_to: room\n        effect: scale\n", new: "        applies_to: room\n        effect: scaled\n",
+		wantErr: rules.ErrInvalidValue, wantPath: "steps[4].rules[0].effect"},
+	{name: "list effect on a proportionate-deduction rule", old: "        applies_to: room\n        effect: scale\n", new: "        applies_to: room\n        effect: not-payable\n",
+		wantErr: rules.ErrInvalidValue, wantPath: "steps[4].rules[0].effect"},
+	{name: "unmodelled no-scaling rule", old: icuScalingRule, new: "      - id: no-proportionate-deduction-icu\n        unmodelled: true\n        applies_to: icu\n        effect: no-scaling\n",
+		wantErr: rules.ErrInvalidValue, wantPath: "steps[4].rules[1].unmodelled"},
 }
+
+// icuScalingRule is the pack's rule for scaling by an ICU ratio.
+const icuScalingRule = "      - id: proportionate-deduction-icu\n" +
+	"        clause: C.I.1 Note 2\n" +
+	"        see_also: [C.I.1 Note 3, IRDAI/HLT/REG/CIR/151/06/2020 para 7]\n" +
+	"        applies_to: icu\n" +
+	"        effect: scale\n"
 
 func (m malformed) apply(t testing.TB, src string) string {
 	t.Helper()
@@ -237,8 +254,8 @@ func TestParsePackValidVariants(t *testing.T) {
 				t.Errorf("UIN = %q", p.Wording.UIN)
 			}
 		}},
-		{name: "quoted date", old: "valid_from: 2020-04-16\n", new: "valid_from: \"2020-04-16\"\n", check: func(t *testing.T, p *rules.Pack) {
-			if got := p.Wording.ValidFrom.String(); got != "2020-04-16" {
+		{name: "quoted date", old: "valid_from: 2023-04-01\n", new: "valid_from: \"2023-04-01\"\n", check: func(t *testing.T, p *rules.Pack) {
+			if got := p.Wording.ValidFrom.String(); got != "2023-04-01" {
 				t.Errorf("valid_from = %s", got)
 			}
 		}},
@@ -247,11 +264,33 @@ func TestParsePackValidVariants(t *testing.T) {
 				t.Errorf("identity = %s", p.Identity())
 			}
 		}},
-		{name: "valid_until", old: "  valid_from: 2020-04-16\n", new: "  valid_from: 2020-04-16\n  valid_until: 2030-03-31\n", check: func(t *testing.T, p *rules.Pack) {
+		{name: "valid_until", old: "  valid_from: 2023-04-01\n", new: "  valid_from: 2023-04-01\n  valid_until: 2030-03-31\n", check: func(t *testing.T, p *rules.Pack) {
 			if got := p.Wording.ValidUntil.String(); got != "2030-03-31" {
 				t.Errorf("valid_until = %s", got)
 			}
 		}},
+		// ADR 0010: a later version can stop scaling by an ICU ratio by
+		// changing only the pack. The no-scaling rule still covers the ICU
+		// target, and cites its reason.
+		{
+			name: "ICU scaling dropped",
+			old:  icuScalingRule,
+			new: "      - id: no-proportionate-deduction-icu\n" +
+				"        clause: IRDAI/HLT/REG/CIR/151/06/2020 para 7\n" +
+				"        see_also: [C.I.1 Note 2]\n" +
+				"        applies_to: icu\n" +
+				"        effect: no-scaling\n",
+			check: func(t *testing.T, p *rules.Pack) {
+				if _, ok := p.Rule("proportionate-deduction-icu"); ok {
+					t.Error("proportionate-deduction-icu is still there")
+				}
+				r, ok := p.Rule("no-proportionate-deduction-icu")
+				if !ok || r.Effect != rules.EffectNoScaling || r.AppliesTo != "icu" ||
+					r.Clause != "IRDAI/HLT/REG/CIR/151/06/2020 para 7" {
+					t.Errorf("no-proportionate-deduction-icu = %+v", r)
+				}
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

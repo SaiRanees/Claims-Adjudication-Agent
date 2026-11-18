@@ -48,7 +48,7 @@ func TestGoDigitLimits(t *testing.T) {
 	if p.Version != 1 || p.Wording.UIN != "GODHLIP24179V022324" {
 		t.Errorf("identity = %s, UIN %s", p.Identity(), p.Wording.UIN)
 	}
-	if got := p.Wording.ValidFrom.String(); got != "2020-04-16" {
+	if got := p.Wording.ValidFrom.String(); got != "2023-04-01" {
 		t.Errorf("valid_from = %s", got)
 	}
 	if !p.Wording.ValidUntil.IsZero() {
@@ -160,8 +160,13 @@ func TestGoDigitTreatments(t *testing.T) {
 	if !slices.Equal(pd.ExemptCategories, wantExempt) {
 		t.Errorf("exempt = %v, want %v", pd.ExemptCategories, wantExempt)
 	}
+	roomScaling, _ := p.Rule("proportionate-deduction-room")
+	if roomScaling.Effect != rules.EffectScale {
+		t.Errorf("proportionate-deduction-room effect = %q, want scale", roomScaling.Effect)
+	}
 	icuScaling, _ := p.Rule("proportionate-deduction-icu")
-	if icuScaling.Clause != "C.I.1 Note 2" || !slices.Contains(icuScaling.SeeAlso, "IRDAI/HLT/REG/CIR/151/06/2020 para 7") {
+	if icuScaling.Clause != "C.I.1 Note 2" || icuScaling.Effect != rules.EffectScale ||
+		!slices.Contains(icuScaling.SeeAlso, "IRDAI/HLT/REG/CIR/151/06/2020 para 7") {
 		t.Errorf("proportionate-deduction-icu = %+v", icuScaling)
 	}
 	for _, id := range []string{"unmodelled-package-rate", "unmodelled-outside-stay"} {

@@ -114,8 +114,9 @@ type Rule struct {
 	Months            int64
 	WaivedAfterMonths int64
 
-	// StepDropListedItems.
-	Effect ListEffect
+	// StepDropListedItems: a list effect. StepApplyProportionateDeduction:
+	// EffectScale or EffectNoScaling.
+	Effect Effect
 
 	// StepApplyDailyCaps: the bucket's categories and its daily Limit.
 	Categories []Category
@@ -229,21 +230,32 @@ func Categories() []Category {
 	}
 }
 
-// ListEffect is what an Annexure A list does to a line it matches. Every
-// effect pays the line nothing; the effect records why.
-type ListEffect string
+// Effect is what a rule does, for the steps whose rules can do more than one
+// thing.
+type Effect string
 
-// The list effects.
+// What an Annexure A list does to a line it matches. Every list effect pays
+// the line nothing; the effect records why.
 const (
-	EffectNotPayable       ListEffect = "not-payable"
-	EffectRoomCharges      ListEffect = "room-charges"
-	EffectProcedureCharges ListEffect = "procedure-charges"
-	EffectTreatmentCosts   ListEffect = "treatment-costs"
+	EffectNotPayable       Effect = "not-payable"
+	EffectRoomCharges      Effect = "room-charges"
+	EffectProcedureCharges Effect = "procedure-charges"
+	EffectTreatmentCosts   Effect = "treatment-costs"
 )
 
-func listEffects() []ListEffect {
-	return []ListEffect{EffectNotPayable, EffectRoomCharges, EffectProcedureCharges, EffectTreatmentCosts}
+// What a proportionate-deduction rule does for its target. A no-scaling rule
+// still covers the target and cites its reason, so a pack can stop scaling
+// by one ratio without an engine change.
+const (
+	EffectScale     Effect = "scale"
+	EffectNoScaling Effect = "no-scaling"
+)
+
+func listEffects() []Effect {
+	return []Effect{EffectNotPayable, EffectRoomCharges, EffectProcedureCharges, EffectTreatmentCosts}
 }
+
+func scalingEffects() []Effect { return []Effect{EffectScale, EffectNoScaling} }
 
 // Period is what a sub-limit is counted over.
 type Period string

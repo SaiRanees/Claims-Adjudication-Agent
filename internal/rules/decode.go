@@ -342,10 +342,11 @@ func ruleKeys(s StepName) []string {
 		extra = []string{"categories", "share_of_sum_insured_bp", "ceiling_paise"}
 	case StepApplySubLimits:
 		extra = []string{"share_of_sum_insured_bp", "ceiling_paise", "per"}
+	case StepApplyProportionateDeduction:
+		extra = []string{"effect"}
 	case StepTakeCoPayment:
 		extra = []string{"rate_bp"}
-	case StepSetAsideUnmodelledLines, StepApplyProportionateDeduction,
-		StepCapAtCoverLeft, StepTakeBillDiscount:
+	case StepSetAsideUnmodelledLines, StepCapAtCoverLeft, StepTakeBillDiscount:
 	}
 	return append(slices.Clone(commonRuleKeys), extra...)
 }
@@ -439,15 +440,16 @@ func (d *decoder) ruleParams(path string, f *fields, step StepName, r *Rule) err
 		r.WaivedAfterMonths, _, err = f.optIntIn("waived_after_months", 1, maxMonths)
 		return err
 	case StepDropListedItems:
-		n, p, err := f.need("effect")
-		if err != nil {
-			return err
+		r.Effect, err = effect(f, listEffects())
+		return err
+	case StepApplyProportionateDeduction:
+		// Scaling or not, the rule rests on a clause: a no-scaling rule cites
+		// its reason.
+		if r.Unmodelled {
+			n, p, _ := f.get("unmodelled")
+			return fail(p, n, ErrInvalidValue, "a proportionate-deduction rule cites the clause it rests on")
 		}
-		raw, err := str(p, n)
-		if err != nil {
-			return err
-		}
-		r.Effect, err = oneOf(p, n, raw, listEffects())
+		r.Effect, err = effect(f, scalingEffects())
 		return err
 	case StepApplyDailyCaps:
 		if r.Categories, err = d.categoryList(f, "categories"); err != nil {
@@ -494,10 +496,22 @@ func (d *decoder) ruleParams(path string, f *fields, step StepName, r *Rule) err
 		rate, err := f.intIn("rate_bp", 0, int64(money.FullRate))
 		r.Rate = money.BasisPoints(rate)
 		return err
-	case StepSetAsideUnmodelledLines, StepApplyProportionateDeduction,
-		StepCapAtCoverLeft, StepTakeBillDiscount:
+	case StepSetAsideUnmodelledLines, StepCapAtCoverLeft, StepTakeBillDiscount:
 	}
 	return nil
+}
+
+// effect reads a rule's required effect, one of allowed.
+func effect(f *fields, allowed []Effect) (Effect, error) {
+	n, p, err := f.need("effect")
+	if err != nil {
+		return "", err
+	}
+	raw, err := str(p, n)
+	if err != nil {
+		return "", err
+	}
+	return oneOf(p, n, raw, allowed)
 }
 
 func (d *decoder) clauseRef(path string, n *yaml.Node) (string, error) {
