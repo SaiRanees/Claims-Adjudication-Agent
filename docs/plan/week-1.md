@@ -2,7 +2,7 @@
 
 By the end of the week, one command starts the whole stack, and one claim travels from the API through the outbox into a running workflow, with a single trace end to end. The engine's money core starts alongside, because it needs no policy.
 
-Progress, 16 November: the scaffold is built and checked, and the ticked items below are done. The first run on a real Windows machine has passed: the stack, the database checks, code generation and `go run ./cmd/dev check`. The API skeleton (session 4), the relay and first workflow (session 5) and tracing (session 6) are built. Still to do: the money package. Everything runs natively on Windows (ADR 0007).
+Progress, 18 November: week 1 is done. Every session is built and checked, and the gate passed from a fresh clone on 17 November. The one-minute demo moved to week 8, where M5 records the demo video. Everything runs natively on Windows (ADR 0007).
 
 ## Decide first
 
@@ -77,8 +77,8 @@ Done when CI is green on main, and one create-claim trace shows in Grafana from 
 - [x] `internal/rules/money`: `int64` paise, basis points, half-up rounding, largest-remainder allocation.
 - [x] Table tests, plus a Go fuzz test proving allocations always add up to the total.
 - [x] ADRs 0001 to 0006: Go, Temporal, the outbox for every workflow message, only IDs through Temporal, the engine as a pure library, synthetic data only.
-- [ ] Gate: from a fresh clone, `go run ./cmd/dev up`, `go run ./cmd/dev migrate` and `go run ./cmd/dev test` all pass. Record a one-minute demo.
-  - 17 November: passed from a fresh clone of `session-7-money-gate` under its own Compose project (`COMPOSE_PROJECT_NAME=claims-agent-gate`): `up`, `migrate`, `seed`, `db-check` (all checks passed) and `test`, which ran the database and Temporal tests against the stack: 198 passed, 0 skipped, 0 failed. The demo is still to record.
+- [x] Gate: from a fresh clone, `go run ./cmd/dev up`, `go run ./cmd/dev migrate` and `go run ./cmd/dev test` all pass. The one-minute demo moved to week 8, where M5 records the demo video.
+  - 17 November: passed from a fresh clone of `session-7-money-gate` under its own Compose project (`COMPOSE_PROJECT_NAME=claims-agent-gate`): `up`, `migrate`, `seed`, `db-check` (all checks passed) and `test`, which ran the database and Temporal tests against the stack: 198 passed, 0 skipped, 0 failed. On 18 November the demo moved to week 8.
 
 ## Done by the end of week 1
 

@@ -122,11 +122,11 @@ Missing documents and every raised flag leave the main path, and come back only 
 
 **What sends a claim to review** (checked in code after the engine runs; any one is enough)
 
-- A proposed denial: an exclusion, a waiting period, a pre-existing disease, or a claim with nothing payable.
+- A proposed denial, where the policy makes the claim pay nothing: an exclusion, a waiting period, a pre-existing disease, or nothing payable under the rules. A claim that pays nothing only because the engine couldn't model a line isn't one; it goes to review as a case the engine doesn't model.
 - A failed cross-check: lines don't add up to the bill total, an amount is missing from the page text, or names and dates don't match the policy.
 - A disagreement between the agent and the code-side item lookup, or a line the agent flagged.
 - A billed or payable amount above a set value, or a payable within a small margin of a limit.
-- A case the engine doesn't model: a package-rate bill, a bill-level discount, a line with no date in a stay with more than one room rate, or a known conflict between wording and regulation.
+- A case the engine doesn't model (a package-rate bill, a bill-level discount, or a line with no date in a stay with more than one room rate), or a contested reading such as scaling by an ICU ratio ([ADR 0010](../adr/0010-cap-icu-charges-flag-icu-scaling.md)).
 - A step that hit its retry, turn or token limit.
 
 IRDAI's 2024 master circular bars an insurer from repudiating a claim without approval from its Product Management Committee or Claims Review Committee ([source](https://rsdebate.nic.in/bitstream/123456789/758801/1/PQ_267_11022025_U874_p297_p299.pdf)), so a denial always belongs to people. The model's confidence score is one more input, calibrated on the dev set; it never clears a claim by itself. Auto-finalizing stays off, so every claim gets a reviewer, until the test-set numbers justify turning it on for clean claims.
@@ -217,7 +217,7 @@ All money math runs in one pure Go package. Claim facts and a versioned rule pac
 
 - Money is `int64` paise and percentages are basis points. No floats on the money path.
 - Rounding happens once per line, with one documented rule (half up, to the paisa), covered by tests. Claim-level amounts such as co-payment are spread across lines by largest remainder, so lines always add up to the total.
-- Each adjustment records line ID, rule ID, clause ID, inputs and amount. That record is the explanation reviewers and letters show.
+- Each adjustment records line ID, rule ID, clause ID, inputs and amount. That record is the explanation reviewers and letters show. Every reduction is an adjustment, so for every line, billed less payable equals the sum of its adjustments. A rule for a case the engine doesn't model, such as a package-rate line, rests on no clause, so its clause ID is empty.
 - The rule pack is chosen by the policy version in force on the admission date, then pinned on the claim, so re-running an old claim reproduces the old answer.
 
 **Rule pack: one YAML file per policy wording version.** The first one encodes Go Digit's wording of Arogya Sanjeevani ([wording](https://www.godigit.com/content/dam/godigit/directportal/en/downloads/health/policy-wordings-arogya-sanjeevani-policy-go-digit.pdf)):
@@ -241,8 +241,8 @@ All money math runs in one pure Go package. Claim facts and a versioned rule pac
 2. Cap room and ICU charges at their per-day limits.
 3. Scale non-exempt hospital expenses by the room-rate ratio of their stay segment.
 4. Apply sub-limits: cataract, modern treatments, ambulance.
-5. Apply the 5% co-payment.
-6. Cap at the sum insured plus cumulative bonus left for the policy year.
+5. Cap at the sum insured plus cumulative bonus left for the policy year.
+6. Take the 5% co-payment of the capped amount ([ADR 0009](../adr/0009-cap-before-co-payment.md)).
 
 Step 3, per line:
 
@@ -269,8 +269,8 @@ Step 3, per line:
 
 **Where the wording and regulation can disagree**
 
-- IRDAI's 2020 rules tell insurers not to apply proportionate deduction for ICU charges ([source](https://www.business-standard.com/article/companies/out-of-pocket-expenses-of-policyholders-to-fall-after-new-irdai-guidelines-120061200007_1.html)), yet this wording also scales by the ICU rate. The rule pack marks this as a known conflict, and any claim that triggers it goes to review.
-- The wording doesn't say whether co-payment comes before or after the sum-insured cap. Record the choice in an ADR, pin it with a golden case, and flag claims near the cap.
+- IRDAI's 2020 rules told insurers not to apply proportionate deduction for ICU charges ([source](https://www.business-standard.com/article/companies/out-of-pocket-expenses-of-policyholders-to-fall-after-new-irdai-guidelines-120061200007_1.html)). The 2024 master circular supersedes that circular, and neither it nor the 2024 Insurance Products Regulations restates the bar. This wording still scales by the ICU rate. ICU charges are capped, never scaled. Scaling other lines by an ICU ratio follows the wording under its own rule, and raises `icu_ratio_scaling`, which sends the claim to review. The flag isn't called a known conflict, because no current regulation is known to bar the practice. The review stays because the bar's reason still holds, that an ICU has no categories to choose from, and the practice is contested ([ADR 0010](../adr/0010-cap-icu-charges-flag-icu-scaling.md)).
+- The wording doesn't order the co-payment and the sum-insured cap in so many words. The cap comes first, because E.II.28(c) takes 5% of the amount "admissible and payable". The two orders differ only when the admissible amount exceeds the cover left. Those claims are flagged with the other order's figure, which is never lower, and a golden case pins the choice ([ADR 0009](../adr/0009-cap-before-co-payment.md)).
 
 **Testing**
 
@@ -297,7 +297,7 @@ Postgres is the system of record; Temporal holds only in-flight workflow state. 
 | `agent_runs`, `agent_messages` | The agent conversation per claim, turn by turn | Turn numbers unique per run |
 | `extractions` | Model output per document and page range, schema version, link to its model call | Never updated; re-extraction adds a row |
 | `line_items` | Description, category, service date, quantity, unit price, amount in paise, source page, package flag | Amount at least zero; quantity × unit price matches amount |
-| `adjudications`, `adjustments` | Versioned results; one adjustment per rule applied, with its clause ID | New version on every recompute or override |
+| `adjudications`, `adjustments` | Versioned results; one adjustment per rule applied, with its clause ID (empty for a rule the engine doesn't model) | New version on every recompute or override |
 | `review_tasks` | Reason codes, assignee, lease expiry, decision | One open task per claim |
 | `audit_events` | Every state change, model call, tool call and human action, as IDs and amounts | Insert-only database role; hash-chained per claim |
 | `outbox` | Messages for workflows (start, documents added, review decided) and notifications, each with an event ID | Written in the same transaction as the change |
@@ -534,7 +534,7 @@ Each gate is a demo you can record. If a gate slips, cut scope from the next mil
 
 **Never cut:** the engine's golden cases, the outbox and workflow, the review queue, and held-out test numbers.
 
-This week's tasks are in [week-1.md](week-1.md).
+This week's tasks are in [week-2.md](week-2.md).
 
 ## Risks and open decisions
 
@@ -554,8 +554,8 @@ This week's tasks are in [week-1.md](week-1.md).
 **Open decisions**
 
 - [x] First policy: Arogya Sanjeevani, decided 10 November. A retail policy can follow later as a second rule pack.
-- [ ] Check proportionate-deduction scope against IRDAI's 2024 master circular on health insurance itself; secondary sources disagree on whether it narrowed the rule.
-- [ ] Choose where co-payment sits relative to the sum-insured cap, and record it in an ADR.
+- [x] Check proportionate-deduction scope against IRDAI's 2024 master circular on health insurance itself. Done 18 November: the circular supersedes the 2020 circular (Annexure-6, entry 19), and neither it nor the 2024 Insurance Products Regulations restates the ICU bar. ICU charges are capped, never scaled, and scaling by an ICU ratio is flagged for review ([ADR 0010](../adr/0010-cap-icu-charges-flag-icu-scaling.md)).
+- [x] Choose where co-payment sits relative to the sum-insured cap. Decided 18 November: the cap comes first, then the co-payment ([ADR 0009](../adr/0009-cap-before-co-payment.md)).
 - [ ] Decide which review triggers must stay clean on the test set before auto-finalize is switched on.
 - [ ] Pick the retail policy for v2, if one is needed.
 - [ ] Set the per-claim cost budget after the first eval run.
