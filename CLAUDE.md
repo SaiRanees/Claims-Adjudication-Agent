@@ -3,7 +3,7 @@
 An AI agent that adjudicates Indian health insurance reimbursement claims, starting with Arogya Sanjeevani on the Go Digit wording (UIN GODHLIP24179V022324). The agent gathers and checks facts from the claim documents, a deterministic rules engine computes every amount, and people review anything flagged and make every denial.
 
 - Full design: `docs/plan/architecture.md`. Read the relevant section before changing anything design-level.
-- Current checklist: `docs/plan/week-1.md`. Tick items there as they're finished.
+- Current checklist: `docs/plan/week-2.md`. Tick items there as they're finished.
 - Decisions: `docs/adr/`. A change that contradicts an ADR needs a new ADR first.
 
 ## Rules that are never broken
@@ -15,6 +15,7 @@ An AI agent that adjudicates Indian health insurance reimbursement claims, start
 5. Workflow code is deterministic: no clock, randomness, network or goroutines except through the Temporal SDK. Activities are idempotent.
 6. Models never produce amounts; the engine does. A denial always goes to a person.
 7. Synthetic data only. Never add real personal data, or code, data or documents from any employer or client. (ADR 0006)
+8. Golden cases are checked by hand. Never change a golden case's expected values or `evals/engine/golden-cases.csv`, and never skip or weaken the tests that compare them, to make a test pass; stop and report the diff.
 
 ## Working here
 
@@ -91,7 +92,7 @@ An AI agent that adjudicates Indian health insurance reimbursement claims, start
 - Tests are table-driven. The money package also gets a fuzz test.
 - Format with `go run ./cmd/dev fmt` (gofmt and goimports, local prefix `github.com/SaiRanees/Claims-Adjudication-Agent`).
 
-## Status, 17 November 2026
+## Status, 18 November 2026
 
 - Done: the dev task runner, Compose stack, Dockerfile, migration 000001 with seed and 29 database checks, OpenAPI v0 (12 operations), the CI workflow (with a Windows job) and ADRs 0001 to 0008.
 - First run on a real machine (Windows 11, Docker Desktop), 11 November: `dev up` brings all four services up healthy, `migrate` applies 000001 and a second run changes nothing, `seed` is safe to re-run, `db-check` passes 29 of 29 on Postgres 18, `dev tools` and `dev gen` produce `internal/api/apigen/apigen.gen.go` (12 operations), and `dev check` passes.
@@ -100,5 +101,6 @@ An AI agent that adjudicates Indian health insurance reimbursement claims, start
 - Published at https://github.com/SaiRanees/Claims-Adjudication-Agent under the MIT licence. The Go module path matches the repo; `claims-agent` remains the local Compose project name.
 - Session 5, the relay and first workflow: `cmd/relay` delivers the outbox to Temporal (`SKIP LOCKED`, per-claim order, backoff to a 5-minute cap) and `cmd/worker` runs the placeholder `ClaimWorkflow` on the `claims` task queue. With `dev up` and `dev app`, a new claim's `claim-<id>` shows as Running in the Temporal UI, and both services exit cleanly on SIGTERM. CI's Database job starts Temporal for the relay's end-to-end test (`TEST_TEMPORAL_ADDRESS`).
 - Session 6, tracing: the API, relay and worker export traces to `otel-lgtm`. The API writes the request's `traceparent` on the outbox row, the relay continues it around each delivery, and Temporal's interceptor carries it into the workflow, so one create-claim trace runs from `POST /v1/claims` through the relay to the workflow and its activity in Tempo.
-- Session 7, money and the gate: `internal/rules/money` has `Percent` (half-up) and `Allocate` (largest remainder), both computed in 128 bits with `math/bits`, so they're exact for every non-negative input; negative amounts, rates and weights are errors. Table tests and two fuzz tests check them against `math/big`. `api`, `relay` and `worker` restart on failure in Compose. `dev test` points the database and Temporal tests at the local stack by itself. The gate passed from a fresh clone (198 tests, none skipped); the one-minute demo is still to record.
-- Next: record the demo, then week 2. A checked `Sub` joins the money package when the rules engine first subtracts. Details are in `docs/plan/week-1.md`.
+- Session 7, money and the gate: `internal/rules/money` has `Percent` (half-up) and `Allocate` (largest remainder), both computed in 128 bits with `math/bits`, so they're exact for every non-negative input; negative amounts, rates and weights are errors. Table tests and two fuzz tests check them against `math/big`. `api`, `relay` and `worker` restart on failure in Compose. `dev test` points the database and Temporal tests at the local stack by itself. The gate passed from a fresh clone (198 tests, none skipped), so week 1 is done. The one-minute demo moved to week 8, where M5 records the demo video.
+- Week 2, M1 (the rules engine), is planned in `docs/plan/week-2.md`. ADRs 0009 (cap at the cover left before the co-payment) and 0010 (ICU charges are capped, never scaled; scaling by an ICU ratio is flagged) are accepted.
+- Next: week 2, session 1, the rule pack. A checked `Sub` joins the money package in session 2.
