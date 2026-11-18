@@ -1,0 +1,375 @@
+# Rule pack: Arogya Sanjeevani Policy, Go Digit (UIN GODHLIP24179V022324).
+#
+# The engine knows the policy only through this file. Money is integer paise
+# and rates are integer basis points, so 5% is 500 (ADR 0005). The parser in
+# internal/rules rejects unknown fields, floats, integers with a sign, a leading
+# zero, 0x, 0o or an underscore, anchors, aliases, merge keys, explicit tags and
+# a second document.
+#
+# Rule IDs, like clause IDs, never change once published. The M1 gate (week 2,
+# session 7) publishes this version and pins its SHA-256. After that, any change
+# to this file, even to a comment, means a new version in a new file.
+#
+# Which copy the pages refer to
+#
+# Every page cited here is a page of the 25-page wording linked from
+# docs/plan/architecture.md:
+#   https://www.godigit.com/content/dam/godigit/directportal/en/downloads/health/policy-wordings-arogya-sanjeevani-policy-go-digit.pdf
+# That PDF was created on 12 January 2026 and has the SHA-256
+# 70ec4e51cf03a49c06cd7b06fd2dae16ac4ab3a204591fb1e8568a50858ea75b.
+# Its footers ("Page N of 25") match the PDF's own page numbers. The pages were
+# checked against text extracted from it on 18 November 2026.
+#
+# Go Digit also serves a 26-page PDF under the same UIN, created on
+# 25 September 2024:
+#   https://www.godigit.com/content/dam/godigit/directportal/en/downloads/health/Arogya%20Sanjeevani,Go%20Digit-%20Policy%20Wording.pdf
+# It differs in the claim-settlement timelines (E.I.16 and E.II.28(d)), the
+# free-look and grievance clauses, and Annexure B. Every clause this pack cites
+# reads the same in both copies, but the page numbers differ, so cite the
+# 25-page copy.
+
+id: arogya-sanjeevani-godigit-2024
+version: 1
+
+wording:
+  uin: GODHLIP24179V022324
+  # The wording states no validity dates. valid_from is the "Offer to public
+  # from" date, 16-Apr-20, in row 342 of Go Digit's list of products, which
+  # names this UIN. The list is headed "As on 8th september 2026" and was read
+  # on 18 November 2026:
+  #   https://www.godigit.com/content/dam/godigit/general/documents/list-of-products.pdf
+  # Its "Offer to public ended from" column is empty for this UIN, so the pack
+  # has no valid_until.
+  #
+  # 16 April 2020 is when the product was first offered. The UIN's suffix
+  # (V02, 2324) reads as a second version filed in 2023-24, so this exact
+  # wording may have applied from a later date. That reading is an inference,
+  # and no source found states the later date. Selection matches the UIN
+  # first, so the early date only loosens the check for periods that name
+  # this UIN.
+  valid_from: 2020-04-16
+
+documents:
+  - id: wording
+    title: Arogya Sanjeevani Policy, Go Digit - Policy Wording (GODHLIP24179V022324)
+    pages: 25
+  # Downloaded on 18 November 2026 from irdai.gov.in (SHA-256
+  # 8b786b22ae9d0526a66a8748bb169240ad4eaf1dd6d7dd9279c146e0bbe938ec):
+  #   https://irdai.gov.in/documents/37343/365525/Modified+Guidelines+on+Product+filing+in+Health+Insurance+Business-Norms+on.pdf/7b50effc-e553-f0a6-389d-3ca90ab11af5?version=1.0&t=1631531502137&download=true
+  # The 2024 master circular supersedes it (Annexure-6, entry 19), and nothing
+  # current restates its bar on ICU deduction (ADR 0010).
+  - id: irdai-circular-151-2020
+    title: "IRDAI/HLT/REG/CIR/151/06/2020, 11 June 2020: Modified Guidelines on Product filing in Health Insurance Business - Norms on Proportionate Deductions"
+    pages: 2
+
+# Every passage a rule cites. A clause that runs over a page break gives both
+# pages.
+clauses:
+  # "Maximum liability of the Company under all such Claims during each Policy
+  # Year shall be the Sum Insured (Individual or Floater) opted and Cumulative
+  # Bonus (if any) specified in the Schedule."
+  - id: Operative clause
+    document: wording
+    page: 1
+    title: Maximum liability per policy year is the sum insured plus the cumulative bonus
+  # "A co-payment does not reduce the Sum Insured." That sentence starts at the
+  # foot of page 2 and ends at the top of page 3 (ADR 0009).
+  - id: Definition 10
+    document: wording
+    page: 2
+    last_page: 3
+    title: Co-payment
+  - id: Definition 24
+    document: wording
+    page: 4
+    title: ICU (Intensive Care Unit) Charges
+  # "those expenses that an insured person has necessarily and actually
+  # incurred for medical treatment"
+  - id: Definition 26
+    document: wording
+    page: 4
+    title: Medical Expenses
+  # "the amount charged by a hospital towards Room and Boarding expenses"
+  - id: Definition 40
+    document: wording
+    page: 5
+    title: Room Rent
+  # C.I.1 (i) to (iv), C.I.1.1 and Notes 1 to 3 are all on page 6. The Table of
+  # Benefits on page 19 restates the room, ICU, cataract and co-payment limits.
+  - id: C.I.1(i)
+    document: wording
+    page: 6
+    title: Room rent, boarding and nursing, up to 2% of the sum insured and at most Rs 5,000 a day
+  - id: C.I.1(ii)
+    document: wording
+    page: 6
+    title: ICU and ICCU expenses, up to 5% of the sum insured and at most Rs 10,000 a day
+  - id: C.I.1.1(v)
+    document: wording
+    page: 6
+    title: Road ambulance, at most Rs 2,000 per hospitalisation
+  - id: C.I.1 Note 2
+    document: wording
+    page: 6
+    title: Proportionate deduction when the room or ICU rate exceeds its limit
+  - id: C.I.1 Note 3
+    document: wording
+    page: 6
+    title: No proportionate deduction where differential billing isn't followed
+  - id: C.I.3
+    document: wording
+    page: 6
+    title: Cataract, the lower of 25% of the sum insured and Rs 40,000, per eye per policy year
+  - id: C.I.6
+    document: wording
+    page: 7
+    title: Listed modern treatments, up to 50% of the sum insured during the policy period
+  - id: C.I.7
+    document: wording
+    page: 7
+    title: Annexure A, List I not covered; Lists II to IV subsumed into room, procedure or treatment charges
+  # The wording numbers the exclusions D.I.1 to D.I.3 but codes them Excl01,
+  # Excl03 and Excl02, in that order. The codes are the IDs.
+  - id: Excl01
+    document: wording
+    page: 8
+    title: Pre-existing diseases, 36 months (D.I.1)
+  - id: Excl02
+    document: wording
+    page: 8
+    last_page: 9
+    title: Specific waiting period, 24 or 36 months for listed conditions (D.I.3)
+  - id: Excl03
+    document: wording
+    page: 8
+    title: First thirty days waiting period (D.I.2)
+  # "Each and every claim under the Policy shall be subject to a Co-payment of
+  # 5% applicable to claim amount admissible and payable as per the terms and
+  # conditions of the Policy." (ADR 0009)
+  - id: E.II.28(c)
+    document: wording
+    page: 18
+    title: Co-payment of 5%
+  # Annexure A runs from page 20 to page 24. List I is headed "Optional Items".
+  - id: Annexure A List I
+    document: wording
+    page: 20
+    last_page: 21
+    title: Optional items
+  - id: Annexure A List II
+    document: wording
+    page: 21
+    last_page: 22
+    title: Items to be subsumed into room charges
+  - id: Annexure A List III
+    document: wording
+    page: 22
+    title: Items to be subsumed into procedure charges
+  # The heading is at the foot of page 22 and every item is on page 23.
+  - id: Annexure A List IV
+    document: wording
+    page: 22
+    last_page: 23
+    title: Items to be subsumed into costs of treatment
+  - id: Annexure A List V
+    document: wording
+    page: 23
+    last_page: 24
+    title: Additional non-payable items
+  # "Insurers are not permitted to apply proportionate deduction for 'ICU
+  # charges' as different categories of ICU are not there." Paragraph 6, on the
+  # same page, bars the deduction for expenses not billed by room category.
+  # That per-expense test is not modelled (ADR 0010).
+  - id: IRDAI/HLT/REG/CIR/151/06/2020 para 7
+    document: irdai-circular-151-2020
+    page: 1
+    title: No proportionate deduction for ICU charges
+
+# The steps, in the order the engine runs them. Changing the order means a new
+# pack version. architecture.md numbers the six wording steps 1 to 6:
+# drop-listed-items, apply-daily-caps, apply-proportionate-deduction,
+# apply-sub-limits, cap-at-cover-left and take-co-payment. The other three have
+# no wording step number.
+#
+# Each rule names what it applies_to. Every step has a fixed set of targets, and
+# its rules cover each target exactly once.
+steps:
+  # A pass-through until week 2, session 5, which decides how the waiting
+  # periods apply. Each one restarts for an increase in the sum insured
+  # (Excl01(b), Excl02(b), Excl03(iii)), and where a listed condition is also
+  # pre-existing, the longer period applies (Excl02(c)).
+  - step: check-eligibility
+    rules:
+      # Excl03(i) excludes "treatment of any illness within 30 days from the
+      # first policy commencement date", except after an accident. Excl03(ii)
+      # lifts it once continuous coverage has run for "more than twelve
+      # months".
+      - id: waiting-period-first-30-days
+        clause: Excl03
+        applies_to: any-illness
+        days: 30
+        waived_after_months: 12
+      - id: waiting-period-listed-24-months
+        clause: Excl02
+        applies_to: listed-24-months
+        months: 24
+      - id: waiting-period-listed-36-months
+        clause: Excl02
+        applies_to: listed-36-months
+        months: 36
+      - id: waiting-period-pre-existing
+        clause: Excl01
+        applies_to: pre-existing
+        months: 36
+
+  # A line matched to a list pays nothing, and its adjustment cites the list.
+  # M3 transcribes each list's items for code-side matching. Some List I items
+  # are payable in stated cases, such as a sling for an upper-arm fracture, so
+  # the matcher decides whether a line falls in a list at all.
+  - step: drop-listed-items
+    rules:
+      - id: annexure-a-list-i
+        clause: Annexure A List I
+        see_also: [C.I.7]
+        applies_to: list-i
+        effect: not-payable
+      - id: annexure-a-list-ii
+        clause: Annexure A List II
+        see_also: [C.I.7]
+        applies_to: list-ii
+        effect: room-charges
+      - id: annexure-a-list-iii
+        clause: Annexure A List III
+        see_also: [C.I.7]
+        applies_to: list-iii
+        effect: procedure-charges
+      - id: annexure-a-list-iv
+        clause: Annexure A List IV
+        see_also: [C.I.7]
+        applies_to: list-iv
+        effect: treatment-costs
+      # C.I.7 doesn't mention List V. Its heading is "Additional Non Payable
+      # Items".
+      - id: annexure-a-list-v
+        clause: Annexure A List V
+        applies_to: list-v
+        effect: not-payable
+
+  # Lines the engine can't model pay nothing for now, which is at or below
+  # every reading of them, and a person decides. Neither rule rests on a
+  # clause of the wording, so both are marked unmodelled, the only way a rule
+  # may cite no clause. See "What sends a claim to review" in
+  # docs/plan/architecture.md.
+  - step: set-aside-unmodelled-lines
+    rules:
+      - id: unmodelled-package-rate
+        unmodelled: true
+        applies_to: package-rate
+      - id: unmodelled-outside-stay
+        unmodelled: true
+        applies_to: outside-stay
+
+  # Each bucket is capped per day at the lower of a share of the eligible sum
+  # insured and a ceiling. C.I.1(i) caps room rent, boarding and nursing
+  # together ("all-inclusive" in the Table of Benefits), and Definition 40
+  # counts boarding as part of room rent, so separate nursing and patient-diet
+  # lines count toward the room bucket's daily cap. Definition 24 puts ICU
+  # nursing and intensivist charges inside ICU charges.
+  - step: apply-daily-caps
+    rules:
+      - id: daily-cap-room
+        clause: C.I.1(i)
+        see_also: [Definition 40]
+        applies_to: room
+        categories: [room-rent, nursing, patient-diet]
+        share_of_sum_insured_bp: 200
+        ceiling_paise: 500000
+      - id: daily-cap-icu
+        clause: C.I.1(ii)
+        see_also: [Definition 24]
+        applies_to: icu
+        categories: [icu-charges]
+        share_of_sum_insured_bp: 500
+        ceiling_paise: 1000000
+
+  # Note 2 scales "all other expenses incurred at the Hospital" except
+  # (a) pharmacy and consumables, (b) implants and medical devices and
+  # (c) diagnostics. Road ambulance is exempt too: it has its own limit
+  # (C.I.1.1(v)), and Note 2 scales only expenses incurred at the hospital.
+  # Bucket lines are capped, never scaled: room lines by daily-cap-room, and
+  # ICU lines by daily-cap-icu (ADR 0010).
+  #
+  # Note 2 doesn't say whether the ratio uses the bucket's daily total or the
+  # room rent alone. This pack uses the bucket's daily total, because that is
+  # what the cap measures, so the ratio and the cap can't disagree. A golden
+  # case in week 2, session 3 pins this.
+  #
+  # Note 3: a hospital that doesn't follow differential billing gets no
+  # scaling. Its second half, expenses not billed by room category, is not
+  # modelled (ADR 0010).
+  - step: apply-proportionate-deduction
+    ratio_basis: bucket-daily-total
+    scaled_categories: [professional-fees, operation-theatre, other-hospital-charges]
+    exempt_categories: [pharmacy-consumables, implants-devices, diagnostics, road-ambulance]
+    rules:
+      - id: proportionate-deduction-room
+        clause: C.I.1 Note 2
+        see_also: [C.I.1 Note 3]
+        applies_to: room
+      # Follows the wording under its own rule ID, and raises
+      # icu_ratio_scaling so a person reviews it (ADR 0010).
+      - id: proportionate-deduction-icu
+        clause: C.I.1 Note 2
+        see_also: [C.I.1 Note 3, IRDAI/HLT/REG/CIR/151/06/2020 para 7]
+        applies_to: icu
+
+  # A limit with both a share and a ceiling is the lower of the two. Shares
+  # are of the eligible sum insured, without the cumulative bonus.
+  - step: apply-sub-limits
+    rules:
+      - id: sub-limit-cataract
+        clause: C.I.3
+        applies_to: cataract
+        share_of_sum_insured_bp: 2500
+        ceiling_paise: 4000000
+        per: eye-per-policy-year
+      # "during the policy period", which Definition 47 makes one policy year.
+      - id: sub-limit-modern-treatment
+        clause: C.I.6
+        applies_to: modern-treatment
+        share_of_sum_insured_bp: 5000
+        per: policy-year
+      - id: sub-limit-road-ambulance
+        clause: C.I.1.1(v)
+        applies_to: road-ambulance
+        ceiling_paise: 200000
+        per: hospitalisation
+
+  # The admissible total is capped at the cover left: the eligible sum insured
+  # plus the cumulative bonus granted for the year, less what has been paid
+  # this policy year, never below zero. The cap comes before the co-payment
+  # (ADR 0009).
+  - step: cap-at-cover-left
+    rules:
+      - id: cap-cover-left
+        clause: Operative clause
+        applies_to: claim
+
+  # 5% of the capped amount, computed once for the claim and spread across the
+  # lines. The ledger records only what's paid (Definition 10).
+  - step: take-co-payment
+    rules:
+      - id: co-payment
+        clause: E.II.28(c)
+        see_also: [Definition 10]
+        applies_to: claim
+        rate_bp: 500
+
+  # Medical expenses are what was "necessarily and actually incurred", and a
+  # discount was never incurred. Taking it after the co-payment is at or below
+  # every reading of where it fell, and a person decides.
+  - step: take-bill-discount
+    rules:
+      - id: bill-discount
+        clause: Definition 26
+        applies_to: claim
