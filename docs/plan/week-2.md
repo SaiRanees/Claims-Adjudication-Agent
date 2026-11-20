@@ -4,7 +4,7 @@ By the end of the week, one versioned rule pack encodes Go Digit's wording of Ar
 
 Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010 are accepted. Session 1 is done: the rule pack loads, validates and is selected through the policy period. Session 2 is done, with the three fixes from the session 1 review, and its first 10 golden cases are checked.
 
-Progress, 20 November: session 3's golden cases (11 to 21) are written and wait for their check. No step is coded yet.
+Progress, 20 November: session 3 codes steps 1 to 3, and every figure they produce matches all 24 golden cases. Cases 01 to 21 are checked; 22 to 24 wait for their check.
 
 ## Decide first
 
@@ -134,27 +134,28 @@ Done when money's new functions pass their table and fuzz tests, the input-check
 
 ## Session 3: item lists, unmodelled lines, daily caps and proportionate deduction (steps 1 to 3)
 
-- [ ] Step 1: a line matched to an Annexure A list pays nothing, with an adjustment that cites that list.
-- [ ] Setting aside unmodelled lines, a declared step of its own, after dropping listed items and before the daily caps. Lines the engine can't model pay nothing for now, which is at or below every reading of them, and a reviewer decides.
+- [x] Step 1: a line matched to an Annexure A list pays nothing, with an adjustment that cites that list.
+- [x] Setting aside unmodelled lines, a declared step of its own, after dropping listed items and before the daily caps. Lines the engine can't model pay nothing for now, which is at or below every reading of them, and a reviewer decides.
   - The step deducts what is left of each package-rate line, and of each line dated outside the stay, by one adjustment under its own rule ID, `unmodelled-package-rate` or `unmodelled-outside-stay`.
   - It raises `package_rate` or `outside_stay` only for a line it actually deducts. A line an Annexure list already zeroed keeps the list's adjustment as its reason, and raises neither flag.
   - Because the step runs before the daily caps, a set-aside line adds nothing to a bucket's total or a segment's ratio.
   - Neither rule rests on a clause of the wording, so their clause field is empty. The pack marks both rules unmodelled, which is the only way a rule may cite no clause, and a comment points to architecture.md's review triggers.
-- [ ] Step 2: each bucket is capped per day, at the lower of a share of the eligible sum insured and a rupee ceiling: 2% or ₹5,000 for the room bucket, and 5% or ₹10,000 for ICU.
+- [x] Step 2: each bucket is capped per day, at the lower of a share of the eligible sum insured and a rupee ceiling: 2% or ₹5,000 for the room bucket, and 5% or ₹10,000 for ICU.
   - The daily cap is multiplied by the smaller of the days billed and the segment's calendar days, so billing extra days never raises the allowance. A bucket's days billed are the most days any of its lines bills, because room, nursing and diet lines run over the same days.
   - The days billed may equal the segment's calendar days or be one fewer, because hospitals often skip the discharge day. Anything else raises `room_days_mismatch`, including a lump-sum line billed as one unit for a longer stay.
-  - A bucket line's service date is its first billed day, and that picks its segment.
+  - A bucket line's service date is its first billed day, and that picks its segment. So in a stay with more than one segment, an undated bucket line is an input error naming the line; in a stay with one segment, it belongs to that one.
   - The bucket's reduction is spread across its lines with `Allocate`, sorted by ID, in the same way as the claim-level reductions.
   - A bucket line dated in a segment of the other kind raises `bucket_segment_mismatch` and is held to both caps. First its own bucket's cap applies, under that bucket's rule. Then it joins the segment's bucket at what that cap left, and the segment's cap applies under the segment's rule. Per day that pays min(segment lines + min(line, own cap), segment cap). Its billed amount counts in the segment's ratio.
-- [ ] Step 3: each scaled line is multiplied by its segment's ratio in one `MulDiv`, so it's rounded once.
+- [x] Step 3: each scaled line is multiplied by its segment's ratio in one `MulDiv`, so it's rounded once.
   - The ratio follows Note 2's wording, "the admissible rate per day bears to the actual rate per day", at most 1. It counts the days billed: the cap × the days billed ÷ the bucket's billed total.
   - When the days billed are at most the segment's calendar days, that is the capped bucket total over the billed bucket total. When more days are billed, the allowance (step 2) still counts only the segment's calendar days, but the ratio doesn't, so an extra billed day lowers the bucket's payable and not the other lines'. `room_days_mismatch` still sends the claim to a person. Case 22 pins this.
   - A line held to both caps (`bucket_segment_mismatch`) is held to both in the ratio too: the admissible side is min(segment lines + min(line, own cap × its days billed), segment cap × days billed), over the segment's billed total, which includes the line's billed amount. Without such a line, that is the cap × the days billed ÷ the billed total.
   - The room ratio and the ICU ratio are separate rules, and the ICU rule raises `icu_ratio_scaling` (ADR 0010). ICU charge lines are capped but never scaled.
   - A rule whose effect is `no-scaling` skips scaling in segments of its kind, deducts nothing and raises nothing. A test runs a pack variant whose ICU rule is `no-scaling`.
   - A segment with no room or ICU charge has no ratio: scaling is skipped there, and the engine raises `no_room_charge`.
-  - For a hospital without differential billing, the step is skipped (Note 3). When the facts don't say, the step follows the wording and raises `differential_billing_unknown`.
-- [ ] An undated line in a stay with more than one rate gets the lowest ratio in the stay and raises `undated_line`, so its interim figure is never above any reading of the bill. A reviewer supplies the date.
+  - For a hospital without differential billing, the step is skipped (Note 3), so it raises neither `no_room_charge` nor `undated_line`: no ratio is needed. When the facts don't say, the step follows the wording and raises `differential_billing_unknown`.
+- [x] An undated line in a stay with more than one rate gets the lowest ratio in the stay and raises `undated_line`, so its interim figure is never above any reading of the bill. A reviewer supplies the date.
+  - Only a scaled line raises it. An exempt line's figure doesn't depend on its date, and a bucket line needs a date (step 2).
 - [ ] Golden cases:
   - the worked example up to its ₹1,22,500 subtotal;
   - one sum insured where 2% binds and one where ₹5,000 binds;

@@ -52,6 +52,16 @@ func (p *Pack) Rule(id string) (Rule, bool) {
 	return Rule{}, false
 }
 
+// Step returns the step with the given name. A parsed pack has every step.
+func (p *Pack) Step(name StepName) (Step, bool) {
+	for _, s := range p.Steps {
+		if s.Name == name {
+			return s, true
+		}
+	}
+	return Step{}, false
+}
+
 // Clause returns the clause with the given ID.
 func (p *Pack) Clause(id string) (Clause, bool) {
 	for _, c := range p.Clauses {
@@ -275,8 +285,11 @@ func periods() []Period {
 // engine supports is the bucket's daily total, the amount the cap measures.
 type RatioBasis string
 
-// RatioBucketDailyTotal divides the capped bucket total by the billed bucket
-// total.
+// RatioBucketDailyTotal is Note 2's ratio, the admissible rate per day over
+// the actual rate per day, taken over the whole bucket (room rent, nursing
+// and diet together) rather than the room rent alone. It counts the days
+// billed: the daily cap times the days billed, over the bucket's billed
+// total, at most 1.
 const RatioBucketDailyTotal RatioBasis = "bucket-daily-total"
 
 func ratioBases() []RatioBasis { return []RatioBasis{RatioBucketDailyTotal} }

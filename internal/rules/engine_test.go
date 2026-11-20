@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/rules"
-	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/rules/money"
 )
 
 func goDigitPack(t *testing.T) *rules.Pack {
@@ -98,6 +97,11 @@ func TestAdjudicateInputChecks(t *testing.T) {
 			f.Lines[2].Quantity, f.Lines[2].UnitPrice, f.Lines[2].Amount = 1, 1<<62, 1<<62
 		}, "Facts.Lines"},
 		{"unknown item list", func(_ *testing.T, f *rules.Facts, _ *rules.Cover) { f.Lines[4].ItemList = "list-vi" }, "Facts.Lines[4].ItemList"},
+		// A room or ICU line's date picks its segment, so in a stay with more
+		// than one, it needs one.
+		{"undated room line in a stay with two segments", func(_ *testing.T, f *rules.Facts, _ *rules.Cover) {
+			f.Lines[1].ServiceDate = rules.Date{}
+		}, "Facts.Lines[1].ServiceDate"},
 		{"unknown treatment", func(_ *testing.T, f *rules.Facts, _ *rules.Cover) { f.Lines[3].Treatment.Kind = "dental" }, "Facts.Lines[3].Treatment.Kind"},
 		{"cataract with no eye", func(_ *testing.T, f *rules.Facts, _ *rules.Cover) { f.Lines[3].Treatment.Eye = rules.EyeNone }, "Facts.Lines[3].Treatment.Eye"},
 		{"eye on a line that isn't a cataract", func(_ *testing.T, f *rules.Facts, _ *rules.Cover) {
@@ -147,8 +151,11 @@ func TestAdjudicateValidInput(t *testing.T) {
 	}
 }
 
-// Until the steps are coded, every line pays what it billed.
-func TestAdjudicateStub(t *testing.T) {
+// validClaim has one listed line and nothing over a cap, so steps 1 to 3
+// deduct only the listed line. The later steps pass every line through until
+// sessions 4 and 5 code them. Its undated implant is exempt from scaling, so
+// it isn't flagged.
+func TestAdjudicateValidClaim(t *testing.T) {
 	pack := goDigitPack(t)
 	f, c := validClaim(t)
 	res, err := rules.Adjudicate(pack, f, c)
@@ -161,26 +168,33 @@ func TestAdjudicateStub(t *testing.T) {
 	var ids []string
 	for _, l := range res.Lines {
 		ids = append(ids, l.ID)
-		if l.Payable != l.Billed {
-			t.Errorf("%s pays %d of %d", l.ID, l.Payable, l.Billed)
-		}
 	}
 	if !slices.Equal(ids, []string{"L01", "L02", "L03", "L04", "L05"}) {
 		t.Errorf("lines in order %v, want sorted by ID", ids)
 	}
-	const total = money.Paise(7_000_000)
-	if res.Billed != total || res.Payable != total || res.Ledger.Paid != total {
-		t.Errorf("billed %d, payable %d, paid %d; want %d each", res.Billed, res.Payable, res.Ledger.Paid, total)
+	want := []rules.Adjustment{{
+		LineID: "L05", RuleID: "annexure-a-list-ii", Clause: "Annexure A List II",
+		Inputs: []rules.Input{{Name: "amount", Value: 200_000}}, Amount: 200_000,
+	}}
+	if !reflect.DeepEqual(res.Adjustments, want) {
+		t.Errorf("adjustments = %+v, want %+v", res.Adjustments, want)
+	}
+	if len(res.Flags) != 0 {
+		t.Errorf("flags %v, want none", res.Flags)
+	}
+	if res.Billed != 7_000_000 || res.Payable != 6_800_000 || res.Ledger.Paid != 6_800_000 {
+		t.Errorf("billed %d, payable %d, paid %d; want 7,000,000, 6,800,000 and 6,800,000", res.Billed, res.Payable, res.Ledger.Paid)
 	}
 	if res.Ledger.CataractUsed != (rules.EyeAmounts{Right: 1_200_000}) {
 		t.Errorf("cataract use = %+v", res.Ledger.CataractUsed)
 	}
-	if len(res.Adjustments) != 0 || len(res.Flags) != 0 {
-		t.Errorf("adjustments %v, flags %v; want none", res.Adjustments, res.Flags)
-	}
+	checkLines(t, f, res)
+}
+
+func TestImplemented(t *testing.T) {
 	for _, s := range rules.StepNames() {
-		if rules.Implemented(s) {
-			t.Errorf("step %s is marked implemented in the stub", s)
+		if got, want := rules.Implemented(s), slices.Contains(steps1to3, s); got != want {
+			t.Errorf("Implemented(%s) = %t, want %t", s, got, want)
 		}
 	}
 }

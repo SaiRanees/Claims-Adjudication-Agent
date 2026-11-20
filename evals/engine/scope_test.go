@@ -27,6 +27,7 @@ func TestScope(t *testing.T) {
 	coded := func(steps ...rules.StepName) func(rules.StepName) bool {
 		return func(s rules.StepName) bool { return slices.Contains(steps, s) }
 	}
+	stub := coded()
 	session3 := coded(rules.StepDropListedItems, rules.StepSetAsideUnmodelledLines,
 		rules.StepApplyDailyCaps, rules.StepApplyProportionateDeduction)
 	session4 := coded(rules.StepDropListedItems, rules.StepSetAsideUnmodelledLines,
@@ -45,8 +46,8 @@ func TestScope(t *testing.T) {
 		row         Row
 		want        bool
 	}{
-		{"stub: a step-1 adjustment", worked, rules.Implemented, row(KindAdjustment, "L05", "annexure-a-list-ii"), false},
-		{"stub: the claim payable", worked, rules.Implemented, row(KindClaimPayable, "", ""), false},
+		{"stub: a step-1 adjustment", worked, stub, row(KindAdjustment, "L05", "annexure-a-list-ii"), false},
+		{"stub: the claim payable", worked, stub, row(KindClaimPayable, "", ""), false},
 		{"session 3: a daily cap", worked, session3, row(KindAdjustment, "L01", "daily-cap-room"), true},
 		{"session 3: proportionate deduction", worked, session3, row(KindAdjustment, "L02", "proportionate-deduction-room"), true},
 		{"session 3: a flag from step 3", worked, session3, row(KindFlag, "", string(rules.FlagDifferentialBillingUnknown)), true},
