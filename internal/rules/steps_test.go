@@ -268,11 +268,10 @@ func TestStepsOneToThree(t *testing.T) {
 			},
 		},
 		{
-			// Two room lines that split a 4-day segment each bill 2 days, so
-			// both are flagged, and the bucket counts the most days any line
-			// bills: 2, at or below the 4 a reviewer may find. The ratio is
-			// ₹10,000 ÷ ₹16,000.
-			name:       "lines that split a segment count the most days any line bills",
+			// Two room lines that split a 4-day segment cover all 4 days
+			// together, so nothing is flagged, the ₹16,000 is under the
+			// 4 × ₹5,000 allowance, and nothing is scaled.
+			name:       "lines that split a segment count the days they cover together",
 			sumInsured: 50_000_000,
 			facts: func(t *testing.T) rules.Facts {
 				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-06-10", "2025-06-13", rules.SegmentRoom)},
@@ -281,15 +280,20 @@ func TestStepsOneToThree(t *testing.T) {
 					ln(t, "L03", rules.CategoryProfessionalFees, "2025-06-11", 1, 800_000),
 				)
 			},
-			adjs: []wantAdj{
-				{"L01", "daily-cap-room", 300_000},
-				{"L02", "daily-cap-room", 300_000},
-				{"L03", "proportionate-deduction-room", 300_000},
+		},
+		{
+			// Days are judged per category: the room covers 4 of 5 days,
+			// which is accepted, but nursing covers only 2, so only the
+			// nursing line is flagged. The bucket covers 4 days together.
+			name:       "room_days_mismatch is judged per category",
+			sumInsured: 50_000_000,
+			facts: func(t *testing.T) rules.Facts {
+				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-06-10", "2025-06-14", rules.SegmentRoom)},
+					ln(t, "L01", rules.CategoryRoomRent, "2025-06-10", 4, 300_000),
+					ln(t, "L02", rules.CategoryNursing, "2025-06-10", 2, 100_000),
+				)
 			},
-			flags: []wantFlag{
-				{rules.FlagRoomDaysMismatch, "L01", 0},
-				{rules.FlagRoomDaysMismatch, "L02", 0},
-			},
+			flags: []wantFlag{{rules.FlagRoomDaysMismatch, "L02", 0}},
 		},
 		{
 			name:       "a same-day stay billed for one day is accepted",
@@ -354,6 +358,163 @@ func TestStepsOneToThree(t *testing.T) {
 			}
 			if !slices.Equal(flags, tt.flags) {
 				t.Errorf("flags\n got %v\nwant %v", flags, tt.flags)
+			}
+			checkLines(t, f, res)
+		})
+	}
+}
+
+// TestStepsFourToSix checks the sub-limits, the cover cap, the co-payment,
+// the discount, the ledger and proposed_denial on claims the golden cases
+// don't cover. It compares every adjustment and flag.
+func TestStepsFourToSix(t *testing.T) {
+	pack := goDigitPack(t)
+	sameDay := func(t *testing.T, discount money.Paise, lines ...rules.Line) rules.Facts {
+		// A day-care stay at a hospital without differential billing, so
+		// step 3 doesn't run and a bill with no room line raises nothing.
+		f := facts(rules.AnswerNo, []rules.Segment{seg(t, "2025-08-12", "2025-08-12", rules.SegmentRoom)}, lines...)
+		f.BillDiscount = discount
+		return f
+	}
+	cataract := func(l rules.Line, eye rules.Eye) rules.Line {
+		l.Treatment = rules.Treatment{Kind: rules.TreatmentCataract, Eye: eye}
+		return l
+	}
+	tests := []struct {
+		name    string
+		facts   func(t *testing.T) rules.Facts
+		cover   func(c *rules.Cover)
+		adjs    []wantAdj
+		flags   []wantFlag
+		payable money.Paise
+		ledger  rules.Ledger
+	}{
+		{
+			// The discount takes the smaller of itself and the payable, so
+			// the claim pays nothing, but it isn't a proposed denial: the
+			// policy would have paid ₹1,900.
+			name: "a discount above the payable takes it to zero, which isn't a proposed denial",
+			facts: func(t *testing.T) rules.Facts {
+				f := facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-06-10", "2025-06-12", rules.SegmentRoom)},
+					ln(t, "L01", rules.CategoryRoomRent, "2025-06-10", 2, 100_000))
+				f.BillDiscount = 500_000
+				return f
+			},
+			adjs:  []wantAdj{{"L01", "co-payment", 10_000}, {"L01", "bill-discount", 190_000}},
+			flags: []wantFlag{{rules.FlagBillDiscount, "", 500_000}},
+		},
+		{
+			// With no cover left the claim pays nothing; the co-pay-first
+			// figure is also nothing, and the policy pays nothing, so it is
+			// a proposed denial.
+			name: "no cover left pays nothing and proposes a denial",
+			facts: func(t *testing.T) rules.Facts {
+				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-06-10", "2025-06-12", rules.SegmentRoom)},
+					ln(t, "L01", rules.CategoryRoomRent, "2025-06-10", 2, 100_000))
+			},
+			cover: func(c *rules.Cover) { c.Tranches[0].SumInsured, c.PaidThisYear = 10_000_000, 10_000_000 },
+			adjs:  []wantAdj{{"L01", "cap-cover-left", 200_000}},
+			flags: []wantFlag{{rules.FlagCoverExceeded, "", 0}, {rules.FlagProposedDenial, "", 0}},
+		},
+		{
+			// The plan's example: 29 paise of cover against 30 admissible.
+			// Cap first: 29 less 5% (1.45, rounded to 1) is 28. Co-pay
+			// first: 30 less 5% (1.5, rounded to 2) is 28.
+			name: "29 paise of cover against 30 admissible pays 28 either way",
+			facts: func(t *testing.T) rules.Facts {
+				return sameDay(t, 0, ln(t, "L01", rules.CategoryDiagnostics, "2025-08-12", 1, 30))
+			},
+			cover:   func(c *rules.Cover) { c.Tranches[0].SumInsured, c.PaidThisYear = 10_000_000, 9_999_971 },
+			adjs:    []wantAdj{{"L01", "cap-cover-left", 1}, {"L01", "co-payment", 1}},
+			flags:   []wantFlag{{rules.FlagCoverExceeded, "", 28}},
+			payable: 28,
+			ledger:  rules.Ledger{Paid: 28},
+		},
+		{
+			// ₹12,000 admissible against ₹10,000 of cover, with a ₹1,000
+			// discount. Cap first: ₹10,000 − ₹500 − ₹1,000 = ₹8,500. Co-pay
+			// first: ₹12,000 − ₹600 = ₹11,400, capped at ₹10,000, less the
+			// same ₹1,000 = ₹9,000.
+			name: "cover_exceeded's figure takes the same discount",
+			facts: func(t *testing.T) rules.Facts {
+				return sameDay(t, 100_000, ln(t, "L01", rules.CategoryDiagnostics, "2025-08-12", 1, 1_200_000))
+			},
+			cover: func(c *rules.Cover) { c.Tranches[0].SumInsured, c.PaidThisYear = 10_000_000, 9_000_000 },
+			adjs: []wantAdj{
+				{"L01", "cap-cover-left", 200_000}, {"L01", "co-payment", 50_000}, {"L01", "bill-discount", 100_000},
+			},
+			flags:   []wantFlag{{rules.FlagBillDiscount, "", 100_000}, {rules.FlagCoverExceeded, "", 900_000}},
+			payable: 850_000,
+			ledger:  rules.Ledger{Paid: 850_000},
+		},
+		{
+			// 25% of the ₹1,00,000 sum insured is ₹25,000; with the
+			// ₹50,000 bonus it would be ₹37,500 and cap nothing.
+			name: "sub-limit percentages leave out the cumulative bonus",
+			facts: func(t *testing.T) rules.Facts {
+				return sameDay(t, 0, cataract(ln(t, "L01", rules.CategoryProfessionalFees, "2025-08-12", 1, 3_000_000), rules.EyeRight))
+			},
+			cover:   func(c *rules.Cover) { c.Tranches[0].SumInsured, c.CumulativeBonus = 10_000_000, 5_000_000 },
+			adjs:    []wantAdj{{"L01", "sub-limit-cataract", 500_000}, {"L01", "co-payment", 125_000}},
+			payable: 2_375_000,
+			ledger:  rules.Ledger{Paid: 2_375_000, CataractUsed: rules.EyeAmounts{Right: 2_500_000}},
+		},
+		{
+			// The left eye used its ₹25,000 earlier in the year, so this
+			// claim's left-eye line pays nothing: the policy makes the claim
+			// pay nothing, a proposed denial.
+			name: "an eye whose limit is used up pays nothing for it",
+			facts: func(t *testing.T) rules.Facts {
+				return sameDay(t, 0, cataract(ln(t, "L01", rules.CategoryProfessionalFees, "2025-08-12", 1, 1_000_000), rules.EyeLeft))
+			},
+			cover: func(c *rules.Cover) {
+				c.Tranches[0].SumInsured, c.CataractUsed = 10_000_000, rules.EyeAmounts{Left: 2_500_000}
+			},
+			adjs:  []wantAdj{{"L01", "sub-limit-cataract", 1_000_000}},
+			flags: []wantFlag{{rules.FlagProposedDenial, "", 0}},
+		},
+		{
+			// The cover cap binds after the sub-limit: the eye's use is what
+			// its line was admitted at before the co-payment, ₹20,000.
+			// Co-pay first: ₹25,000 − ₹1,250 = ₹23,750, capped at ₹20,000.
+			name: "cataract use is counted after the cover cap and before the co-payment",
+			facts: func(t *testing.T) rules.Facts {
+				return sameDay(t, 0, cataract(ln(t, "L01", rules.CategoryProfessionalFees, "2025-08-12", 1, 2_500_000), rules.EyeRight))
+			},
+			cover:   func(c *rules.Cover) { c.Tranches[0].SumInsured, c.PaidThisYear = 10_000_000, 8_000_000 },
+			adjs:    []wantAdj{{"L01", "cap-cover-left", 500_000}, {"L01", "co-payment", 100_000}},
+			flags:   []wantFlag{{rules.FlagCoverExceeded, "", 2_000_000}},
+			payable: 1_900_000,
+			ledger:  rules.Ledger{Paid: 1_900_000, CataractUsed: rules.EyeAmounts{Right: 2_000_000}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := tt.facts(t)
+			c := coverOf(t, 50_000_000)
+			if tt.cover != nil {
+				tt.cover(&c)
+			}
+			res, err := rules.Adjudicate(pack, f, c)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var adjs []wantAdj
+			for _, a := range res.Adjustments {
+				adjs = append(adjs, wantAdj{a.LineID, a.RuleID, a.Amount})
+			}
+			var flags []wantFlag
+			for _, fl := range res.Flags {
+				flags = append(flags, wantFlag{fl.Code, fl.LineID, fl.Figure})
+			}
+			if !slices.Equal(adjs, tt.adjs) {
+				t.Errorf("adjustments\n got %v\nwant %v", adjs, tt.adjs)
+			}
+			if !slices.Equal(flags, tt.flags) {
+				t.Errorf("flags\n got %v\nwant %v", flags, tt.flags)
+			}
+			if res.Payable != tt.payable || res.Ledger != tt.ledger {
+				t.Errorf("payable %d, ledger %+v; want %d and %+v", res.Payable, res.Ledger, tt.payable, tt.ledger)
 			}
 			checkLines(t, f, res)
 		})

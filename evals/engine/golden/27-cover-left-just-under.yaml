@@ -1,0 +1,53 @@
+# An admissible total one paisa under the cover left: nothing is capped
+# and nothing is flagged. The pair of case 26, with the same cover.
+#
+# Sum insured ₹2,00,000, a cumulative bonus of ₹20,000 and ₹1,70,000 paid
+# this policy year: ₹50,000 of cover left. The room cap is ₹4,000 a day;
+# the room is ₹3,000. Stay 23 to 25 March: 3 calendar days, 2 billed.
+#
+# Steps 1 to 4 change nothing: 600,000 + 3,000,000 + 1,399,999 = 4,999,999
+#   paise admissible.
+# Step 5: 4,999,999 is under the 5,000,000 left. No cap, no flag.
+# Step 6, co-payment: 5% of 4,999,999 = 249,999.95, rounded half-up to
+#   250,000 paise, spread by amount:
+#     L01 30,000.006   L02 150,000.03   L03 69,999.964
+#   The floors add to 249,999; the paisa left goes to L03 (.964): 30,000,
+#   150,000 and 70,000.
+# Payable: 4,999,999 − 250,000 = 4,749,999 paise (₹47,499.99).
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 20000000
+      continuous_since: 2023-04-01
+  cumulative_bonus_paise: 2000000
+  paid_this_year_paise: 17000000
+
+facts:
+  admission: 2026-03-23
+  discharge: 2026-03-25
+  segments:
+    - {from: 2026-03-23, to: 2026-03-25, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2026-03-23, quantity: 2, unit_price_paise: 300000, amount_paise: 600000}
+    - {id: L02, category: professional-fees, service_date: 2026-03-24, quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+    - {id: L03, category: pharmacy-consumables, service_date: 2026-03-24, quantity: 1, unit_price_paise: 1399999, amount_paise: 1399999}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 570000}
+    - {id: L02, payable_paise: 2850000}
+    - {id: L03, payable_paise: 1329999}
+  adjustments:
+    - {line: L01, rule: co-payment, paise: 30000}
+    - {line: L02, rule: co-payment, paise: 150000}
+    - {line: L03, rule: co-payment, paise: 70000}
+  flags: []
+  claim_payable_paise: 4749999
+  ledger:
+    paid_paise: 4749999

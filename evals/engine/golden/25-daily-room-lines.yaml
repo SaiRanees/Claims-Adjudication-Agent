@@ -1,0 +1,63 @@
+# A room billed one line per day, which is common: four lines of one day
+# each at ₹4,000, 16 to 19 February. Each line covers its quantity of days
+# from its service date, so together they cover 4 days, one fewer than the
+# segment's 5 calendar days (the discharge day isn't billed). Nothing is
+# flagged, and the bucket is under its cap.
+#
+# Counting the most days on any one line (1), as session 3 did, would have
+# capped the room at ₹5,000, scaled the surgeon's fee by ₹5,000 ÷ ₹16,000,
+# flagged all four lines and paid ₹19,593.75.
+#
+# Sum insured ₹5,00,000, so the room cap is ₹5,000 a day. Stay 16 to 20
+# February: 5 calendar days.
+#
+# Step 2, daily caps: the room lines cover 4 days together, billed
+#   ₹16,000; the allowance is min(4, 5) × ₹5,000 = ₹20,000. No deduction.
+# Step 3, proportionate deduction: ratio ₹5,000 × 4 days billed ÷ ₹16,000,
+#   at most 1, so 1. L05 isn't scaled.
+# Subtotal: 4 × ₹4,000 + ₹50,000 = ₹66,000.
+# Step 6, co-payment: 5% of ₹66,000 = ₹3,300. Every share is exact:
+#   L01 to L04 ₹200 each, L05 ₹2,500.
+# Payable: ₹66,000 − ₹3,300 = ₹62,700.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2026-02-16
+  discharge: 2026-02-20
+  segments:
+    - {from: 2026-02-16, to: 2026-02-20, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2026-02-16, quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: room-rent, service_date: 2026-02-17, quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L03, category: room-rent, service_date: 2026-02-18, quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L04, category: room-rent, service_date: 2026-02-19, quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    # The surgeon's fee.
+    - {id: L05, category: professional-fees, service_date: 2026-02-17, quantity: 1, unit_price_paise: 5000000, amount_paise: 5000000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 380000}
+    - {id: L02, payable_paise: 380000}
+    - {id: L03, payable_paise: 380000}
+    - {id: L04, payable_paise: 380000}
+    - {id: L05, payable_paise: 4750000}
+  adjustments:
+    - {line: L01, rule: co-payment, paise: 20000}
+    - {line: L02, rule: co-payment, paise: 20000}
+    - {line: L03, rule: co-payment, paise: 20000}
+    - {line: L04, rule: co-payment, paise: 20000}
+    - {line: L05, rule: co-payment, paise: 250000}
+  flags: []
+  claim_payable_paise: 6270000
+  ledger:
+    paid_paise: 6270000

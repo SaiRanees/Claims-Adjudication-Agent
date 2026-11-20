@@ -1,0 +1,59 @@
+# A second claim in the same policy year for an eye already treated. Its
+# cover is case 28's ledger effects: ₹42,750 paid, and cataract use of
+# ₹25,000 on the left eye and ₹20,000 on the right. A second procedure on
+# the right eye, which the facts tie to its cataract treatment, has
+# ₹25,000 − ₹20,000 = ₹5,000 of the right eye's limit left.
+#
+# Sum insured ₹1,00,000, continuous since 1 April 2022, as in case 28. The
+# stay is 10 November only, as day care, at the same eye hospital (no
+# differential billing).
+#
+# Step 4, sub-limits: the right eye's lines, L01 ₹9,000 + L02 ₹3,000 =
+#   ₹12,000, against the ₹5,000 left. The ₹7,000 reduction is spread by
+#   amount, exactly: sub-limit-cataract L01 ₹5,250, L02 ₹1,750. The lines
+#   are now ₹3,750 and ₹1,250.
+# Step 5: the cover left is ₹1,00,000 − ₹42,750 = ₹57,250, above ₹5,000.
+# Step 6, co-payment: 5% of ₹5,000 = ₹250. Every share is exact: L01
+#   ₹187.50, L02 ₹62.50.
+# Payable: ₹5,000 − ₹250 = ₹4,750.
+# Ledger: the right eye's use this claim is ₹5,000, so its ₹25,000 limit is
+# used up for the year.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 10000000
+      continuous_since: 2022-04-01
+  paid_this_year_paise: 4275000
+  cataract_used_paise: {left: 2500000, right: 2000000}
+
+facts:
+  admission: 2025-11-10
+  discharge: 2025-11-10
+  segments:
+    - {from: 2025-11-10, to: 2025-11-10, kind: room}
+  differential_billing: no
+  condition:
+    listed_group: listed-24-months
+  lines:
+    - {id: L01, category: professional-fees, service_date: 2025-11-10, quantity: 1, unit_price_paise: 900000, amount_paise: 900000, treatment: {kind: cataract, eye: right}}
+    - {id: L02, category: pharmacy-consumables, service_date: 2025-11-10, quantity: 1, unit_price_paise: 300000, amount_paise: 300000, treatment: {kind: cataract, eye: right}}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 356250}
+    - {id: L02, payable_paise: 118750}
+  adjustments:
+    - {line: L01, rule: sub-limit-cataract, paise: 525000}
+    - {line: L02, rule: sub-limit-cataract, paise: 175000}
+    - {line: L01, rule: co-payment, paise: 18750}
+    - {line: L02, rule: co-payment, paise: 6250}
+  flags: []
+  claim_payable_paise: 475000
+  ledger:
+    paid_paise: 475000
+    cataract_used_paise: {left: 0, right: 500000}

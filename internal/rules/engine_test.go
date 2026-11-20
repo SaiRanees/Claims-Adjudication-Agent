@@ -151,10 +151,11 @@ func TestAdjudicateValidInput(t *testing.T) {
 	}
 }
 
-// validClaim has one listed line and nothing over a cap, so steps 1 to 3
-// deduct only the listed line. The later steps pass every line through until
-// sessions 4 and 5 code them. Its undated implant is exempt from scaling, so
-// it isn't flagged.
+// validClaim has one listed line and nothing over a cap or a sub-limit, so
+// the listed line pays nothing and every other line pays 95% (the
+// co-payment, 5% of ₹68,000, spreads exactly). Its undated implant is exempt
+// from scaling, so it isn't flagged. Eligibility passes every tranche until
+// session 5.
 func TestAdjudicateValidClaim(t *testing.T) {
 	pack := goDigitPack(t)
 	f, c := validClaim(t)
@@ -172,28 +173,43 @@ func TestAdjudicateValidClaim(t *testing.T) {
 	if !slices.Equal(ids, []string{"L01", "L02", "L03", "L04", "L05"}) {
 		t.Errorf("lines in order %v, want sorted by ID", ids)
 	}
-	want := []rules.Adjustment{{
+	listed := rules.Adjustment{
 		LineID: "L05", RuleID: "annexure-a-list-ii", Clause: "Annexure A List II",
 		Inputs: []rules.Input{{Name: "amount", Value: 200_000}}, Amount: 200_000,
-	}}
-	if !reflect.DeepEqual(res.Adjustments, want) {
-		t.Errorf("adjustments = %+v, want %+v", res.Adjustments, want)
+	}
+	if len(res.Adjustments) == 0 || !reflect.DeepEqual(res.Adjustments[0], listed) {
+		t.Errorf("first adjustment = %+v, want %+v", res.Adjustments, listed)
+	}
+	var got []wantAdj
+	for _, a := range res.Adjustments {
+		got = append(got, wantAdj{a.LineID, a.RuleID, a.Amount})
+	}
+	want := []wantAdj{
+		{"L05", "annexure-a-list-ii", 200_000},
+		{"L01", "co-payment", 40_000}, {"L02", "co-payment", 90_000},
+		{"L03", "co-payment", 150_000}, {"L04", "co-payment", 60_000},
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("adjustments\n got %v\nwant %v", got, want)
 	}
 	if len(res.Flags) != 0 {
 		t.Errorf("flags %v, want none", res.Flags)
 	}
-	if res.Billed != 7_000_000 || res.Payable != 6_800_000 || res.Ledger.Paid != 6_800_000 {
-		t.Errorf("billed %d, payable %d, paid %d; want 7,000,000, 6,800,000 and 6,800,000", res.Billed, res.Payable, res.Ledger.Paid)
+	if res.Billed != 7_000_000 || res.Payable != 6_460_000 || res.Ledger.Paid != 6_460_000 {
+		t.Errorf("billed %d, payable %d, paid %d; want 7,000,000, 6,460,000 and 6,460,000", res.Billed, res.Payable, res.Ledger.Paid)
 	}
+	// The cataract line's use is what it was admitted at before the
+	// co-payment.
 	if res.Ledger.CataractUsed != (rules.EyeAmounts{Right: 1_200_000}) {
 		t.Errorf("cataract use = %+v", res.Ledger.CataractUsed)
 	}
 	checkLines(t, f, res)
 }
 
+// Every step but eligibility is coded; session 5 codes it.
 func TestImplemented(t *testing.T) {
 	for _, s := range rules.StepNames() {
-		if got, want := rules.Implemented(s), slices.Contains(steps1to3, s); got != want {
+		if got, want := rules.Implemented(s), s != rules.StepCheckEligibility; got != want {
 			t.Errorf("Implemented(%s) = %t, want %t", s, got, want)
 		}
 	}

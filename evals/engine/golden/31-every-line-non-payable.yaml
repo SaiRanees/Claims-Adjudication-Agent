@@ -1,0 +1,54 @@
+# A claim where every line is non-payable: a stay for evaluation only,
+# which the item matcher places in Annexure A List IV, item 2,
+# "Hospitalisation for evaluation/diagnostic purpose". Every line pays
+# nothing, and no line was set aside as unmodelled, so the policy makes the
+# claim pay nothing: a proposed denial, which is a valid result, not an
+# error. A person decides (rule 6).
+#
+# Sum insured ₹3,00,000. Stay 24 to 25 November: 2 calendar days, 1 billed.
+#
+# Step 1, listed items: annexure-a-list-iv L01 ₹3,000, L02 ₹12,000,
+#   L03 ₹2,500.
+# Step 2, daily caps: the room line pays nothing, so the bucket is empty.
+# Step 3, proportionate deduction: with no room charge left, the segment
+#   has no ratio, which raises no_room_charge.
+# Steps 4 to 6: nothing is left; the co-payment on ₹0 is ₹0.
+# Payable: ₹0, with no line zeroed as unmodelled and no discount:
+#   proposed_denial.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2025-11-24
+  discharge: 2025-11-25
+  segments:
+    - {from: 2025-11-24, to: 2025-11-25, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2025-11-24, quantity: 1, unit_price_paise: 300000, amount_paise: 300000, item_list: list-iv}
+    - {id: L02, category: diagnostics, service_date: 2025-11-24, quantity: 1, unit_price_paise: 1200000, amount_paise: 1200000, item_list: list-iv}
+    - {id: L03, category: professional-fees, service_date: 2025-11-24, quantity: 1, unit_price_paise: 250000, amount_paise: 250000, item_list: list-iv}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 0}
+    - {id: L02, payable_paise: 0}
+    - {id: L03, payable_paise: 0}
+  adjustments:
+    - {line: L01, rule: annexure-a-list-iv, paise: 300000}
+    - {line: L02, rule: annexure-a-list-iv, paise: 1200000}
+    - {line: L03, rule: annexure-a-list-iv, paise: 250000}
+  flags:
+    - {code: no_room_charge}
+    - {code: proposed_denial}
+  claim_payable_paise: 0
+  ledger:
+    paid_paise: 0
