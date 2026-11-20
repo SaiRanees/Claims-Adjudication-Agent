@@ -1,7 +1,9 @@
 package rules
 
 import (
+	"cmp"
 	"fmt"
+	"math"
 	"math/bits"
 	"slices"
 
@@ -74,6 +76,7 @@ func (c *claim) setAsideUnmodelledLines(s Step) error {
 				return err
 			}
 			c.flagLine(code, i)
+			c.setAside = true
 		}
 	}
 	c.record(adjs)
@@ -147,10 +150,10 @@ func (c *claim) applyDailyCaps(s Step) error {
 // A bucket line dated in a segment of the other kind (nursing on an ICU day,
 // say) raises bucket_segment_mismatch and is held to both caps: first its
 // own bucket's cap, then the segment's, whose bucket it joins at what its own
-// cap left. A bucket's days billed are the most days any of its lines bills,
-// because room, nursing and diet lines run over the same days. A line whose
-// days billed are neither the segment's calendar days nor one fewer raises
-// room_days_mismatch.
+// cap left. A bucket's days billed are the days its lines cover together
+// (daysCovered). room_days_mismatch is judged per category: when the days a
+// category's lines cover together in a segment are neither its calendar
+// days nor one fewer, each of those lines raises it.
 func (c *claim) planDailyCaps(s Step) (capPlan, error) {
 	var p capPlan
 	sumInsured, err := c.sumInsured()
@@ -174,9 +177,20 @@ func (c *claim) planDailyCaps(s Step) (capPlan, error) {
 		if b.billed, err = total(amt, members); err != nil {
 			return p, err
 		}
-		for _, i := range members {
-			if q := c.lines[i].Quantity; q != days && q != days-1 {
-				p.flags = append(p.flags, lineFlag{FlagRoomDaysMismatch, i})
+		for _, cat := range Categories() {
+			var same []int
+			for _, i := range members {
+				if c.lines[i].Category == cat {
+					same = append(same, i)
+				}
+			}
+			if len(same) == 0 {
+				continue
+			}
+			if d := c.daysCovered(sg, same); d != days && d != days-1 {
+				for _, i := range same {
+					p.flags = append(p.flags, lineFlag{FlagRoomDaysMismatch, i})
+				}
 			}
 		}
 
@@ -202,7 +216,7 @@ func (c *claim) planDailyCaps(s Step) (capPlan, error) {
 			if len(group) == 0 {
 				continue
 			}
-			groupTotal, perDay, err := c.capGroup(&p, s, amt, group, kind, sumInsured, days)
+			groupTotal, perDay, err := c.capGroup(&p, s, sg, amt, group, kind, sumInsured)
 			if err != nil {
 				return p, err
 			}
@@ -215,7 +229,7 @@ func (c *claim) planDailyCaps(s Step) (capPlan, error) {
 		admissible = append(admissible, nativeTotal)
 
 		// Then the segment's cap, over every line in its bucket.
-		_, perDay, err := c.capGroup(&p, s, amt, members, sg.Kind, sumInsured, days)
+		_, perDay, err := c.capGroup(&p, s, sg, amt, members, sg.Kind, sumInsured)
 		if err != nil {
 			return p, err
 		}
@@ -229,14 +243,14 @@ func (c *claim) planDailyCaps(s Step) (capPlan, error) {
 	return p, nil
 }
 
-// capGroup caps the lines in group, which belong to kind's bucket, at its
-// daily cap times the smaller of their days billed and the segment's
-// calendar days. It spreads any reduction across them by amount, adds it to
-// p's cuts and takes it off amt.
+// capGroup caps the lines in group, which belong to kind's bucket and are
+// dated in segment sg, at its daily cap times the smaller of the days they
+// cover together and the segment's calendar days. It spreads any reduction
+// across them by amount, adds it to p's cuts and takes it off amt.
 //
 // It returns the group's total before the cap, and the daily cap times the
 // days billed, which is what the ratio counts.
-func (c *claim) capGroup(p *capPlan, s Step, amt []money.Paise, group []int, kind SegmentKind, sumInsured money.Paise, days int64) (groupTotal, perDay money.Paise, err error) {
+func (c *claim) capGroup(p *capPlan, s Step, sg Segment, amt []money.Paise, group []int, kind SegmentKind, sumInsured money.Paise) (groupTotal, perDay money.Paise, err error) {
 	r, err := ruleFor(s, string(kind))
 	if err != nil {
 		return 0, 0, err
@@ -245,16 +259,15 @@ func (c *claim) capGroup(p *capPlan, s Step, amt []money.Paise, group []int, kin
 	if err != nil {
 		return 0, 0, fmt.Errorf("%s: %w", r.ID, err)
 	}
-	var billedDays int64
 	weights := make([]int64, len(group))
 	for k, i := range group {
-		billedDays = max(billedDays, c.lines[i].Quantity)
 		weights[k] = int64(amt[i])
 	}
 	if groupTotal, err = total(amt, group); err != nil {
 		return 0, 0, err
 	}
-	counted := min(billedDays, days)
+	billedDays := c.daysCovered(sg, group)
+	counted := min(billedDays, int64(sg.From.DaysUntil(sg.To))+1)
 	allowance, err := money.MulDiv(daily, counted, 1)
 	if err != nil {
 		return 0, 0, fmt.Errorf("%s: %w", r.ID, err)
@@ -278,6 +291,55 @@ func (c *claim) capGroup(p *capPlan, s Step, amt []money.Paise, group []int, kin
 		}
 	}
 	return groupTotal, perDay, nil
+}
+
+// daysCovered counts the days the lines in idx, all dated in segment sg,
+// cover together. Each line covers its quantity of days from its service
+// date; an undated one, possible only in a stay with one segment, from the
+// segment's first day. Days past the segment's end count, so billing more
+// days than the segment has shows. The count saturates at math.MaxInt64.
+func (c *claim) daysCovered(sg Segment, idx []int) int64 {
+	type span struct{ from, to int64 } // inclusive, in days from sg.From
+	spans := make([]span, 0, len(idx))
+	for _, i := range idx {
+		var from int64
+		if d := c.lines[i].ServiceDate; !d.IsZero() {
+			from = int64(sg.From.DaysUntil(d))
+		}
+		to := int64(math.MaxInt64)
+		if q := c.lines[i].Quantity; q-1 <= math.MaxInt64-from {
+			to = from + q - 1
+		}
+		spans = append(spans, span{from, to})
+	}
+	if len(spans) == 0 {
+		return 0
+	}
+	slices.SortFunc(spans, func(a, b span) int { return cmp.Or(cmp.Compare(a.from, b.from), cmp.Compare(a.to, b.to)) })
+	var days int64
+	length := func(s span) int64 {
+		if s.to-s.from == math.MaxInt64 {
+			return math.MaxInt64
+		}
+		return s.to - s.from + 1
+	}
+	cur := spans[0]
+	for _, s := range spans[1:] {
+		if s.from <= cur.to || s.from-1 == cur.to {
+			cur.to = max(cur.to, s.to)
+			continue
+		}
+		days = saturatingAdd(days, length(cur))
+		cur = s
+	}
+	return saturatingAdd(days, length(cur))
+}
+
+func saturatingAdd(a, b int64) int64 {
+	if a > math.MaxInt64-b {
+		return math.MaxInt64
+	}
+	return a + b
 }
 
 // limitOf is a limit's value for a sum insured: the lower of its share and

@@ -4,7 +4,7 @@ By the end of the week, one versioned rule pack encodes Go Digit's wording of Ar
 
 Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010 are accepted. Session 1 is done: the rule pack loads, validates and is selected through the policy period. Session 2 is done, with the three fixes from the session 1 review, and its first 10 golden cases are checked.
 
-Progress, 20 November: session 3 codes steps 1 to 3, and every figure they produce matches all 24 golden cases. Cases 01 to 21 are checked; 22 to 24 wait for their check.
+Progress, 20 November: session 3 is done: steps 1 to 3 are coded, and golden cases 01 to 24 are checked and pass. Session 4 codes every step but eligibility; all 32 golden cases pass in full, and cases 25 to 32 wait for their check.
 
 ## Decide first
 
@@ -156,7 +156,7 @@ Done when money's new functions pass their table and fuzz tests, the input-check
   - For a hospital without differential billing, the step is skipped (Note 3), so it raises neither `no_room_charge` nor `undated_line`: no ratio is needed. When the facts don't say, the step follows the wording and raises `differential_billing_unknown`.
 - [x] An undated line in a stay with more than one rate gets the lowest ratio in the stay and raises `undated_line`, so its interim figure is never above any reading of the bill. A reviewer supplies the date.
   - Only a scaled line raises it. An exempt line's figure doesn't depend on its date, and a bucket line needs a date (step 2).
-- [ ] Golden cases:
+- [x] Golden cases:
   - the worked example up to its ₹1,22,500 subtotal;
   - one sum insured where 2% binds and one where ₹5,000 binds;
   - a room rate just over the cap and one just under it;
@@ -173,28 +173,28 @@ Done when money's new functions pass their table and fuzz tests, the input-check
   - a line dated outside the stay;
   - a package line an Annexure list has already zeroed, which keeps the list's reason and raises no `package_rate`.
 
-  Written as cases 11 to 24 in `evals/engine/golden/`, with their arithmetic in comments. Cases 01 to 06 already cover the rest: the worked example (01), 2% binding (02) and ₹5,000 binding (01), a rate just over the cap (03), the nursing line (04), a room billed one day short (01 to 04), the ICU example (05), and differential billing answered no (06) and unknown (03). Cases 01 to 21 are checked; 22 to 24 wait for their check.
+  Written as cases 11 to 24 in `evals/engine/golden/`, with their arithmetic in comments. Cases 01 to 06 already cover the rest: the worked example (01), 2% binding (02) and ₹5,000 binding (01), a rate just over the cap (03), the nursing line (04), a room billed one day short (01 to 04), the ICU example (05), and differential billing answered no (06) and unknown (03). All 24 are checked and pass.
 
 Done when every golden case for steps 1 to 3 is checked and passes, including the worked example's ₹1,22,500 subtotal, to the paisa.
 
 ## Session 4: sub-limits, the cap, co-payment and the discount (steps 4 to 6)
 
-- [ ] Fix how a bucket's days billed are counted. Session 3 counted the most days on any one line, so a bill with one room line per day, which is common, counted as 1 day. Four daily ₹4,000 lines with a ₹50,000 surgeon's fee paid ₹19,593.75 with four `room_days_mismatch` flags instead of ₹62,700 with none.
+- [x] Fix how a bucket's days billed are counted. Session 3 counted the most days on any one line, so a bill with one room line per day, which is common, counted as 1 day. Four daily ₹4,000 lines with a ₹50,000 surgeon's fee paid ₹19,593.75 with four `room_days_mismatch` flags instead of ₹62,700 with none.
   - Each line covers its quantity of days from its service date; an undated bucket line, possible only in a stay with one segment, covers them from the segment's first day. A bucket's days billed are the days its lines cover together, for the allowance (step 2) and the ratio (step 3) alike.
   - `room_days_mismatch` is judged per category, on the days that category's lines cover together, and raised on each of them.
   - The fix changes none of cases 01 to 24. Case 25 is that bill.
-- [ ] Step 4 applies three sub-limits to the lines the facts tie to each treatment. Percentage limits use the eligible sum insured, without the cumulative bonus.
+- [x] Step 4 applies three sub-limits to the lines the facts tie to each treatment. Percentage limits use the eligible sum insured, without the cumulative bonus.
   - Cataract: the lower of 25% of the sum insured and ₹40,000 per eye, less what that eye has already used this policy year.
   - Listed modern treatments (C.I.6): 50% of the sum insured, less what has already been used.
   - Road ambulance: ₹2,000 per hospitalisation.
-- [ ] Step 5 caps the admissible total at the cover left: the eligible sum insured plus the cumulative bonus granted for the year, less the total paid this policy year, and never below zero.
+- [x] Step 5 caps the admissible total at the cover left: the eligible sum insured plus the cumulative bonus granted for the year, less the total paid this policy year, and never below zero.
   - When the admissible total exceeds the cover left, the engine raises `cover_exceeded`, carrying the co-pay-first payable after the same discount, so the two figures compare like for like (ADR 0009).
   - That figure is never lower than the payable, and can equal it: when no cover is left, or when rounding closes the gap. For example, 29 paise of cover against 30 paise admissible pays 28 paise either way.
-- [ ] Step 6: a co-payment of 5% of the capped amount, computed once with `Percent`.
-- [ ] The bill discount, declared last, deducts the smaller of the discount and the payable, spreads it across the lines with `Allocate`, and raises `bill_discount`. No line goes below zero, because the deduction never exceeds the lines' total. Deducting it after the co-payment is at or below every reading of where the discount fell, and a reviewer decides. Its rule cites Definition 26, "Medical Expenses", which covers only what was "necessarily and actually incurred"; a discount was never incurred.
-- [ ] Every claim-level reduction is spread across the lines with `Allocate`, weighted by each line's amount so far. The lines are sorted by ID first, so the input order never moves a paisa. `Allocate` returns `ErrNoWeight` whenever every weight is zero, even for a zero total, so the engine skips allocation when there is nothing to spread.
-- [ ] The ledger effects are filled in: the payable is the sum insured and bonus consumed, and the cataract and C.I.6 lines' amounts before the co-payment are their sub-limit use.
-- [ ] `proposed_denial` means the policy makes the claim pay nothing. The engine raises it when every tranche is excluded (session 5), or when the payable is zero, no line was zeroed as unmodelled, and the discount didn't take it to zero.
+- [x] Step 6: a co-payment of 5% of the capped amount, computed once with `Percent`.
+- [x] The bill discount, declared last, deducts the smaller of the discount and the payable, spreads it across the lines with `Allocate`, and raises `bill_discount`. No line goes below zero, because the deduction never exceeds the lines' total. Deducting it after the co-payment is at or below every reading of where the discount fell, and a reviewer decides. Its rule cites Definition 26, "Medical Expenses", which covers only what was "necessarily and actually incurred"; a discount was never incurred.
+- [x] Every claim-level reduction is spread across the lines with `Allocate`, weighted by each line's amount so far. The lines are sorted by ID first, so the input order never moves a paisa. `Allocate` returns `ErrNoWeight` whenever every weight is zero, even for a zero total, so the engine skips allocation when there is nothing to spread.
+- [x] The ledger effects are filled in: the payable is the sum insured and bonus consumed, and the cataract and C.I.6 lines' amounts before the co-payment are their sub-limit use.
+- [x] `proposed_denial` means the policy makes the claim pay nothing. The engine raises it when every tranche is excluded (session 5), or when the payable is zero, no line was zeroed as unmodelled, and the discount didn't take it to zero.
   - A claim that pays nothing only because a line is billed at a package rate or dated outside the stay isn't a proposed denial. Calling it one would steer a reviewer toward denying a claim the engine couldn't read. Its `package_rate` or `outside_stay` flag sends it to review instead.
   - A proposed denial is a valid result, not an error, and a person decides (rule 6).
 - [ ] Golden cases:

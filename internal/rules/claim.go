@@ -34,6 +34,15 @@ type claim struct {
 	// buckets holds each segment's bucket figures once the daily caps have
 	// run; proportionate deduction reads them.
 	buckets []bucket
+	// setAside records that a line was zeroed as unmodelled.
+	setAside bool
+	// exceeded is set when step 5 capped the claim at the cover left.
+	exceeded *coverExcess
+	// beforeCoPay is what each line paid just before the co-payment, which
+	// the ledger counts as sub-limit use.
+	beforeCoPay []money.Paise
+	// beforeDiscount is the payable just before the bill discount.
+	beforeDiscount *money.Paise
 }
 
 func newClaim(pack *Pack, f Facts, cv Cover) (*claim, error) {
@@ -139,20 +148,24 @@ func (c *claim) flagClaim(code FlagCode, figure money.Paise) {
 func (c *claim) result() (Result, error) {
 	res := Result{Pack: c.pack.Identity(), Lines: make([]LineResult, len(c.lines)), Adjustments: c.adjustments}
 	billed := make([]money.Paise, len(c.lines))
+	// A treatment's sub-limit use is what its lines were admitted at before
+	// the co-payment, because the sub-limits apply before it.
+	admitted := c.amount
+	if c.beforeCoPay != nil {
+		admitted = c.beforeCoPay
+	}
 	for i, l := range c.lines {
 		res.Lines[i] = LineResult{ID: l.ID, Billed: l.Amount, Payable: c.amount[i]}
 		billed[i] = l.Amount
-		// Until the sub-limits are coded, a treatment's lines are admitted
-		// at what they pay so far.
 		switch l.Treatment.Kind {
 		case TreatmentCataract:
 			if l.Treatment.Eye == EyeLeft {
-				res.Ledger.CataractUsed.Left += c.amount[i]
+				res.Ledger.CataractUsed.Left += admitted[i]
 			} else {
-				res.Ledger.CataractUsed.Right += c.amount[i]
+				res.Ledger.CataractUsed.Right += admitted[i]
 			}
 		case TreatmentModernTreatment:
-			res.Ledger.ModernTreatmentUsed += c.amount[i]
+			res.Ledger.ModernTreatmentUsed += admitted[i]
 		case TreatmentNone:
 		}
 	}
