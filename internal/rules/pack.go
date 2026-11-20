@@ -119,10 +119,13 @@ type Rule struct {
 	AppliesTo string
 
 	// StepCheckEligibility: a waiting period of Days or Months (one of the
-	// two), lifted after WaivedAfterMonths of continuous cover when non-zero.
+	// two), lifted after WaivedAfterMonths of continuous cover when non-zero,
+	// and not applied to a claim arising from an accident when
+	// WaivedForAccident is set.
 	Days              int64
 	Months            int64
 	WaivedAfterMonths int64
+	WaivedForAccident bool
 
 	// StepDropListedItems: a list effect. StepApplyProportionateDeduction:
 	// EffectScale or EffectNoScaling.

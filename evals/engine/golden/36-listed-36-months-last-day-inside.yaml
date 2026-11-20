@@ -1,0 +1,54 @@
+# The last day inside a 36-month wait for a listed condition (Excl02):
+# age-related osteoarthritis (36-month list, item 2). Cover has run
+# continuously since 10 September 2022, so the wait runs through
+# 9 September 2022 + 36 months = 9 September 2025, the day of this
+# admission.
+#
+# Sum insured ₹3,00,000, in one tranche. A 2-day stay, the room billed for
+# 1 day.
+#
+# Eligibility: the only tranche is still inside the wait, so no sum
+#   insured is eligible. Each line's billed amount is deducted under
+#   waiting-period-listed-36-months (Excl02):
+#   L01 ₹4,000, L02 ₹30,000. tranche_excluded carries the ₹3,00,000
+#   excluded.
+# Steps 2 to 6: nothing is left to pay. The bill has a room line, so
+#   no_room_charge isn't raised.
+# Payable: ₹0, a proposed denial. The engine never denies: a person
+#   decides (rule 6).
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: 2022-09-10
+
+facts:
+  admission: 2025-09-09
+  discharge: 2025-09-10
+  segments:
+    - {from: 2025-09-09, to: 2025-09-10, kind: room}
+  differential_billing: yes
+  condition:
+    listed_group: listed-36-months
+  lines:
+    - {id: L01, category: room-rent, service_date: 2025-09-09, quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: professional-fees, service_date: 2025-09-09, quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 0}
+    - {id: L02, payable_paise: 0}
+  adjustments:
+    - {line: L01, rule: waiting-period-listed-36-months, paise: 400000}
+    - {line: L02, rule: waiting-period-listed-36-months, paise: 3000000}
+  flags:
+    - {code: tranche_excluded, paise: 30000000}
+    - {code: proposed_denial}
+  claim_payable_paise: 0
+  ledger:
+    paid_paise: 0

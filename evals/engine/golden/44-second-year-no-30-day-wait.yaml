@@ -1,0 +1,48 @@
+# A claim early in the second year of continuous cover: the first policy
+# began on 1 April 2024, it renewed on 1 April 2025, and the admission is
+# on 8 April 2025, day 8 of the renewal. The 30 days count from the first
+# policy's start, not each renewal, and Excl03(ii) lifts them once cover
+# has run for more than 12 months, so there is no 30-day wait.
+#
+# Sum insured ₹3,00,000, so the room cap is the lower of 2% (₹6,000) and
+# ₹5,000: ₹5,000 a day. A 2-day stay, the room billed for 1 day.
+#
+# Eligibility: the only tranche is past every wait that applies.
+# Steps 2 and 3: the room, ₹4,000, is under its cap, so nothing is capped
+#   or scaled.
+# Subtotal: ₹4,000 + ₹30,000 = ₹34,000.
+# Step 6, co-payment: 5% of ₹34,000 = ₹1,700. Every share is exact:
+#   L01 ₹200, L02 ₹1,500.
+# Payable: ₹34,000 − ₹1,700 = ₹32,300.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: 2024-04-01
+
+facts:
+  admission: 2025-04-08
+  discharge: 2025-04-09
+  segments:
+    - {from: 2025-04-08, to: 2025-04-09, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2025-04-08, quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: professional-fees, service_date: 2025-04-08, quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 380000}
+    - {id: L02, payable_paise: 2850000}
+  adjustments:
+    - {line: L01, rule: co-payment, paise: 20000}
+    - {line: L02, rule: co-payment, paise: 150000}
+  flags: []
+  claim_payable_paise: 3230000
+  ledger:
+    paid_paise: 3230000

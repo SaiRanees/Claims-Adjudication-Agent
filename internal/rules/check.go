@@ -47,7 +47,7 @@ func checkInput(f Facts, c Cover) error {
 	if err := checkCondition(f.Condition); err != nil {
 		return err
 	}
-	return checkCover(c)
+	return checkCover(c, f.Admission)
 }
 
 // checkStay checks that the segments tile the stay: inclusive ranges in date
@@ -143,7 +143,9 @@ func checkCondition(c Condition) error {
 	return nil
 }
 
-func checkCover(c Cover) error {
+// checkCover checks the cover. A tranche whose continuous cover began after
+// the admission wasn't in force for the claim, so it is bad input.
+func checkCover(c Cover, admission Date) error {
 	if len(c.Tranches) == 0 {
 		return bad("Cover.Tranches", "the cover has no sum insured")
 	}
@@ -155,6 +157,8 @@ func checkCover(c Cover) error {
 			return bad(field+".SumInsured", "%d is below one paisa", t.SumInsured)
 		case t.ContinuousSince.IsZero():
 			return bad(field+".ContinuousSince", "missing")
+		case t.ContinuousSince.After(admission):
+			return bad(field+".ContinuousSince", "%s is after the admission on %s", t.ContinuousSince, admission)
 		}
 		sums[i] = t.SumInsured
 	}

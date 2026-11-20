@@ -191,28 +191,53 @@ clauses:
 # Each rule names what it applies_to. Every step has a fixed set of targets, and
 # its rules cover each target exactly once.
 steps:
-  # A pass-through until week 2, session 5, which decides how the waiting
-  # periods apply. Each one restarts for an increase in the sum insured
-  # (Excl01(b), Excl02(b), Excl03(iii)), and where a listed condition is also
-  # pre-existing, the longer period applies (Excl02(c)).
+  # Each tranche of the sum insured is tested on its own, from the date its
+  # continuous cover began (portability included), because every wait
+  # restarts for an increase in the sum insured (Excl01(b), Excl02(b),
+  # Excl03(iii)). Only the tranches past every wait that applies count toward
+  # the eligible sum insured, which the percentage limits and the cover cap
+  # use. Where a listed condition is also pre-existing, both waits apply, so
+  # the longer one decides (Excl02(c)).
+  #
+  # A wait of N days or months from a tranche's date D runs through
+  # (D - 1 day) + N, as a policy schedule's "one year less a day" does, and
+  # the next day is covered: the 30 days from 1 May run through 30 May, and
+  # 24 months from 29 February 2024 through 28 February 2026. Adding N to D
+  # would end some waits a day sooner, the higher reading.
+  #
+  # When no tranche is eligible, every line is deducted under one rule: the
+  # wait that ends last of those excluding the oldest tranche, ties going to
+  # this order. The oldest tranche becomes eligible first, so its wait is
+  # what stands between the claim and payment.
+  #
+  # Which waits an accident lifts is waived_for_accident: Excl03(i) and
+  # Excl02(a) exclude claims arising from an accident from their waits;
+  # Excl01 doesn't.
   - step: check-eligibility
     rules:
       # Excl03(i) excludes "treatment of any illness within 30 days from the
-      # first policy commencement date", except after an accident. Excl03(ii)
-      # lifts it once continuous coverage has run for "more than twelve
-      # months".
+      # first policy commencement date". When the facts give the illness's
+      # onset date, the onset decides: an onset inside the 30 days excludes
+      # the claim even if the admission is after them, the lower reading.
+      # The admission date decides only when no onset is known. Excl03(ii)
+      # lifts the wait once continuous coverage has run for "more than twelve
+      # months", which within the 30 days of a tranche's own date it never
+      # has, so an increase gets its own 30 days (Excl03(iii)).
       - id: waiting-period-first-30-days
         clause: Excl03
         applies_to: any-illness
+        waived_for_accident: true
         days: 30
         waived_after_months: 12
       - id: waiting-period-listed-24-months
         clause: Excl02
         applies_to: listed-24-months
+        waived_for_accident: true
         months: 24
       - id: waiting-period-listed-36-months
         clause: Excl02
         applies_to: listed-36-months
+        waived_for_accident: true
         months: 36
       - id: waiting-period-pre-existing
         clause: Excl01

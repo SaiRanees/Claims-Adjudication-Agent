@@ -10,8 +10,10 @@
 # Step 1, listed items: annexure-a-list-iv L01 ₹3,000, L02 ₹12,000,
 #   L03 ₹2,500.
 # Step 2, daily caps: the room line pays nothing, so the bucket is empty.
-# Step 3, proportionate deduction: with no room charge left, the segment
-#   has no ratio, which raises no_room_charge.
+# Step 3, proportionate deduction: with no room charge left to pay, the
+#   segment has no ratio, but no line is left to scale either. The bill
+#   does have a room line, so no_room_charge isn't raised: it means the bill
+#   has no room or ICU line at all (session 5).
 # Steps 4 to 6: nothing is left; the co-payment on ₹0 is ₹0.
 # Payable: ₹0, with no line zeroed as unmodelled and no discount:
 #   proposed_denial.
@@ -47,7 +49,6 @@ expected:
     - {line: L02, rule: annexure-a-list-iv, paise: 1200000}
     - {line: L03, rule: annexure-a-list-iv, paise: 250000}
   flags:
-    - {code: no_room_charge}
     - {code: proposed_denial}
   claim_payable_paise: 0
   ledger:

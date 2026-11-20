@@ -8,17 +8,16 @@ import (
 // ErrNoPackGiven means Adjudicate was called without a pack.
 var ErrNoPackGiven = errors.New("rules: no pack")
 
-// Implemented reports whether the engine codes a step yet. A step it doesn't
-// code passes every line through unchanged. The golden runner compares only
-// what coded steps produce, so a checked case can wait for its steps without
-// failing (week 2, session 5 codes eligibility).
+// Implemented reports whether the engine codes a step. The golden runner
+// compares only what coded steps produce, so while the steps were coded one
+// session at a time, a checked case could wait for its steps without
+// failing. Since week 2, session 5, every step is coded.
 func Implemented(s StepName) bool {
 	switch s {
-	case StepDropListedItems, StepSetAsideUnmodelledLines, StepApplyDailyCaps, StepApplyProportionateDeduction,
-		StepApplySubLimits, StepCapAtCoverLeft, StepTakeCoPayment, StepTakeBillDiscount:
+	case StepCheckEligibility, StepDropListedItems, StepSetAsideUnmodelledLines, StepApplyDailyCaps,
+		StepApplyProportionateDeduction, StepApplySubLimits, StepCapAtCoverLeft, StepTakeCoPayment,
+		StepTakeBillDiscount:
 		return true
-	case StepCheckEligibility:
-		return false
 	}
 	return false
 }
@@ -27,8 +26,7 @@ func Implemented(s StepName) bool {
 // pack, facts and cover always give the same result, whatever order the
 // lines come in.
 //
-// It runs the steps in the order the pack declares. Every step is coded
-// except eligibility, which passes every tranche until week 2, session 5.
+// It runs the steps in the order the pack declares.
 func Adjudicate(pack *Pack, facts Facts, cover Cover) (Result, error) {
 	if pack == nil {
 		return Result{}, ErrNoPackGiven
@@ -70,8 +68,7 @@ func (c *claim) run(s Step) error {
 	case StepTakeBillDiscount:
 		return c.takeBillDiscount(s)
 	case StepCheckEligibility:
-		// Not coded yet: every tranche counts.
-		return nil
+		return c.checkEligibility(s)
 	}
 	return fmt.Errorf("unknown step %q", s.Name)
 }

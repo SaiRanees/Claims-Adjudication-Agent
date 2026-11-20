@@ -194,6 +194,10 @@ var malformedCases = []malformed{
 		wantErr: rules.ErrInvalidValue, wantPath: "steps[4].rules[0].effect"},
 	{name: "list effect on a proportionate-deduction rule", old: "        applies_to: room\n        effect: scale\n", new: "        applies_to: room\n        effect: not-payable\n",
 		wantErr: rules.ErrInvalidValue, wantPath: "steps[4].rules[0].effect"},
+	{name: "waived_for_accident not a boolean", old: "        waived_for_accident: true\n        days: 30\n", new: "        waived_for_accident: yes\n        days: 30\n",
+		wantErr: rules.ErrType, wantPath: "steps[0].rules[0].waived_for_accident"},
+	{name: "waived_for_accident on a sub-limit", old: "        per: hospitalisation\n", new: "        per: hospitalisation\n        waived_for_accident: true\n",
+		wantErr: rules.ErrUnknownField, wantPath: "steps[5].rules[2].waived_for_accident"},
 	{name: "unmodelled no-scaling rule", old: icuScalingRule, new: "      - id: no-proportionate-deduction-icu\n        unmodelled: true\n        applies_to: icu\n        effect: no-scaling\n",
 		wantErr: rules.ErrInvalidValue, wantPath: "steps[4].rules[1].unmodelled"},
 }
