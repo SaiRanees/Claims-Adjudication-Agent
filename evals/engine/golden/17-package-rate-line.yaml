@@ -1,0 +1,71 @@
+# A line billed at a package rate. The engine doesn't model packages, so the
+# step that sets aside unmodelled lines deducts the whole line under
+# unmodelled-package-rate, which cites no clause, and raises package_rate on
+# it. A reviewer decides what the package pays.
+#
+# That step runs before the daily caps, so the package line, though in a
+# scaled category, gets no ratio deduction, and with nothing left it takes
+# no share of the co-payment. Other lines still pay, so the claim isn't a
+# proposed denial.
+#
+# Sum insured ₹5,00,000, so the room cap is ₹5,000 a day. Stay 14 to 17
+# July: 4 calendar days, 3 billed at ₹6,000. The ₹60,000 package covers the
+# procedure; the room, the anaesthetist and the pharmacy are billed outside
+# it.
+#
+# Unmodelled lines, before step 2: L02 ₹60,000 is billed at a package rate.
+#   unmodelled-package-rate ₹60,000, and package_rate on L02.
+# Step 2, daily caps: L01 ₹18,000 capped at 3 × ₹5,000 = ₹15,000.
+#   daily-cap-room ₹3,000.
+# Step 3, proportionate deduction: ratio ₹15,000 ÷ ₹18,000 = 5/6.
+#   L03 600,000 × 1,500,000 ÷ 1,800,000 = 500,000 exactly, so
+#   proportionate-deduction-room ₹1,000. L02 is already zero. L04 pharmacy
+#   is exempt.
+# Subtotal: ₹15,000 + ₹0 + ₹5,000 + ₹9,000 = ₹29,000.
+# Step 6, co-payment: 5% of ₹29,000 = ₹1,450, spread by each line's amount
+#   so far. Every share is exact: L01 ₹750, L02 nothing, L03 ₹250,
+#   L04 ₹450.
+# Payable: ₹29,000 − ₹1,450 = ₹27,550.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2025-07-14
+  discharge: 2025-07-17
+  segments:
+    - {from: 2025-07-14, to: 2025-07-17, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2025-07-14, quantity: 3, unit_price_paise: 600000, amount_paise: 1800000}
+    # "Laparoscopic appendectomy package".
+    - {id: L02, category: other-hospital-charges, service_date: 2025-07-15, quantity: 1, unit_price_paise: 6000000, amount_paise: 6000000, package_rate: true}
+    # The anaesthetist, billed outside the package.
+    - {id: L03, category: professional-fees, service_date: 2025-07-15, quantity: 1, unit_price_paise: 600000, amount_paise: 600000}
+    - {id: L04, category: pharmacy-consumables, service_date: 2025-07-15, quantity: 1, unit_price_paise: 900000, amount_paise: 900000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 1425000}
+    - {id: L02, payable_paise: 0}
+    - {id: L03, payable_paise: 475000}
+    - {id: L04, payable_paise: 855000}
+  adjustments:
+    - {line: L02, rule: unmodelled-package-rate, paise: 6000000}
+    - {line: L01, rule: daily-cap-room, paise: 300000}
+    - {line: L03, rule: proportionate-deduction-room, paise: 100000}
+    - {line: L01, rule: co-payment, paise: 75000}
+    - {line: L03, rule: co-payment, paise: 25000}
+    - {line: L04, rule: co-payment, paise: 45000}
+  flags:
+    - {code: package_rate, line: L02}
+  claim_payable_paise: 2755000
+  ledger:
+    paid_paise: 2755000

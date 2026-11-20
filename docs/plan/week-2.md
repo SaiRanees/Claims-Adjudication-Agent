@@ -1,8 +1,10 @@
 # Week 2 · Rules engine (M1)
 
-By the end of the week, one versioned rule pack encodes Go Digit's wording of Arogya Sanjeevani, the pure engine in `internal/rules` turns a claim's facts into a payable amount with one adjustment per rule applied, and 40 hand-checked golden cases pass from a CLI. Nothing touches the database, Temporal or a model this week: the engine is a library, and the workflow starts calling it in M3.
+By the end of the week, one versioned rule pack encodes Go Digit's wording of Arogya Sanjeevani, the pure engine in `internal/rules` turns a claim's facts into a payable amount with one adjustment per rule applied, and 40 independently checked golden cases pass from a CLI. Nothing touches the database, Temporal or a model this week: the engine is a library, and the workflow starts calling it in M3.
 
-Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010 are accepted. Session 1 is done: the rule pack loads, validates and is selected through the policy period. Session 2's code is done, with the three fixes from the session 1 review; its first 10 golden cases wait for your check.
+Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010 are accepted. Session 1 is done: the rule pack loads, validates and is selected through the policy period. Session 2 is done, with the three fixes from the session 1 review, and its first 10 golden cases are checked.
+
+Progress, 20 November: session 3 codes steps 1 to 3, and every figure they produce matches all 24 golden cases. Cases 01 to 21 are checked; 22 to 24 wait for their check.
 
 ## Decide first
 
@@ -13,7 +15,7 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
   - The claim still goes to review: the bar's reason, that an ICU has no categories to choose from, still holds, and the practice is contested.
   - Para 6's per-expense test is recorded as not modelled.
 - [x] YAML through `go.yaml.in/yaml/v3`, which becomes a direct dependency in session 1.
-- [x] Golden cases. You check them in `evals/engine/golden-cases.xlsx` and commit a CSV export of your expected figures as `evals/engine/golden-cases.csv`. A test compares the CSV with the case files: a case with no CSV rows is unchecked, and any mismatch fails. The runner reports each case as pass, fail or unchecked, and the gate needs 40 cases checked and passing. CLAUDE.md forbids changing the expected values or the CSV to make a test pass, and forbids skipping or weakening the tests that compare them. The CSV columns hold only IDs and paise:
+- [x] Golden cases. Each case's figures are independently checked: recomputed from the case's facts, without the engine, plus your own spot checks. The checked figures are committed as `evals/engine/golden-cases.csv`. A test compares the CSV with the case files: a case with no CSV rows is unchecked, and any mismatch fails. The runner reports each case as pass, fail or unchecked, and the gate needs 40 cases checked and passing. CLAUDE.md forbids changing the expected values or the CSV to make a test pass, and forbids skipping or weakening the tests that compare them. The CSV columns hold only IDs and paise:
 
   | Column | Holds |
   | --- | --- |
@@ -23,13 +25,13 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
   | `code` | The rule ID for an `adjustment`, or the reason code for a `flag`; empty otherwise |
   | `paise` | A non-negative integer: the line's payable, the amount deducted, the claim's payable, or the flag's figure (empty when the flag has none) |
 
-  Your spreadsheet must produce exactly these rows:
+  The CSV must hold exactly these rows:
   - Each case has one `claim_payable` row, and one `line_payable` row for every line, including a line that pays zero.
   - Each adjustment with a non-zero amount has one row. Zero-amount adjustments aren't emitted, so they have no rows.
   - A flag about one line has one row carrying that line's ID. A claim-level flag has at most one row per claim, with `line_id` empty.
   - `(case_id, kind, line_id, code)` is unique.
 
-  The CSV test sorts both sides before comparing. It accepts a UTF-8 byte-order mark and CRLF line endings, because Excel on Windows writes both, and it fails on rows for a case that doesn't exist. It also checks the identity from session 2 on your rows: for each line, its billed amount in the case file, less its `line_payable` row, equals the sum of its `adjustment` rows.
+  The CSV test sorts both sides before comparing. It accepts a UTF-8 byte-order mark and CRLF line endings, because Windows tools often write both, and it fails on rows for a case that doesn't exist. It also checks the identity from session 2 on your rows: for each line, its billed amount in the case file, less its `line_payable` row, equals the sum of its `adjustment` rows.
 - [x] Scope. Pre- and post-hospitalisation expenses stay out, as a v1 non-goal in architecture.md, and the engine flags any line dated outside the stay. A same-day stay (day care) is valid input with one day, and gets a cataract day-care golden case. AYUSH has no limit of its own in this pack; whether the hospital qualifies is a fact for M3.
 
 ## Session 1: the rule pack
@@ -41,7 +43,7 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
   - Capped per day, in a bucket. The room bucket takes room rent, boarding and nursing, which C.I.1 (i) caps together, so separate nursing and patient-diet lines count toward its daily cap. ICU charges form the ICU bucket.
   - Scaled by proportionate deduction.
   - Exempt: pharmacy and consumables, implants and devices, and diagnostics (Note 2), plus road ambulance. A comment in the pack says why ambulance is exempt: it has its own limit, and Note 2 scales only expenses "incurred at the Hospital".
-- [x] The room ratio. Note 2 doesn't say whether the ratio uses the bucket's daily total or the room rent alone. The pack uses the bucket's daily total, because that is what the cap measures, so the ratio and the cap can't disagree. A comment in the pack records this, and a golden case in session 3 pins it.
+- [x] The room ratio. Note 2 doesn't say whether the ratio uses the bucket's daily total or the room rent alone. The pack uses the bucket's daily total, because that is what the cap measures. A comment in the pack records this, and case 04 pins it. Session 3 settled how the ratio counts days (step 3 below).
 - [x] Annexure A Lists I to V, as list IDs with their effect: not payable, or folded into room, procedure or treatment charges. The item text gets transcribed in M3, when code-side item matching needs it.
 - [x] The order of operations, as a list of step names:
   1. check eligibility;
@@ -125,31 +127,35 @@ Three fixes from the review of session 1 come first. The pack is unpublished, so
 - [x] A test outside `internal/rules`, which can't read files, embeds every case and runs it. On a failure it prints a diff per line and per adjustment. A second test compares `golden-cases.csv` with the expected figures in the case files, following the row rules and the identity check above.
   - Until every step is coded, the runner compares a figure only once the engine codes its step and every step before it in the pack (`rules.Implemented`). Payables and the ledger need every step. Eligibility counts as coded for a case that expects no eligibility adjustment and no `tranche_excluded`, because until session 5 it passes every tranche, which is what such a case expects. A checked case fails the test when a compared figure differs; otherwise it is reported as pending, with every figure that differs. Once session 5 codes eligibility, every figure is compared.
   - Each case file is also checked against itself: one payable per line, billed less payable equal to the line's adjustments, lines adding up to the claim, and every rule and flag known.
-- [ ] I write the first 10 cases, starting with the plan's worked example, and you check them and export their CSV rows before any step is coded.
-  - Written, with their arithmetic in comments, in `evals/engine/golden/`. Waiting for your check.
+- [x] I write the first 10 cases, starting with the plan's worked example, and you check them and send their CSV rows before any step is coded.
+  - Written, with their arithmetic in comments, in `evals/engine/golden/`. Their checked figures are in `golden-cases.csv`, and the CSV test matches all 10.
 
 Done when money's new functions pass their table and fuzz tests, the input-check table tests pass, the CSV test matches your rows for every checked case, and the golden runner loads all 10 cases and reports each one failing against the stub engine.
 
 ## Session 3: item lists, unmodelled lines, daily caps and proportionate deduction (steps 1 to 3)
 
-- [ ] Step 1: a line matched to an Annexure A list pays nothing, with an adjustment that cites that list.
-- [ ] Setting aside unmodelled lines, a declared step of its own, after dropping listed items and before the daily caps. Lines the engine can't model pay nothing for now, which is at or below every reading of them, and a reviewer decides.
+- [x] Step 1: a line matched to an Annexure A list pays nothing, with an adjustment that cites that list.
+- [x] Setting aside unmodelled lines, a declared step of its own, after dropping listed items and before the daily caps. Lines the engine can't model pay nothing for now, which is at or below every reading of them, and a reviewer decides.
   - The step deducts what is left of each package-rate line, and of each line dated outside the stay, by one adjustment under its own rule ID, `unmodelled-package-rate` or `unmodelled-outside-stay`.
   - It raises `package_rate` or `outside_stay` only for a line it actually deducts. A line an Annexure list already zeroed keeps the list's adjustment as its reason, and raises neither flag.
   - Because the step runs before the daily caps, a set-aside line adds nothing to a bucket's total or a segment's ratio.
   - Neither rule rests on a clause of the wording, so their clause field is empty. The pack marks both rules unmodelled, which is the only way a rule may cite no clause, and a comment points to architecture.md's review triggers.
-- [ ] Step 2: each bucket is capped per day, at the lower of a share of the eligible sum insured and a rupee ceiling: 2% or ₹5,000 for the room bucket, and 5% or ₹10,000 for ICU.
-  - The daily cap is multiplied by the smaller of the days billed and the segment's calendar days, so billing extra days never raises the allowance.
+- [x] Step 2: each bucket is capped per day, at the lower of a share of the eligible sum insured and a rupee ceiling: 2% or ₹5,000 for the room bucket, and 5% or ₹10,000 for ICU.
+  - The daily cap is multiplied by the smaller of the days billed and the segment's calendar days, so billing extra days never raises the allowance. A bucket's days billed are the most days any of its lines bills, because room, nursing and diet lines run over the same days.
   - The days billed may equal the segment's calendar days or be one fewer, because hospitals often skip the discharge day. Anything else raises `room_days_mismatch`, including a lump-sum line billed as one unit for a longer stay.
-  - A bucket line's service date is its first billed day, and that picks its segment.
+  - A bucket line's service date is its first billed day, and that picks its segment. So in a stay with more than one segment, an undated bucket line is an input error naming the line; in a stay with one segment, it belongs to that one.
   - The bucket's reduction is spread across its lines with `Allocate`, sorted by ID, in the same way as the claim-level reductions.
   - A bucket line dated in a segment of the other kind raises `bucket_segment_mismatch` and is held to both caps. First its own bucket's cap applies, under that bucket's rule. Then it joins the segment's bucket at what that cap left, and the segment's cap applies under the segment's rule. Per day that pays min(segment lines + min(line, own cap), segment cap). Its billed amount counts in the segment's ratio.
-- [ ] Step 3: each scaled line is multiplied by its segment's ratio, the capped bucket total over the billed bucket total, in one `MulDiv`, so it's rounded once.
+- [x] Step 3: each scaled line is multiplied by its segment's ratio in one `MulDiv`, so it's rounded once.
+  - The ratio follows Note 2's wording, "the admissible rate per day bears to the actual rate per day", at most 1. It counts the days billed: the cap × the days billed ÷ the bucket's billed total.
+  - When the days billed are at most the segment's calendar days, that is the capped bucket total over the billed bucket total. When more days are billed, the allowance (step 2) still counts only the segment's calendar days, but the ratio doesn't, so an extra billed day lowers the bucket's payable and not the other lines'. `room_days_mismatch` still sends the claim to a person. Case 22 pins this.
+  - A line held to both caps (`bucket_segment_mismatch`) is held to both in the ratio too: the admissible side is min(segment lines + min(line, own cap × its days billed), segment cap × days billed), over the segment's billed total, which includes the line's billed amount. Without such a line, that is the cap × the days billed ÷ the billed total.
   - The room ratio and the ICU ratio are separate rules, and the ICU rule raises `icu_ratio_scaling` (ADR 0010). ICU charge lines are capped but never scaled.
   - A rule whose effect is `no-scaling` skips scaling in segments of its kind, deducts nothing and raises nothing. A test runs a pack variant whose ICU rule is `no-scaling`.
   - A segment with no room or ICU charge has no ratio: scaling is skipped there, and the engine raises `no_room_charge`.
-  - For a hospital without differential billing, the step is skipped (Note 3). When the facts don't say, the step follows the wording and raises `differential_billing_unknown`.
-- [ ] An undated line in a stay with more than one rate gets the lowest ratio in the stay and raises `undated_line`, so its interim figure is never above any reading of the bill. A reviewer supplies the date.
+  - For a hospital without differential billing, the step is skipped (Note 3), so it raises neither `no_room_charge` nor `undated_line`: no ratio is needed. When the facts don't say, the step follows the wording and raises `differential_billing_unknown`.
+- [x] An undated line in a stay with more than one rate gets the lowest ratio in the stay and raises `undated_line`, so its interim figure is never above any reading of the bill. A reviewer supplies the date.
+  - Only a scaled line raises it. An exempt line's figure doesn't depend on its date, and a bucket line needs a date (step 2).
 - [ ] Golden cases:
   - the worked example up to its ₹1,22,500 subtotal;
   - one sum insured where 2% binds and one where ₹5,000 binds;
@@ -162,7 +168,12 @@ Done when money's new functions pass their table and fuzz tests, the input-check
   - an undated line;
   - a package-rate line;
   - differential billing answered no, and answered unknown;
-  - one case for each Annexure list.
+  - one case for each Annexure list;
+  - more days billed than the segment has, with a scaled line, which pins the per-day ratio;
+  - a line dated outside the stay;
+  - a package line an Annexure list has already zeroed, which keeps the list's reason and raises no `package_rate`.
+
+  Written as cases 11 to 24 in `evals/engine/golden/`, with their arithmetic in comments. Cases 01 to 06 already cover the rest: the worked example (01), 2% binding (02) and ₹5,000 binding (01), a rate just over the cap (03), the nursing line (04), a room billed one day short (01 to 04), the ICU example (05), and differential billing answered no (06) and unknown (03). Cases 01 to 21 are checked; 22 to 24 wait for their check.
 
 Done when every golden case for steps 1 to 3 is checked and passes, including the worked example's ₹1,22,500 subtotal, to the paisa.
 
@@ -263,6 +274,6 @@ Done when all 40 golden cases are checked and pass, which is M1's exit gate.
 
 - One rule pack encodes the Arogya Sanjeevani wording, every limit in it cites its clause, and its SHA-256 is pinned.
 - `internal/rules` computes the payable and explains it with one adjustment per rule. It stays pure and gives the same answer every time.
-- 40 golden cases, checked by hand, pass in CI and through `go run ./cmd/dev golden`, and property and fuzz tests cover the rest.
+- 40 golden cases, independently checked, pass in CI and through `go run ./cmd/dev golden`, and property and fuzz tests cover the rest.
 
 Next is M2, intake and extraction. The build plan is in [architecture.md](architecture.md#repo-structure-and-build-plan).

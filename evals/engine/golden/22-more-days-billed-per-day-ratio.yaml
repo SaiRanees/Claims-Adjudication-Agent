@@ -1,0 +1,59 @@
+# More days billed than the segment has, with a scaled line: the ratio
+# follows Note 2, "the admissible rate per day bears to the actual rate per
+# day", so it counts the days billed. The allowance still counts only the
+# segment's days, and 5 days billed for 4 raises room_days_mismatch on L01.
+#
+# Sum insured ₹5,00,000, so the room cap is ₹5,000 a day. Stay 5 to 8
+# January: 4 calendar days, billed for 5 at ₹8,000.
+#
+# Step 2, daily caps: L01 billed 5 × ₹8,000 = ₹40,000; capped at
+#   min(5, 4) = 4 × ₹5,000 = ₹20,000. daily-cap-room ₹20,000 on L01.
+# Step 3, proportionate deduction: ratio = ₹5,000 × 5 days billed ÷
+#   ₹40,000 = 2,500,000 ÷ 4,000,000 = 62.5%, which is the rate per day,
+#   ₹5,000 ÷ ₹8,000.
+#   L02 4,000,000 × 2,500,000 ÷ 4,000,000 = 2,500,000 exactly (₹25,000), so
+#   proportionate-deduction-room ₹15,000. L03 pharmacy is exempt.
+#   The capped total over the billed total, ₹20,000 ÷ ₹40,000 = 50%, would
+#   have paid L02 ₹20,000.
+# Subtotal: ₹20,000 + ₹25,000 + ₹6,000 = ₹51,000.
+# Step 6, co-payment: 5% of ₹51,000 = ₹2,550. Every share is exact:
+#   L01 ₹1,000, L02 ₹1,250, L03 ₹300.
+# Payable: ₹51,000 − ₹2,550 = ₹48,450.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2026-01-05
+  discharge: 2026-01-08
+  segments:
+    - {from: 2026-01-05, to: 2026-01-08, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2026-01-05, quantity: 5, unit_price_paise: 800000, amount_paise: 4000000}
+    - {id: L02, category: professional-fees, service_date: 2026-01-06, quantity: 1, unit_price_paise: 4000000, amount_paise: 4000000}
+    - {id: L03, category: pharmacy-consumables, service_date: 2026-01-06, quantity: 1, unit_price_paise: 600000, amount_paise: 600000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 1900000}
+    - {id: L02, payable_paise: 2375000}
+    - {id: L03, payable_paise: 570000}
+  adjustments:
+    - {line: L01, rule: daily-cap-room, paise: 2000000}
+    - {line: L02, rule: proportionate-deduction-room, paise: 1500000}
+    - {line: L01, rule: co-payment, paise: 100000}
+    - {line: L02, rule: co-payment, paise: 125000}
+    - {line: L03, rule: co-payment, paise: 30000}
+  flags:
+    - {code: room_days_mismatch, line: L01}
+  claim_payable_paise: 4845000
+  ledger:
+    paid_paise: 4845000

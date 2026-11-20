@@ -1,0 +1,62 @@
+# A line dated outside the stay. Pre- and post-hospitalisation expenses
+# aren't modelled (a v1 non-goal), so the step that sets aside unmodelled
+# lines deducts the whole line under unmodelled-outside-stay, which cites
+# no clause, and raises outside_stay on it. A person decides whether it is
+# payable. A line dated on the discharge day is inside the stay.
+#
+# Sum insured ₹5,00,000, so the room cap is ₹5,000 a day; the room is
+# ₹4,000. Stay 20 to 23 October: 4 calendar days, 3 billed.
+#
+# Unmodelled lines, before step 2: L04, medicines bought on 24 October, the
+#   day after discharge, is outside the stay. unmodelled-outside-stay
+#   ₹2,500, and outside_stay on L04. L03, a scan on 23 October, the
+#   discharge day, stays.
+# Step 2, daily caps: L01 ₹12,000, under 3 × ₹5,000 = ₹15,000. No deduction.
+# Step 3, proportionate deduction: ratio ₹12,000 ÷ ₹12,000 = 1, so nothing
+#   is scaled.
+# Subtotal: ₹12,000 + ₹28,000 + ₹5,000 + ₹0 = ₹45,000.
+# Step 6, co-payment: 5% of ₹45,000 = ₹2,250. Every share is exact:
+#   L01 ₹600, L02 ₹1,400, L03 ₹250, L04 nothing.
+# Payable: ₹45,000 − ₹2,250 = ₹42,750. Other lines pay, so the claim isn't a
+#   proposed denial.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2025-10-20
+  discharge: 2025-10-23
+  segments:
+    - {from: 2025-10-20, to: 2025-10-23, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2025-10-20, quantity: 3, unit_price_paise: 400000, amount_paise: 1200000}
+    - {id: L02, category: professional-fees, service_date: 2025-10-21, quantity: 1, unit_price_paise: 2800000, amount_paise: 2800000}
+    # A scan on the discharge day.
+    - {id: L03, category: diagnostics, service_date: 2025-10-23, quantity: 1, unit_price_paise: 500000, amount_paise: 500000}
+    # Medicines bought the day after discharge.
+    - {id: L04, category: pharmacy-consumables, service_date: 2025-10-24, quantity: 1, unit_price_paise: 250000, amount_paise: 250000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 1140000}
+    - {id: L02, payable_paise: 2660000}
+    - {id: L03, payable_paise: 475000}
+    - {id: L04, payable_paise: 0}
+  adjustments:
+    - {line: L04, rule: unmodelled-outside-stay, paise: 250000}
+    - {line: L01, rule: co-payment, paise: 60000}
+    - {line: L02, rule: co-payment, paise: 140000}
+    - {line: L03, rule: co-payment, paise: 25000}
+  flags:
+    - {code: outside_stay, line: L04}
+  claim_payable_paise: 4275000
+  ledger:
+    paid_paise: 4275000

@@ -1,0 +1,55 @@
+# A hospital billing more days than the segment has: 5 days for a stay of 4
+# calendar days. The cap counts the segment's days, min(5, 4) = 4, so
+# billing an extra day never raises the allowance. 5 is neither 4 nor 3, so
+# L01 raises room_days_mismatch.
+#
+# Sum insured ₹5,00,000, so the room cap is ₹5,000 a day. Stay 8 to 11
+# December, billed for 5 days at ₹6,000.
+#
+# Step 2, daily caps: L01 billed 5 × ₹6,000 = ₹30,000; capped at
+#   4 × ₹5,000 = ₹20,000. Counting the 5 days billed would allow ₹25,000.
+#   daily-cap-room ₹10,000 on L01.
+# Step 3, proportionate deduction: L02 pharmacy and L03 diagnostics are
+#   exempt. The case has no scaled line, so it pins only the days the cap
+#   counts.
+# Subtotal: ₹20,000 + ₹10,000 + ₹7,000 = ₹37,000.
+# Step 6, co-payment: 5% of ₹37,000 = ₹1,850. Every share is exact:
+#   L01 ₹1,000, L02 ₹500, L03 ₹350.
+# Payable: ₹37,000 − ₹1,850 = ₹35,150.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2025-12-08
+  discharge: 2025-12-11
+  segments:
+    - {from: 2025-12-08, to: 2025-12-11, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2025-12-08, quantity: 5, unit_price_paise: 600000, amount_paise: 3000000}
+    - {id: L02, category: pharmacy-consumables, service_date: 2025-12-09, quantity: 1, unit_price_paise: 1000000, amount_paise: 1000000}
+    - {id: L03, category: diagnostics, service_date: 2025-12-08, quantity: 1, unit_price_paise: 700000, amount_paise: 700000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 1900000}
+    - {id: L02, payable_paise: 950000}
+    - {id: L03, payable_paise: 665000}
+  adjustments:
+    - {line: L01, rule: daily-cap-room, paise: 1000000}
+    - {line: L01, rule: co-payment, paise: 100000}
+    - {line: L02, rule: co-payment, paise: 50000}
+    - {line: L03, rule: co-payment, paise: 35000}
+  flags:
+    - {code: room_days_mismatch, line: L01}
+  claim_payable_paise: 3515000
+  ledger:
+    paid_paise: 3515000

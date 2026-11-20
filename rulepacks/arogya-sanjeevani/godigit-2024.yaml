@@ -311,8 +311,12 @@ steps:
   #
   # Note 2 doesn't say whether the ratio uses the bucket's daily total or the
   # room rent alone. This pack uses the bucket's daily total, because that is
-  # what the cap measures, so the ratio and the cap can't disagree. A golden
-  # case in week 2, session 3 pins this.
+  # what the cap measures; golden case 04 pins it. Note 2 compares rates "per
+  # day", so the ratio counts the days billed: the bucket's daily cap times
+  # the days billed, over the bucket's billed total, at most 1. The daily
+  # cap's allowance counts only the smaller of the days billed and the
+  # segment's calendar days, so an extra billed day lowers the bucket's
+  # payable but not the ratio; golden case 22 pins it.
   #
   # Note 3: a hospital that doesn't follow differential billing gets no
   # scaling. Its second half, expenses not billed by room category, is not

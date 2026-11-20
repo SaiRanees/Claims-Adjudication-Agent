@@ -1,0 +1,55 @@
+# Annexure A List V, additional non-payable items: AHD, item 23, "Ancillary
+# And Hospital Disinfection (Eg., Biomedical Waste Disposal/Management,
+# Sanitation, Sanitization/Fumigation Charges Etc.)". C.I.7 doesn't mention
+# List V, so the adjustment cites the list alone.
+#
+# Sum insured ₹5,00,000, so the room cap is ₹5,000 a day; the room is
+# ₹4,500. Stay 9 to 11 March: 3 calendar days, 2 billed.
+#
+# Step 1, listed items: L02 ₹750 → annexure-a-list-v ₹750.
+# Step 2, daily caps: L01 ₹9,000, under 2 × ₹5,000 = ₹10,000. No deduction.
+# Step 3, proportionate deduction: ratio ₹9,000 ÷ ₹9,000 = 1, so nothing is
+#   scaled.
+# Subtotal: ₹9,000 + ₹0 + ₹22,000 + ₹7,000 = ₹38,000.
+# Step 6, co-payment: 5% of ₹38,000 = ₹1,900. Every share is exact:
+#   L01 ₹450, L02 nothing, L03 ₹1,100, L04 ₹350.
+# Payable: ₹38,000 − ₹1,900 = ₹36,100.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2026-03-09
+  discharge: 2026-03-11
+  segments:
+    - {from: 2026-03-09, to: 2026-03-11, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2026-03-09, quantity: 2, unit_price_paise: 450000, amount_paise: 900000}
+    # "Biomedical waste disposal charges".
+    - {id: L02, category: other-hospital-charges, service_date: 2026-03-09, quantity: 1, unit_price_paise: 75000, amount_paise: 75000, item_list: list-v}
+    - {id: L03, category: professional-fees, service_date: 2026-03-10, quantity: 1, unit_price_paise: 2200000, amount_paise: 2200000}
+    - {id: L04, category: pharmacy-consumables, service_date: 2026-03-10, quantity: 1, unit_price_paise: 700000, amount_paise: 700000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 855000}
+    - {id: L02, payable_paise: 0}
+    - {id: L03, payable_paise: 2090000}
+    - {id: L04, payable_paise: 665000}
+  adjustments:
+    - {line: L02, rule: annexure-a-list-v, paise: 75000}
+    - {line: L01, rule: co-payment, paise: 45000}
+    - {line: L03, rule: co-payment, paise: 110000}
+    - {line: L04, rule: co-payment, paise: 35000}
+  flags: []
+  claim_payable_paise: 3610000
+  ledger:
+    paid_paise: 3610000

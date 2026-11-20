@@ -1,0 +1,55 @@
+# Annexure A List IV, items subsumed into the costs of treatment:
+# admission and registration charges, item 1, "Not Payable". The line pays
+# nothing, and its adjustment cites the list.
+#
+# Sum insured ₹3,00,000: the room cap is the lower of 2% (₹6,000) and
+# ₹5,000, so ₹5,000 a day; the room is ₹2,500. Stay 25 to 28 August:
+# 4 calendar days, 3 billed.
+#
+# Step 1, listed items: L02 ₹1,000 → annexure-a-list-iv ₹1,000.
+# Step 2, daily caps: L01 ₹7,500, under 3 × ₹5,000 = ₹15,000. No deduction.
+# Step 3, proportionate deduction: ratio ₹7,500 ÷ ₹7,500 = 1, so nothing is
+#   scaled.
+# Subtotal: ₹7,500 + ₹0 + ₹12,500 + ₹7,000 = ₹27,000.
+# Step 6, co-payment: 5% of ₹27,000 = ₹1,350. Every share is exact:
+#   L01 ₹375, L02 nothing, L03 ₹625, L04 ₹350.
+# Payable: ₹27,000 − ₹1,350 = ₹25,650.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2025-08-25
+  discharge: 2025-08-28
+  segments:
+    - {from: 2025-08-25, to: 2025-08-28, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2025-08-25, quantity: 3, unit_price_paise: 250000, amount_paise: 750000}
+    # Admission and registration charges.
+    - {id: L02, category: other-hospital-charges, service_date: 2025-08-25, quantity: 1, unit_price_paise: 100000, amount_paise: 100000, item_list: list-iv}
+    - {id: L03, category: professional-fees, service_date: 2025-08-26, quantity: 1, unit_price_paise: 1250000, amount_paise: 1250000}
+    - {id: L04, category: diagnostics, service_date: 2025-08-25, quantity: 1, unit_price_paise: 700000, amount_paise: 700000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 712500}
+    - {id: L02, payable_paise: 0}
+    - {id: L03, payable_paise: 1187500}
+    - {id: L04, payable_paise: 665000}
+  adjustments:
+    - {line: L02, rule: annexure-a-list-iv, paise: 100000}
+    - {line: L01, rule: co-payment, paise: 37500}
+    - {line: L03, rule: co-payment, paise: 62500}
+    - {line: L04, rule: co-payment, paise: 35000}
+  flags: []
+  claim_payable_paise: 2565000
+  ledger:
+    paid_paise: 2565000
