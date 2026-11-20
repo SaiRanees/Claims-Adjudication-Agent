@@ -43,7 +43,7 @@ Progress, 20 November: session 3's golden cases (11 to 21) are written and wait 
   - Capped per day, in a bucket. The room bucket takes room rent, boarding and nursing, which C.I.1 (i) caps together, so separate nursing and patient-diet lines count toward its daily cap. ICU charges form the ICU bucket.
   - Scaled by proportionate deduction.
   - Exempt: pharmacy and consumables, implants and devices, and diagnostics (Note 2), plus road ambulance. A comment in the pack says why ambulance is exempt: it has its own limit, and Note 2 scales only expenses "incurred at the Hospital".
-- [x] The room ratio. Note 2 doesn't say whether the ratio uses the bucket's daily total or the room rent alone. The pack uses the bucket's daily total, because that is what the cap measures, so the ratio and the cap can't disagree. A comment in the pack records this, and a golden case in session 3 pins it.
+- [x] The room ratio. Note 2 doesn't say whether the ratio uses the bucket's daily total or the room rent alone. The pack uses the bucket's daily total, because that is what the cap measures. A comment in the pack records this, and case 04 pins it. Session 3 settled how the ratio counts days (step 3 below).
 - [x] Annexure A Lists I to V, as list IDs with their effect: not payable, or folded into room, procedure or treatment charges. The item text gets transcribed in M3, when code-side item matching needs it.
 - [x] The order of operations, as a list of step names:
   1. check eligibility;
@@ -141,12 +141,15 @@ Done when money's new functions pass their table and fuzz tests, the input-check
   - Because the step runs before the daily caps, a set-aside line adds nothing to a bucket's total or a segment's ratio.
   - Neither rule rests on a clause of the wording, so their clause field is empty. The pack marks both rules unmodelled, which is the only way a rule may cite no clause, and a comment points to architecture.md's review triggers.
 - [ ] Step 2: each bucket is capped per day, at the lower of a share of the eligible sum insured and a rupee ceiling: 2% or ₹5,000 for the room bucket, and 5% or ₹10,000 for ICU.
-  - The daily cap is multiplied by the smaller of the days billed and the segment's calendar days, so billing extra days never raises the allowance.
+  - The daily cap is multiplied by the smaller of the days billed and the segment's calendar days, so billing extra days never raises the allowance. A bucket's days billed are the most days any of its lines bills, because room, nursing and diet lines run over the same days.
   - The days billed may equal the segment's calendar days or be one fewer, because hospitals often skip the discharge day. Anything else raises `room_days_mismatch`, including a lump-sum line billed as one unit for a longer stay.
   - A bucket line's service date is its first billed day, and that picks its segment.
   - The bucket's reduction is spread across its lines with `Allocate`, sorted by ID, in the same way as the claim-level reductions.
   - A bucket line dated in a segment of the other kind raises `bucket_segment_mismatch` and is held to both caps. First its own bucket's cap applies, under that bucket's rule. Then it joins the segment's bucket at what that cap left, and the segment's cap applies under the segment's rule. Per day that pays min(segment lines + min(line, own cap), segment cap). Its billed amount counts in the segment's ratio.
-- [ ] Step 3: each scaled line is multiplied by its segment's ratio, the capped bucket total over the billed bucket total, in one `MulDiv`, so it's rounded once.
+- [ ] Step 3: each scaled line is multiplied by its segment's ratio in one `MulDiv`, so it's rounded once.
+  - The ratio follows Note 2's wording, "the admissible rate per day bears to the actual rate per day", at most 1. It counts the days billed: the cap × the days billed ÷ the bucket's billed total.
+  - When the days billed are at most the segment's calendar days, that is the capped bucket total over the billed bucket total. When more days are billed, the allowance (step 2) still counts only the segment's calendar days, but the ratio doesn't, so an extra billed day lowers the bucket's payable and not the other lines'. `room_days_mismatch` still sends the claim to a person. Case 22 pins this.
+  - A line held to both caps (`bucket_segment_mismatch`) is held to both in the ratio too: the admissible side is min(segment lines + min(line, own cap × its days billed), segment cap × days billed), over the segment's billed total, which includes the line's billed amount. Without such a line, that is the cap × the days billed ÷ the billed total.
   - The room ratio and the ICU ratio are separate rules, and the ICU rule raises `icu_ratio_scaling` (ADR 0010). ICU charge lines are capped but never scaled.
   - A rule whose effect is `no-scaling` skips scaling in segments of its kind, deducts nothing and raises nothing. A test runs a pack variant whose ICU rule is `no-scaling`.
   - A segment with no room or ICU charge has no ratio: scaling is skipped there, and the engine raises `no_room_charge`.
@@ -164,9 +167,12 @@ Done when money's new functions pass their table and fuzz tests, the input-check
   - an undated line;
   - a package-rate line;
   - differential billing answered no, and answered unknown;
-  - one case for each Annexure list.
+  - one case for each Annexure list;
+  - more days billed than the segment has, with a scaled line, which pins the per-day ratio;
+  - a line dated outside the stay;
+  - a package line an Annexure list has already zeroed, which keeps the list's reason and raises no `package_rate`.
 
-  Written as cases 11 to 21 in `evals/engine/golden/`, with their arithmetic in comments. Cases 01 to 06 already cover the rest: the worked example (01), 2% binding (02) and ₹5,000 binding (01), a rate just over the cap (03), the nursing line (04), a room billed one day short (01 to 04), the ICU example (05), and differential billing answered no (06) and unknown (03). Waiting for your check.
+  Written as cases 11 to 24 in `evals/engine/golden/`, with their arithmetic in comments. Cases 01 to 06 already cover the rest: the worked example (01), 2% binding (02) and ₹5,000 binding (01), a rate just over the cap (03), the nursing line (04), a room billed one day short (01 to 04), the ICU example (05), and differential billing answered no (06) and unknown (03). Cases 01 to 21 are checked; 22 to 24 wait for their check.
 
 Done when every golden case for steps 1 to 3 is checked and passes, including the worked example's ₹1,22,500 subtotal, to the paisa.
 
