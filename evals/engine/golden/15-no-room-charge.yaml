@@ -1,0 +1,49 @@
+# A segment with no room or ICU charge. The bill has no room, nursing or
+# diet line, so the segment has no ratio: scaling is skipped there, and the
+# engine raises no_room_charge so a reviewer looks for the room charge.
+#
+# Sum insured ₹3,00,000. Stay 15 to 16 September, one room segment.
+#
+# Step 2, daily caps: no bucket line, so nothing is capped.
+# Step 3, proportionate deduction: no ratio, so L01 and L02 keep their
+#   amounts. no_room_charge. L03 pharmacy is exempt.
+# Subtotal: ₹25,000 + ₹10,000 + ₹8,000 = ₹43,000.
+# Step 6, co-payment: 5% of ₹43,000 = ₹2,150. Every share is exact:
+#   L01 ₹1,250, L02 ₹500, L03 ₹400.
+# Payable: ₹43,000 − ₹2,150 = ₹40,850.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2025-09-15
+  discharge: 2025-09-16
+  segments:
+    - {from: 2025-09-15, to: 2025-09-16, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: professional-fees, service_date: 2025-09-15, quantity: 1, unit_price_paise: 2500000, amount_paise: 2500000}
+    - {id: L02, category: operation-theatre, service_date: 2025-09-15, quantity: 1, unit_price_paise: 1000000, amount_paise: 1000000}
+    - {id: L03, category: pharmacy-consumables, service_date: 2025-09-15, quantity: 1, unit_price_paise: 800000, amount_paise: 800000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 2375000}
+    - {id: L02, payable_paise: 950000}
+    - {id: L03, payable_paise: 760000}
+  adjustments:
+    - {line: L01, rule: co-payment, paise: 125000}
+    - {line: L02, rule: co-payment, paise: 50000}
+    - {line: L03, rule: co-payment, paise: 40000}
+  flags:
+    - {code: no_room_charge}
+  claim_payable_paise: 4085000
+  ledger:
+    paid_paise: 4085000

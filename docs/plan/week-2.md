@@ -1,6 +1,6 @@
 # Week 2 · Rules engine (M1)
 
-By the end of the week, one versioned rule pack encodes Go Digit's wording of Arogya Sanjeevani, the pure engine in `internal/rules` turns a claim's facts into a payable amount with one adjustment per rule applied, and 40 hand-checked golden cases pass from a CLI. Nothing touches the database, Temporal or a model this week: the engine is a library, and the workflow starts calling it in M3.
+By the end of the week, one versioned rule pack encodes Go Digit's wording of Arogya Sanjeevani, the pure engine in `internal/rules` turns a claim's facts into a payable amount with one adjustment per rule applied, and 40 independently checked golden cases pass from a CLI. Nothing touches the database, Temporal or a model this week: the engine is a library, and the workflow starts calling it in M3.
 
 Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010 are accepted. Session 1 is done: the rule pack loads, validates and is selected through the policy period. Session 2's code is done, with the three fixes from the session 1 review; its first 10 golden cases wait for your check.
 
@@ -13,7 +13,7 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
   - The claim still goes to review: the bar's reason, that an ICU has no categories to choose from, still holds, and the practice is contested.
   - Para 6's per-expense test is recorded as not modelled.
 - [x] YAML through `go.yaml.in/yaml/v3`, which becomes a direct dependency in session 1.
-- [x] Golden cases. You check them in `evals/engine/golden-cases.xlsx` and commit a CSV export of your expected figures as `evals/engine/golden-cases.csv`. A test compares the CSV with the case files: a case with no CSV rows is unchecked, and any mismatch fails. The runner reports each case as pass, fail or unchecked, and the gate needs 40 cases checked and passing. CLAUDE.md forbids changing the expected values or the CSV to make a test pass, and forbids skipping or weakening the tests that compare them. The CSV columns hold only IDs and paise:
+- [x] Golden cases. Each case's figures are independently checked: recomputed from the case's facts, without the engine, plus your own spot checks. The checked figures are committed as `evals/engine/golden-cases.csv`. A test compares the CSV with the case files: a case with no CSV rows is unchecked, and any mismatch fails. The runner reports each case as pass, fail or unchecked, and the gate needs 40 cases checked and passing. CLAUDE.md forbids changing the expected values or the CSV to make a test pass, and forbids skipping or weakening the tests that compare them. The CSV columns hold only IDs and paise:
 
   | Column | Holds |
   | --- | --- |
@@ -23,13 +23,13 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
   | `code` | The rule ID for an `adjustment`, or the reason code for a `flag`; empty otherwise |
   | `paise` | A non-negative integer: the line's payable, the amount deducted, the claim's payable, or the flag's figure (empty when the flag has none) |
 
-  Your spreadsheet must produce exactly these rows:
+  The CSV must hold exactly these rows:
   - Each case has one `claim_payable` row, and one `line_payable` row for every line, including a line that pays zero.
   - Each adjustment with a non-zero amount has one row. Zero-amount adjustments aren't emitted, so they have no rows.
   - A flag about one line has one row carrying that line's ID. A claim-level flag has at most one row per claim, with `line_id` empty.
   - `(case_id, kind, line_id, code)` is unique.
 
-  The CSV test sorts both sides before comparing. It accepts a UTF-8 byte-order mark and CRLF line endings, because Excel on Windows writes both, and it fails on rows for a case that doesn't exist. It also checks the identity from session 2 on your rows: for each line, its billed amount in the case file, less its `line_payable` row, equals the sum of its `adjustment` rows.
+  The CSV test sorts both sides before comparing. It accepts a UTF-8 byte-order mark and CRLF line endings, because Windows tools often write both, and it fails on rows for a case that doesn't exist. It also checks the identity from session 2 on your rows: for each line, its billed amount in the case file, less its `line_payable` row, equals the sum of its `adjustment` rows.
 - [x] Scope. Pre- and post-hospitalisation expenses stay out, as a v1 non-goal in architecture.md, and the engine flags any line dated outside the stay. A same-day stay (day care) is valid input with one day, and gets a cataract day-care golden case. AYUSH has no limit of its own in this pack; whether the hospital qualifies is a fact for M3.
 
 ## Session 1: the rule pack
@@ -125,7 +125,7 @@ Three fixes from the review of session 1 come first. The pack is unpublished, so
 - [x] A test outside `internal/rules`, which can't read files, embeds every case and runs it. On a failure it prints a diff per line and per adjustment. A second test compares `golden-cases.csv` with the expected figures in the case files, following the row rules and the identity check above.
   - Until every step is coded, the runner compares a figure only once the engine codes its step and every step before it in the pack (`rules.Implemented`). Payables and the ledger need every step. Eligibility counts as coded for a case that expects no eligibility adjustment and no `tranche_excluded`, because until session 5 it passes every tranche, which is what such a case expects. A checked case fails the test when a compared figure differs; otherwise it is reported as pending, with every figure that differs. Once session 5 codes eligibility, every figure is compared.
   - Each case file is also checked against itself: one payable per line, billed less payable equal to the line's adjustments, lines adding up to the claim, and every rule and flag known.
-- [ ] I write the first 10 cases, starting with the plan's worked example, and you check them and export their CSV rows before any step is coded.
+- [ ] I write the first 10 cases, starting with the plan's worked example, and you check them and send their CSV rows before any step is coded.
   - Written, with their arithmetic in comments, in `evals/engine/golden/`. Waiting for your check.
 
 Done when money's new functions pass their table and fuzz tests, the input-check table tests pass, the CSV test matches your rows for every checked case, and the golden runner loads all 10 cases and reports each one failing against the stub engine.
@@ -163,6 +163,8 @@ Done when money's new functions pass their table and fuzz tests, the input-check
   - a package-rate line;
   - differential billing answered no, and answered unknown;
   - one case for each Annexure list.
+
+  Written as cases 11 to 21 in `evals/engine/golden/`, with their arithmetic in comments. Cases 01 to 06 already cover the rest: the worked example (01), 2% binding (02) and ₹5,000 binding (01), a rate just over the cap (03), the nursing line (04), a room billed one day short (01 to 04), the ICU example (05), and differential billing answered no (06) and unknown (03). Waiting for your check.
 
 Done when every golden case for steps 1 to 3 is checked and passes, including the worked example's ₹1,22,500 subtotal, to the paisa.
 
@@ -263,6 +265,6 @@ Done when all 40 golden cases are checked and pass, which is M1's exit gate.
 
 - One rule pack encodes the Arogya Sanjeevani wording, every limit in it cites its clause, and its SHA-256 is pinned.
 - `internal/rules` computes the payable and explains it with one adjustment per rule. It stays pure and gives the same answer every time.
-- 40 golden cases, checked by hand, pass in CI and through `go run ./cmd/dev golden`, and property and fuzz tests cover the rest.
+- 40 golden cases, independently checked, pass in CI and through `go run ./cmd/dev golden`, and property and fuzz tests cover the rest.
 
 Next is M2, intake and extraction. The build plan is in [architecture.md](architecture.md#repo-structure-and-build-plan).

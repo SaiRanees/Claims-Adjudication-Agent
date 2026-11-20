@@ -1,0 +1,77 @@
+# An undated line in a stay with more than one rate. L04 has no date, so it
+# takes the lowest ratio in the stay and raises undated_line: its interim
+# figure is never above any reading of the bill, and a reviewer supplies the
+# date.
+#
+# Sum insured ₹2,00,000, so the room cap is the lower of 2% (₹4,000) and
+# ₹5,000: ₹4,000 a day. Stay 9 to 14 February, in two rooms:
+#   a single room, 9 to 11 February: 3 calendar days, billed for 3 at
+#   ₹6,000;
+#   a twin-sharing room, 12 to 14 February: 3 calendar days, billed for 2 at
+#   ₹5,000.
+#
+# Step 2, daily caps, per segment:
+#   single room: L01 ₹18,000 capped at 3 × ₹4,000 = ₹12,000.
+#     daily-cap-room ₹6,000.
+#   twin sharing: L02 ₹10,000 capped at 2 × ₹4,000 = ₹8,000.
+#     daily-cap-room ₹2,000.
+# Step 3, proportionate deduction: the single room's ratio is
+#   ₹12,000 ÷ ₹18,000 = 2/3, the twin-sharing room's ₹8,000 ÷ ₹10,000 = 80%.
+#   L03, dated 13 February, takes 80%: ₹10,000 × 80% = ₹8,000, so
+#     proportionate-deduction-room ₹2,000.
+#   L04, undated, takes the lower, 2/3: 1,200,000 × 1,200,000 ÷ 1,800,000 =
+#     800,000 exactly, so proportionate-deduction-room ₹4,000. At 80% it
+#     would pay ₹9,600.
+#   L05 diagnostics is exempt.
+# Subtotal: ₹12,000 + ₹8,000 + ₹8,000 + ₹8,000 + ₹6,000 = ₹42,000.
+# Step 6, co-payment: 5% of ₹42,000 = ₹2,100. Every share is exact:
+#   L01 ₹600, L02 ₹400, L03 ₹400, L04 ₹400, L05 ₹300.
+# Payable: ₹42,000 − ₹2,100 = ₹39,900.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 20000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2026-02-09
+  discharge: 2026-02-14
+  segments:
+    - {from: 2026-02-09, to: 2026-02-11, kind: room}
+    - {from: 2026-02-12, to: 2026-02-14, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2026-02-09, quantity: 3, unit_price_paise: 600000, amount_paise: 1800000}
+    - {id: L02, category: room-rent, service_date: 2026-02-12, quantity: 2, unit_price_paise: 500000, amount_paise: 1000000}
+    - {id: L03, category: professional-fees, service_date: 2026-02-13, quantity: 1, unit_price_paise: 1000000, amount_paise: 1000000}
+    # Consultant's visits, billed without a date.
+    - {id: L04, category: professional-fees, quantity: 1, unit_price_paise: 1200000, amount_paise: 1200000}
+    - {id: L05, category: diagnostics, service_date: 2026-02-10, quantity: 1, unit_price_paise: 600000, amount_paise: 600000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 1140000}
+    - {id: L02, payable_paise: 760000}
+    - {id: L03, payable_paise: 760000}
+    - {id: L04, payable_paise: 760000}
+    - {id: L05, payable_paise: 570000}
+  adjustments:
+    - {line: L01, rule: daily-cap-room, paise: 600000}
+    - {line: L02, rule: daily-cap-room, paise: 200000}
+    - {line: L03, rule: proportionate-deduction-room, paise: 200000}
+    - {line: L04, rule: proportionate-deduction-room, paise: 400000}
+    - {line: L01, rule: co-payment, paise: 60000}
+    - {line: L02, rule: co-payment, paise: 40000}
+    - {line: L03, rule: co-payment, paise: 40000}
+    - {line: L04, rule: co-payment, paise: 40000}
+    - {line: L05, rule: co-payment, paise: 30000}
+  flags:
+    - {code: undated_line, line: L04}
+  claim_payable_paise: 3990000
+  ledger:
+    paid_paise: 3990000
