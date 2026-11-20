@@ -296,6 +296,61 @@ func TestStepsOneToThree(t *testing.T) {
 			flags: []wantFlag{{rules.FlagRoomDaysMismatch, "L02", 0}},
 		},
 		{
+			// Session 5: a same-day stay without a room line is day care,
+			// and Note 2 applies only after an admission to a room.
+			name:       "a same-day stay without a room line raises no no_room_charge",
+			sumInsured: 50_000_000,
+			facts: func(t *testing.T) rules.Facts {
+				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-08-12", "2025-08-12", rules.SegmentRoom)},
+					ln(t, "L01", rules.CategoryProfessionalFees, "2025-08-12", 1, 1_000_000),
+					ln(t, "L02", rules.CategoryPharmacyConsumables, "2025-08-12", 1, 200_000),
+				)
+			},
+		},
+		{
+			// The bill has a room line, though a list zeroed it, so the
+			// segment has no ratio but isn't missing a room charge.
+			name:       "a room line a list zeroed still counts as a room line",
+			sumInsured: 50_000_000,
+			facts: func(t *testing.T) rules.Facts {
+				l := ln(t, "L01", rules.CategoryRoomRent, "2025-06-10", 1, 400_000)
+				l.ItemList = "list-ii"
+				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-06-10", "2025-06-11", rules.SegmentRoom)},
+					l, ln(t, "L02", rules.CategoryProfessionalFees, "2025-06-10", 1, 1_000_000))
+			},
+			adjs: []wantAdj{{"L01", "annexure-a-list-ii", 400_000}},
+		},
+		{
+			name:       "a segment with no room line and nothing to scale raises nothing",
+			sumInsured: 50_000_000,
+			facts: func(t *testing.T) rules.Facts {
+				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-06-10", "2025-06-11", rules.SegmentRoom)},
+					ln(t, "L01", rules.CategoryPharmacyConsumables, "2025-06-10", 1, 500_000),
+					ln(t, "L02", rules.CategoryDiagnostics, "2025-06-10", 1, 300_000),
+				)
+			},
+		},
+		{
+			// L01 and L02 both bill the room for 12 June: a day billed
+			// twice. The two nursing lines cover the same days, as shifts
+			// may, and raise nothing. The bucket is at its allowance, so the
+			// cap deducts nothing.
+			name:       "two room-rent lines covering the same day are flagged, nursing shifts aren't",
+			sumInsured: 50_000_000,
+			facts: func(t *testing.T) rules.Facts {
+				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-06-10", "2025-06-13", rules.SegmentRoom)},
+					ln(t, "L01", rules.CategoryRoomRent, "2025-06-10", 3, 300_000),
+					ln(t, "L02", rules.CategoryRoomRent, "2025-06-12", 1, 300_000),
+					ln(t, "L03", rules.CategoryNursing, "2025-06-10", 3, 50_000),
+					ln(t, "L04", rules.CategoryNursing, "2025-06-10", 3, 50_000),
+				)
+			},
+			flags: []wantFlag{
+				{rules.FlagRoomDaysMismatch, "L01", 0},
+				{rules.FlagRoomDaysMismatch, "L02", 0},
+			},
+		},
+		{
 			name:       "a same-day stay billed for one day is accepted",
 			sumInsured: 50_000_000,
 			facts: func(t *testing.T) rules.Facts {
@@ -515,6 +570,133 @@ func TestStepsFourToSix(t *testing.T) {
 			}
 			if res.Payable != tt.payable || res.Ledger != tt.ledger {
 				t.Errorf("payable %d, ledger %+v; want %d and %+v", res.Payable, res.Ledger, tt.payable, tt.ledger)
+			}
+			checkLines(t, f, res)
+		})
+	}
+}
+
+// TestEligibility checks the waiting periods on claims the golden cases
+// don't cover. Each claim is a 2-day stay: a ₹4,000 room for 1 day and a
+// ₹30,000 fee. Eligible on ₹3,00,000 it pays ₹32,300.
+func TestEligibility(t *testing.T) {
+	pack := goDigitPack(t)
+	stay := func(t *testing.T, admission string, cond rules.Condition) rules.Facts {
+		d := date(t, admission)
+		next, err := d.AddDays(1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		f := facts(rules.AnswerYes, []rules.Segment{{From: d, To: next, Kind: rules.SegmentRoom}},
+			ln(t, "L01", rules.CategoryRoomRent, admission, 1, 400_000),
+			ln(t, "L02", rules.CategoryProfessionalFees, admission, 1, 3_000_000))
+		f.Condition = cond
+		return f
+	}
+	tranche := func(t *testing.T, sumInsured money.Paise, since string) rules.Tranche {
+		return rules.Tranche{SumInsured: sumInsured, ContinuousSince: date(t, since)}
+	}
+	eligible := []wantAdj{{"L01", "co-payment", 20_000}, {"L02", "co-payment", 150_000}}
+	excluded := func(rule string) []wantAdj { return []wantAdj{{"L01", rule, 400_000}, {"L02", rule, 3_000_000}} }
+
+	tests := []struct {
+		name     string
+		facts    func(t *testing.T) rules.Facts
+		tranches func(t *testing.T) []rules.Tranche
+		adjs     []wantAdj
+		flags    []wantFlag
+		payable  money.Paise
+	}{
+		{
+			// A hernia inside its 24-month wait, but from an accident:
+			// Excl02(a) doesn't apply.
+			name: "an accident lifts a listed condition's wait",
+			facts: func(t *testing.T) rules.Facts {
+				return stay(t, "2025-08-04", rules.Condition{ListedGroup: "listed-24-months", Accident: true})
+			},
+			tranches: func(t *testing.T) []rules.Tranche { return []rules.Tranche{tranche(t, 30_000_000, "2025-01-01")} },
+			adjs:     eligible,
+			payable:  3_230_000,
+		},
+		{
+			name: "an accident doesn't lift the pre-existing disease wait",
+			facts: func(t *testing.T) rules.Facts {
+				return stay(t, "2025-08-04", rules.Condition{PreExisting: true, Accident: true})
+			},
+			tranches: func(t *testing.T) []rules.Tranche { return []rules.Tranche{tranche(t, 30_000_000, "2024-01-01")} },
+			adjs:     excluded("waiting-period-pre-existing"),
+			flags:    []wantFlag{{rules.FlagTrancheExcluded, "", 30_000_000}, {rules.FlagProposedDenial, "", 0}},
+		},
+		{
+			// Excl03(iii): the 30 days apply afresh to an increase, here on
+			// its day 16. Only the ₹1,00,000 base counts, so the room cap is
+			// 2% of it, ₹2,000: the room is capped at ₹2,000 and the fee
+			// scaled by ₹2,000 ÷ ₹4,000.
+			name:  "the 30-day wait applies afresh to a sum-insured increase",
+			facts: func(t *testing.T) rules.Facts { return stay(t, "2025-08-04", rules.Condition{}) },
+			tranches: func(t *testing.T) []rules.Tranche {
+				return []rules.Tranche{tranche(t, 10_000_000, "2023-04-01"), tranche(t, 20_000_000, "2025-07-20")}
+			},
+			adjs: []wantAdj{
+				{"L01", "daily-cap-room", 200_000}, {"L02", "proportionate-deduction-room", 1_500_000},
+				{"L01", "co-payment", 10_000}, {"L02", "co-payment", 75_000},
+			},
+			flags:   []wantFlag{{rules.FlagTrancheExcluded, "", 20_000_000}},
+			payable: 1_615_000,
+		},
+		{
+			// When the onset is known it decides the 30-day wait, and an
+			// onset before cover began isn't inside it; a pre-existing
+			// disease is for Excl01, which the facts don't claim here.
+			name: "an onset before cover began isn't inside the 30-day wait",
+			facts: func(t *testing.T) rules.Facts {
+				return stay(t, "2025-05-10", rules.Condition{Onset: date(t, "2025-04-20")})
+			},
+			tranches: func(t *testing.T) []rules.Tranche { return []rules.Tranche{tranche(t, 30_000_000, "2025-05-01")} },
+			adjs:     eligible,
+			payable:  3_230_000,
+		},
+		{
+			// Both tranches are inside a hernia's 24-month wait: the claim is
+			// a proposed denial, every line cites the oldest tranche's wait,
+			// and tranche_excluded carries the whole ₹3,00,000.
+			name: "with no tranche eligible, the whole sum insured is excluded",
+			facts: func(t *testing.T) rules.Facts {
+				return stay(t, "2025-08-04", rules.Condition{ListedGroup: "listed-24-months"})
+			},
+			tranches: func(t *testing.T) []rules.Tranche {
+				return []rules.Tranche{tranche(t, 10_000_000, "2024-01-01"), tranche(t, 20_000_000, "2025-04-01")}
+			},
+			adjs:  excluded("waiting-period-listed-24-months"),
+			flags: []wantFlag{{rules.FlagTrancheExcluded, "", 30_000_000}, {rules.FlagProposedDenial, "", 0}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := tt.facts(t)
+			res, err := rules.Adjudicate(pack, f, rules.Cover{Tranches: tt.tranches(t)})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var adjs []wantAdj
+			for _, a := range res.Adjustments {
+				adjs = append(adjs, wantAdj{a.LineID, a.RuleID, a.Amount})
+				if r, _ := pack.Rule(a.RuleID); a.Clause != r.Clause {
+					t.Errorf("%s cites %q, want %q", a.RuleID, a.Clause, r.Clause)
+				}
+			}
+			var flags []wantFlag
+			for _, fl := range res.Flags {
+				flags = append(flags, wantFlag{fl.Code, fl.LineID, fl.Figure})
+			}
+			if !slices.Equal(adjs, tt.adjs) {
+				t.Errorf("adjustments\n got %v\nwant %v", adjs, tt.adjs)
+			}
+			if !slices.Equal(flags, tt.flags) {
+				t.Errorf("flags\n got %v\nwant %v", flags, tt.flags)
+			}
+			if res.Payable != tt.payable {
+				t.Errorf("payable %d, want %d", res.Payable, tt.payable)
 			}
 			checkLines(t, f, res)
 		})

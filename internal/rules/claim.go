@@ -34,6 +34,10 @@ type claim struct {
 	// buckets holds each segment's bucket figures once the daily caps have
 	// run; proportionate deduction reads them.
 	buckets []bucket
+	// eligible is the eligible sum insured, once the eligibility step has
+	// run; allExcluded records that no tranche was eligible.
+	eligible    *money.Paise
+	allExcluded bool
 	// setAside records that a line was zeroed as unmodelled.
 	setAside bool
 	// exceeded is set when step 5 capped the claim at the cover left.
@@ -97,9 +101,12 @@ func segmentOf(f Facts, d Date) int {
 	return -1
 }
 
-// sumInsured is the eligible sum insured. Until week 2, session 5 codes the
-// waiting periods, every tranche counts.
+// sumInsured is the eligible sum insured: the tranches past their waiting
+// periods, once the eligibility step has run, and every tranche before it.
 func (c *claim) sumInsured() (money.Paise, error) {
+	if c.eligible != nil {
+		return *c.eligible, nil
+	}
 	sums := make([]money.Paise, len(c.cover.Tranches))
 	for i, t := range c.cover.Tranches {
 		sums[i] = t.SumInsured

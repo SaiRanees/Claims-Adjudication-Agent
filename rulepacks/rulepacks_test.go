@@ -86,20 +86,23 @@ func TestGoDigitLimits(t *testing.T) {
 		t.Errorf("co-payment = %d bp citing %s, want 500 citing E.II.28(c)", r.Rate, r.Clause)
 	}
 
+	// Excl03(i) and Excl02(a) don't apply to accidents; Excl01 does.
 	waits := []struct {
 		rule           string
 		clause         string
 		days, months   int64
 		waivedAfterMos int64
+		accident       bool
 	}{
-		{rule: "waiting-period-first-30-days", clause: "Excl03", days: 30, waivedAfterMos: 12},
-		{rule: "waiting-period-listed-24-months", clause: "Excl02", months: 24},
-		{rule: "waiting-period-listed-36-months", clause: "Excl02", months: 36},
+		{rule: "waiting-period-first-30-days", clause: "Excl03", days: 30, waivedAfterMos: 12, accident: true},
+		{rule: "waiting-period-listed-24-months", clause: "Excl02", months: 24, accident: true},
+		{rule: "waiting-period-listed-36-months", clause: "Excl02", months: 36, accident: true},
 		{rule: "waiting-period-pre-existing", clause: "Excl01", months: 36},
 	}
 	for _, w := range waits {
 		r, _ := p.Rule(w.rule)
-		if r.Clause != w.clause || r.Days != w.days || r.Months != w.months || r.WaivedAfterMonths != w.waivedAfterMos {
+		if r.Clause != w.clause || r.Days != w.days || r.Months != w.months || r.WaivedAfterMonths != w.waivedAfterMos ||
+			r.WaivedForAccident != w.accident {
 			t.Errorf("%s = %+v", w.rule, r)
 		}
 	}

@@ -4,7 +4,7 @@ By the end of the week, one versioned rule pack encodes Go Digit's wording of Ar
 
 Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010 are accepted. Session 1 is done: the rule pack loads, validates and is selected through the policy period. Session 2 is done, with the three fixes from the session 1 review, and its first 10 golden cases are checked.
 
-Progress, 20 November: session 3 is done: steps 1 to 3 are coded, and golden cases 01 to 24 are checked and pass. Session 4 codes every step but eligibility; all 32 golden cases pass in full, and cases 25 to 32 wait for their check.
+Progress, 20 November: sessions 3 and 4 are done, with golden cases 01 to 32 checked and passing. Session 5 makes the two rule changes from the session 4 review and codes eligibility, so every step is coded; all 48 golden cases pass in full, and cases 33 to 48 wait for their check.
 
 ## Decide first
 
@@ -197,7 +197,7 @@ Done when every golden case for steps 1 to 3 is checked and passes, including th
 - [x] `proposed_denial` means the policy makes the claim pay nothing. The engine raises it when every tranche is excluded (session 5), or when the payable is zero, no line was zeroed as unmodelled, and the discount didn't take it to zero.
   - A claim that pays nothing only because a line is billed at a package rate or dated outside the stay isn't a proposed denial. Calling it one would steer a reviewer toward denying a claim the engine couldn't read. Its `package_rate` or `outside_stay` flag sends it to review instead.
   - A proposed denial is a valid result, not an error, and a person decides (rule 6).
-- [ ] Golden cases:
+- [x] Golden cases:
   - the worked example through to ₹1,16,375;
   - an admissible amount just over the cover left (flagged, with the co-payment taken on the cover left) and one just under it (no flag);
   - a claim for both eyes, and a second claim for an eye already treated, whose cover input is the first claim's ledger effects;
@@ -209,7 +209,7 @@ Done when every golden case for steps 1 to 3 is checked and passes, including th
   - a claim where every line is non-payable, which is a proposed denial, not an error;
   - a package-billed cataract claim whose only payable line is the package line, which pays zero and raises `package_rate`, not `proposed_denial`.
 
-  Cases 01 to 24 already cover the worked example (01), the cataract as day care (08), the ambulance (06), the rounding (10) and the discount (09); case 07 exceeds the cover by ₹2,000. The rest are written as cases 26 to 32, with case 25 for the days-billed fix, and wait for their check: 26 is a paisa over the cover left and 27 a paisa under, 28 and 29 are the two cataract claims, 30 is the modern treatment, 31 the claim where every line is non-payable, and 32 the package-billed cataract.
+  Cases 01 to 24 already cover the worked example (01), the cataract as day care (08), the ambulance (06), the rounding (10) and the discount (09); case 07 exceeds the cover by ₹2,000. The rest are written as cases 26 to 32, with case 25 for the days-billed fix; all are checked and pass: 26 is a paisa over the cover left and 27 a paisa under, 28 and 29 are the two cataract claims, 30 is the modern treatment, 31 the claim where every line is non-payable, and 32 the package-billed cataract.
 
 Done when every golden case written so far is checked and passes, and the worked example matches the plan's table line by line.
 
@@ -217,27 +217,27 @@ Done when every golden case written so far is checked and passes, and the worked
 
 Two rule changes from the review of session 4 come first. They were decided before case 31 was checked, so changing that case isn't a test fix.
 
-- [ ] `no_room_charge` means the bill has no room or ICU line for that segment at all. A line a list zeroed, or that the unmodelled step set aside, still counts, and so does one the eligibility step zeroed.
+- [x] `no_room_charge` means the bill has no room or ICU line for that segment at all. A line a list zeroed, or that the unmodelled step set aside, still counts, and so does one the eligibility step zeroed.
   - It is raised only for a stay longer than one day, and only when the segment still has a scaled line to scale. A same-day stay without a room line is normal day care, and Note 2 applies only after an admission to a room.
   - Case 31 now raises only `proposed_denial`. Cases 15 (two days, with scaled lines) and 28, 29 and 32 (no differential billing) don't change.
-- [ ] Two room-rent lines in one segment that cover the same day raise `room_days_mismatch` on both, as a day billed twice.
+- [x] Two room-rent lines in one segment that cover the same day raise `room_days_mismatch` on both, as a day billed twice.
   - Not for `icu-charges`: Definition 24 puts the ICU bed, the intensivist and ICU nursing on the same day, as in case 05. Not for `nursing`, since shifts can be billed separately.
   - Case 33 is a room day billed twice, under the cap: the cap doesn't catch it, so the flag must.
-- [ ] The eligibility step, declared first since session 1, stops being a pass-through. Every percentage limit and the cap use the eligible sum insured.
-- [ ] The waiting periods:
+- [x] The eligibility step, declared first since session 1, stops being a pass-through. Every percentage limit and the cap use the eligible sum insured.
+- [x] The waiting periods:
   - 30 days at the start (Excl03). It doesn't apply to accidents, and Excl03(ii) drops it once cover has run continuously for more than 12 months.
   - 24 or 36 months for listed conditions (Excl02). Excl02(a) doesn't apply it to accidents either.
   - 36 months for pre-existing disease (Excl01), accident or not. Where a listed condition is also pre-existing, the longer period applies (Excl02(c)).
 
   The facts say which group the condition falls into; deciding that is the agent's job in M3. Which waits an accident lifts is pack data, `waived_for_accident` on each rule, because the engine knows the policy only through the pack.
-- [ ] Where a period ends. A wait of N days or months starting on a tranche's continuous-cover date D runs through (D − 1 day) + N, the way a policy schedule's "one year less a day" does, and the first day after it is covered. So the 30-day wait's last day is D + 29 (day 30), 24 months from 1 April 2022 run through 31 March 2024, and 24 months from 29 February 2024 run through 28 February 2026. Adding N months to D instead would end that last one a day sooner, on 27 February, which is the higher reading.
-- [ ] Each tranche is tested on its own. An increase in the sum insured restarts the waiting periods for the added amount (Excl01(b), Excl02(b), Excl03(iii)), so only the tranches past the relevant period count toward the eligible sum insured. A tranche that is left out raises `tranche_excluded`, carrying the total sum insured excluded.
-- [ ] Excl03 excludes "treatment of any illness within 30 days".
+- [x] Where a period ends. A wait of N days or months starting on a tranche's continuous-cover date D runs through (D − 1 day) + N, the way a policy schedule's "one year less a day" does, and the first day after it is covered. So the 30-day wait's last day is D + 29 (day 30), 24 months from 1 April 2022 run through 31 March 2024, and 24 months from 29 February 2024 run through 28 February 2026. Adding N months to D instead would end that last one a day sooner, on 27 February, which is the higher reading.
+- [x] Each tranche is tested on its own. An increase in the sum insured restarts the waiting periods for the added amount (Excl01(b), Excl02(b), Excl03(iii)), so only the tranches past the relevant period count toward the eligible sum insured. A tranche that is left out raises `tranche_excluded`, carrying the total sum insured excluded.
+- [x] Excl03 excludes "treatment of any illness within 30 days".
   - When the facts give an onset date inside the first 30 days, the claim gets a proposed denial and its flag. That follows the lower reading, by the plan's rule that an interim figure is never above any reading.
   - The admission date decides only when no onset date is known.
 
   A comment in the pack records this.
-- [ ] When no tranche is eligible, the claim gets a proposed denial: payable zero, each line's billed amount deducted by an adjustment citing Excl01, Excl02 or Excl03, and `proposed_denial`. The engine never denies.
+- [x] When no tranche is eligible, the claim gets a proposed denial: payable zero, each line's billed amount deducted by an adjustment citing Excl01, Excl02 or Excl03, and `proposed_denial`. The engine never denies.
   - The rule cited is the oldest tranche's: of the waits that exclude it, the one that ends last, with ties going to the pack's order. The oldest tranche is the first to become eligible, so its wait is what stands between the claim and payment.
   - `tranche_excluded` is raised too, carrying the whole sum insured.
 - [ ] Golden cases:

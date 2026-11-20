@@ -229,10 +229,11 @@ func (c *claim) takeBillDiscount(s Step) error {
 // the smaller of the discount and that (ADR 0009). It is never lower than
 // the payable.
 //
-// proposed_denial means the policy makes the claim pay nothing: the payable
-// is zero, no line was zeroed as unmodelled, and the discount didn't take it
-// to zero. A claim that pays nothing only because of a line the engine
-// couldn't read goes to review through that line's flag instead.
+// proposed_denial means the policy makes the claim pay nothing: every
+// tranche is excluded, or the payable is zero, no line was zeroed as
+// unmodelled, and the discount didn't take it to zero. A claim that pays
+// nothing only because of a line the engine couldn't read goes to review
+// through that line's flag instead.
 func (c *claim) finish() error {
 	payable, err := money.Sum(c.amount...)
 	if err != nil {
@@ -249,7 +250,7 @@ func (c *claim) finish() error {
 	if c.beforeDiscount != nil {
 		beforeDiscount = *c.beforeDiscount
 	}
-	if payable == 0 && !c.setAside && beforeDiscount == 0 {
+	if c.allExcluded || (payable == 0 && !c.setAside && beforeDiscount == 0) {
 		c.flagClaim(FlagProposedDenial, 0)
 	}
 	return nil

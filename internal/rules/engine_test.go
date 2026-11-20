@@ -111,6 +111,10 @@ func TestAdjudicateInputChecks(t *testing.T) {
 		{"no tranches", func(_ *testing.T, _ *rules.Facts, c *rules.Cover) { c.Tranches = nil }, "Cover.Tranches"},
 		{"zero sum insured", func(_ *testing.T, _ *rules.Facts, c *rules.Cover) { c.Tranches[0].SumInsured = 0 }, "Cover.Tranches[0].SumInsured"},
 		{"tranche with no start", func(_ *testing.T, _ *rules.Facts, c *rules.Cover) { c.Tranches[0].ContinuousSince = rules.Date{} }, "Cover.Tranches[0].ContinuousSince"},
+		// A tranche whose cover began after the admission wasn't in force.
+		{"tranche starting after the admission", func(t *testing.T, _ *rules.Facts, c *rules.Cover) {
+			c.Tranches[0].ContinuousSince = date(t, "2025-06-11")
+		}, "Cover.Tranches[0].ContinuousSince"},
 		{"negative bonus", func(_ *testing.T, _ *rules.Facts, c *rules.Cover) { c.CumulativeBonus = -1 }, "Cover.CumulativeBonus"},
 		{"negative paid", func(_ *testing.T, _ *rules.Facts, c *rules.Cover) { c.PaidThisYear = -1 }, "Cover.PaidThisYear"},
 		{"negative cataract use", func(_ *testing.T, _ *rules.Facts, c *rules.Cover) { c.CataractUsed.Left = -1 }, "Cover.CataractUsed.Left"},
@@ -206,11 +210,11 @@ func TestAdjudicateValidClaim(t *testing.T) {
 	checkLines(t, f, res)
 }
 
-// Every step but eligibility is coded; session 5 codes it.
+// Since session 5, every step is coded.
 func TestImplemented(t *testing.T) {
 	for _, s := range rules.StepNames() {
-		if got, want := rules.Implemented(s), s != rules.StepCheckEligibility; got != want {
-			t.Errorf("Implemented(%s) = %t, want %t", s, got, want)
+		if !rules.Implemented(s) {
+			t.Errorf("Implemented(%s) = false, want true", s)
 		}
 	}
 }

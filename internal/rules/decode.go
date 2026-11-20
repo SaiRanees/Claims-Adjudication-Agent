@@ -327,7 +327,7 @@ func (d *decoder) categoryList(f *fields, key string) ([]Category, error) {
 var (
 	commonRuleKeys = []string{"id", "clause", "unmodelled", "see_also", "applies_to"}
 	allRuleKeys    = append(slices.Clone(commonRuleKeys),
-		"days", "months", "waived_after_months", "effect", "categories",
+		"days", "months", "waived_after_months", "waived_for_accident", "effect", "categories",
 		"share_of_sum_insured_bp", "ceiling_paise", "per", "rate_bp")
 )
 
@@ -335,7 +335,7 @@ func ruleKeys(s StepName) []string {
 	var extra []string
 	switch s {
 	case StepCheckEligibility:
-		extra = []string{"days", "months", "waived_after_months"}
+		extra = []string{"days", "months", "waived_after_months", "waived_for_accident"}
 	case StepDropListedItems:
 		extra = []string{"effect"}
 	case StepApplyDailyCaps:
@@ -437,7 +437,12 @@ func (d *decoder) ruleParams(path string, f *fields, step StepName, r *Rule) err
 		case !hasDays && !hasMonths:
 			return fail(join(path, "days"), f.node, ErrMissingField, "give days or months")
 		}
-		r.WaivedAfterMonths, _, err = f.optIntIn("waived_after_months", 1, maxMonths)
+		if r.WaivedAfterMonths, _, err = f.optIntIn("waived_after_months", 1, maxMonths); err != nil {
+			return err
+		}
+		if n, p, ok := f.get("waived_for_accident"); ok {
+			r.WaivedForAccident, err = boolean(p, n)
+		}
 		return err
 	case StepDropListedItems:
 		r.Effect, err = effect(f, listEffects())

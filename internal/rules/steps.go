@@ -192,6 +192,18 @@ func (c *claim) planDailyCaps(s Step) (capPlan, error) {
 					p.flags = append(p.flags, lineFlag{FlagRoomDaysMismatch, i})
 				}
 			}
+			// Two room-rent lines covering the same day bill it twice. ICU
+			// charges share their days by design (Definition 24), and
+			// nursing shifts can be billed separately.
+			if cat == CategoryRoomRent {
+				for a, i := range same {
+					for _, j := range same[a+1:] {
+						if c.overlap(sg, i, j) {
+							p.flags = append(p.flags, lineFlag{FlagRoomDaysMismatch, i}, lineFlag{FlagRoomDaysMismatch, j})
+						}
+					}
+				}
+			}
 		}
 
 		// Lines of the other kind meet their own bucket's cap first.
@@ -299,18 +311,9 @@ func (c *claim) capGroup(p *capPlan, s Step, sg Segment, amt []money.Paise, grou
 // segment's first day. Days past the segment's end count, so billing more
 // days than the segment has shows. The count saturates at math.MaxInt64.
 func (c *claim) daysCovered(sg Segment, idx []int) int64 {
-	type span struct{ from, to int64 } // inclusive, in days from sg.From
 	spans := make([]span, 0, len(idx))
 	for _, i := range idx {
-		var from int64
-		if d := c.lines[i].ServiceDate; !d.IsZero() {
-			from = int64(sg.From.DaysUntil(d))
-		}
-		to := int64(math.MaxInt64)
-		if q := c.lines[i].Quantity; q-1 <= math.MaxInt64-from {
-			to = from + q - 1
-		}
-		spans = append(spans, span{from, to})
+		spans = append(spans, c.span(sg, i))
 	}
 	if len(spans) == 0 {
 		return 0
@@ -333,6 +336,32 @@ func (c *claim) daysCovered(sg Segment, idx []int) int64 {
 		cur = s
 	}
 	return saturatingAdd(days, length(cur))
+}
+
+// span is the days a line covers, inclusive, counted from its segment's
+// first day.
+type span struct{ from, to int64 }
+
+// span returns the days line i, dated in segment sg, covers: its quantity
+// of days from its service date, or from the segment's first day when it is
+// undated. The end saturates at math.MaxInt64.
+func (c *claim) span(sg Segment, i int) span {
+	var from int64
+	if d := c.lines[i].ServiceDate; !d.IsZero() {
+		from = int64(sg.From.DaysUntil(d))
+	}
+	to := int64(math.MaxInt64)
+	if q := c.lines[i].Quantity; q-1 <= math.MaxInt64-from {
+		to = from + q - 1
+	}
+	return span{from, to}
+}
+
+// overlap reports whether lines i and j, both dated in segment sg, cover a
+// day in common.
+func (c *claim) overlap(sg Segment, i, j int) bool {
+	a, b := c.span(sg, i), c.span(sg, j)
+	return a.from <= b.to && b.from <= a.to
 }
 
 func saturatingAdd(a, b int64) int64 {
@@ -367,6 +396,30 @@ func total(amt []money.Paise, idx []int) (money.Paise, error) {
 		parts[k] = amt[i]
 	}
 	return money.Sum(parts...)
+}
+
+// missingRoomCharge reports whether segment si, which has no ratio, should
+// raise no_room_charge: the bill has no room or ICU line for it at all (a
+// line zeroed or set aside by an earlier step still counts), the stay is
+// longer than one day (a same-day stay without a room line is day care),
+// and the segment still has a scaled line to scale.
+func (c *claim) missingRoomCharge(s Step, si int) bool {
+	if c.facts.Admission == c.facts.Discharge {
+		return false
+	}
+	toScale := false
+	for i, l := range c.lines {
+		if c.seg[i] != si {
+			continue
+		}
+		if c.inBucket[i] {
+			return false
+		}
+		if c.amount[i] > 0 && slices.Contains(s.ScaledCategories, l.Category) {
+			toScale = true
+		}
+	}
+	return toScale
 }
 
 // ratio is a segment's proportionate-deduction ratio, num ÷ den.
@@ -428,7 +481,9 @@ func (c *claim) applyProportionateDeduction(s Step) error {
 			return fmt.Errorf("rule %s has effect %q, which doesn't scale", r.ID, r.Effect)
 		}
 		if b.billed == 0 {
-			c.flagClaim(FlagNoRoomCharge, 0)
+			if c.missingRoomCharge(s, i) {
+				c.flagClaim(FlagNoRoomCharge, 0)
+			}
 			continue
 		}
 		ratios[i] = ratio{num: b.admissible, den: b.billed, rule: r, ok: true}
