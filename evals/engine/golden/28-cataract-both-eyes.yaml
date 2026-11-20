@@ -1,0 +1,72 @@
+# A cataract claim for both eyes, the first this policy year. The limit is
+# per eye, so the left eye is capped and the right isn't; a limit pooled
+# over both eyes (₹50,000 against ₹50,000 billed) would cap nothing.
+# Case 29 is a later claim whose cover is this claim's ledger effects.
+#
+# Sum insured ₹1,00,000: the cataract limit is the lower of 25% (₹25,000)
+# and ₹40,000, per eye per policy year, so ₹25,000 an eye, with nothing
+# used yet. Cataract has a 24-month wait (Excl02); cover has run since
+# 1 April 2022, so it ended on 1 April 2024. The stay is 22 September only,
+# as day care, at an eye hospital without room categories (no differential
+# billing), which bills no bed.
+#
+# Step 4, sub-limits:
+#   left eye: L01 ₹16,000 + L02 ₹14,000 = ₹30,000, over ₹25,000. The
+#   ₹5,000 (500,000 paise) reduction is spread by amount:
+#     L01 266,666.67   L02 233,333.33
+#   The floors add to 499,999; the paisa left goes to L01 (.67).
+#   sub-limit-cataract: L01 266,667, L02 233,333. The left eye's lines are
+#   now 1,333,333 + 1,166,667 = 2,500,000 paise.
+#   right eye: L03 ₹12,000 + L04 ₹8,000 = ₹20,000, under ₹25,000.
+# Admissible: ₹25,000 + ₹20,000 = ₹45,000, under the cover left.
+# Step 6, co-payment: 5% of ₹45,000 = ₹2,250 (225,000 paise), spread:
+#     L01 66,666.65   L02 58,333.35   L03 60,000   L04 40,000
+#   The floors add to 224,999; the paisa left goes to L01 (.65).
+# Payable: 4,500,000 − 225,000 = 4,275,000 paise (₹42,750).
+# Ledger: each eye's use is what its lines were admitted at before the
+# co-payment: left ₹25,000, right ₹20,000.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 10000000
+      continuous_since: 2022-04-01
+
+facts:
+  admission: 2025-09-22
+  discharge: 2025-09-22
+  segments:
+    - {from: 2025-09-22, to: 2025-09-22, kind: room}
+  differential_billing: no
+  condition:
+    listed_group: listed-24-months
+  lines:
+    - {id: L01, category: professional-fees, service_date: 2025-09-22, quantity: 1, unit_price_paise: 1600000, amount_paise: 1600000, treatment: {kind: cataract, eye: left}}
+    # The left eye's intraocular lens.
+    - {id: L02, category: implants-devices, service_date: 2025-09-22, quantity: 1, unit_price_paise: 1400000, amount_paise: 1400000, treatment: {kind: cataract, eye: left}}
+    - {id: L03, category: professional-fees, service_date: 2025-09-22, quantity: 1, unit_price_paise: 1200000, amount_paise: 1200000, treatment: {kind: cataract, eye: right}}
+    # The right eye's intraocular lens.
+    - {id: L04, category: implants-devices, service_date: 2025-09-22, quantity: 1, unit_price_paise: 800000, amount_paise: 800000, treatment: {kind: cataract, eye: right}}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 1266666}
+    - {id: L02, payable_paise: 1108334}
+    - {id: L03, payable_paise: 1140000}
+    - {id: L04, payable_paise: 760000}
+  adjustments:
+    - {line: L01, rule: sub-limit-cataract, paise: 266667}
+    - {line: L02, rule: sub-limit-cataract, paise: 233333}
+    - {line: L01, rule: co-payment, paise: 66667}
+    - {line: L02, rule: co-payment, paise: 58333}
+    - {line: L03, rule: co-payment, paise: 60000}
+    - {line: L04, rule: co-payment, paise: 40000}
+  flags: []
+  claim_payable_paise: 4275000
+  ledger:
+    paid_paise: 4275000
+    cataract_used_paise: {left: 2500000, right: 2000000}

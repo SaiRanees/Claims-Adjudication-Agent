@@ -1,0 +1,58 @@
+# A package-billed cataract claim whose only payable line is the package.
+# The engine doesn't model packages, so the package line pays nothing under
+# unmodelled-package-rate and raises package_rate. The claim pays nothing,
+# but only because of a line the engine couldn't read, so it isn't a
+# proposed denial: calling it one would steer a reviewer toward denying it.
+# The package_rate flag sends it to review instead.
+#
+# Sum insured ₹1,00,000, continuous since 1 April 2022, past cataract's
+# 24-month wait. The stay is 12 January only, as day care, at an eye
+# hospital without room categories (no differential billing).
+#
+# Step 1, listed items: L02, an admission kit, is List II item 27:
+#   annexure-a-list-ii ₹500.
+# Unmodelled lines: L01, the right eye's cataract package at ₹35,000, is
+#   billed at a package rate: unmodelled-package-rate ₹35,000, and
+#   package_rate on L01.
+# Step 4: L01 is tied to the right eye's cataract but has nothing left, so
+#   the sub-limit takes nothing.
+# Steps 5 and 6: nothing is left; the co-payment on ₹0 is ₹0.
+# Payable: ₹0. A line was zeroed as unmodelled, so no proposed_denial.
+# Ledger: nothing paid, and no cataract use.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 10000000
+      continuous_since: 2022-04-01
+
+facts:
+  admission: 2026-01-12
+  discharge: 2026-01-12
+  segments:
+    - {from: 2026-01-12, to: 2026-01-12, kind: room}
+  differential_billing: no
+  condition:
+    listed_group: listed-24-months
+  lines:
+    # "Cataract surgery package, right eye".
+    - {id: L01, category: other-hospital-charges, service_date: 2026-01-12, quantity: 1, unit_price_paise: 3500000, amount_paise: 3500000, package_rate: true, treatment: {kind: cataract, eye: right}}
+    # An admission kit.
+    - {id: L02, category: other-hospital-charges, service_date: 2026-01-12, quantity: 1, unit_price_paise: 50000, amount_paise: 50000, item_list: list-ii}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 0}
+    - {id: L02, payable_paise: 0}
+  adjustments:
+    - {line: L02, rule: annexure-a-list-ii, paise: 50000}
+    - {line: L01, rule: unmodelled-package-rate, paise: 3500000}
+  flags:
+    - {code: package_rate, line: L01}
+  claim_payable_paise: 0
+  ledger:
+    paid_paise: 0

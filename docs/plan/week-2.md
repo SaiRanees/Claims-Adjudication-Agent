@@ -103,7 +103,7 @@ Three fixes from the review of session 1 come first. The pack is unpublished, so
 
   | Code | About | Raised when | Figure |
   | --- | --- | --- | --- |
-  | `room_days_mismatch` | Line | A bucket line's days billed are neither the segment's calendar days nor one fewer | None |
+  | `room_days_mismatch` | Line | The days a category's bucket lines cover together in a segment are neither its calendar days nor one fewer; raised on each of those lines | None |
   | `bucket_segment_mismatch` | Line | A bucket line is dated in a segment of the other kind: nursing or patient diet on an ICU day, or ICU charges on a room day | None |
   | `undated_line` | Line | A line has no date in a stay with more than one rate | None |
   | `outside_stay` | Line | The unmodelled-lines step deducts a line dated outside the stay | None |
@@ -141,8 +141,8 @@ Done when money's new functions pass their table and fuzz tests, the input-check
   - Because the step runs before the daily caps, a set-aside line adds nothing to a bucket's total or a segment's ratio.
   - Neither rule rests on a clause of the wording, so their clause field is empty. The pack marks both rules unmodelled, which is the only way a rule may cite no clause, and a comment points to architecture.md's review triggers.
 - [x] Step 2: each bucket is capped per day, at the lower of a share of the eligible sum insured and a rupee ceiling: 2% or ₹5,000 for the room bucket, and 5% or ₹10,000 for ICU.
-  - The daily cap is multiplied by the smaller of the days billed and the segment's calendar days, so billing extra days never raises the allowance. A bucket's days billed are the most days any of its lines bills, because room, nursing and diet lines run over the same days.
-  - The days billed may equal the segment's calendar days or be one fewer, because hospitals often skip the discharge day. Anything else raises `room_days_mismatch`, including a lump-sum line billed as one unit for a longer stay.
+  - The daily cap is multiplied by the smaller of the days billed and the segment's calendar days, so billing extra days never raises the allowance. Each line covers its quantity of days from its service date, so a bucket's days billed are the days its lines cover together (session 4 fixed this; see there).
+  - The days billed may equal the segment's calendar days or be one fewer, because hospitals often skip the discharge day. This is judged per category, on the days that category's lines cover together. Anything else raises `room_days_mismatch` on each of that category's lines, including a lump-sum line billed as one unit for a longer stay.
   - A bucket line's service date is its first billed day, and that picks its segment. So in a stay with more than one segment, an undated bucket line is an input error naming the line; in a stay with one segment, it belongs to that one.
   - The bucket's reduction is spread across its lines with `Allocate`, sorted by ID, in the same way as the claim-level reductions.
   - A bucket line dated in a segment of the other kind raises `bucket_segment_mismatch` and is held to both caps. First its own bucket's cap applies, under that bucket's rule. Then it joins the segment's bucket at what that cap left, and the segment's cap applies under the segment's rule. Per day that pays min(segment lines + min(line, own cap), segment cap). Its billed amount counts in the segment's ratio.
@@ -179,6 +179,10 @@ Done when every golden case for steps 1 to 3 is checked and passes, including th
 
 ## Session 4: sub-limits, the cap, co-payment and the discount (steps 4 to 6)
 
+- [ ] Fix how a bucket's days billed are counted. Session 3 counted the most days on any one line, so a bill with one room line per day, which is common, counted as 1 day. Four daily ₹4,000 lines with a ₹50,000 surgeon's fee paid ₹19,593.75 with four `room_days_mismatch` flags instead of ₹62,700 with none.
+  - Each line covers its quantity of days from its service date; an undated bucket line, possible only in a stay with one segment, covers them from the segment's first day. A bucket's days billed are the days its lines cover together, for the allowance (step 2) and the ratio (step 3) alike.
+  - `room_days_mismatch` is judged per category, on the days that category's lines cover together, and raised on each of them.
+  - The fix changes none of cases 01 to 24. Case 25 is that bill.
 - [ ] Step 4 applies three sub-limits to the lines the facts tie to each treatment. Percentage limits use the eligible sum insured, without the cumulative bonus.
   - Cataract: the lower of 25% of the sum insured and ₹40,000 per eye, less what that eye has already used this policy year.
   - Listed modern treatments (C.I.6): 50% of the sum insured, less what has already been used.
@@ -204,6 +208,8 @@ Done when every golden case for steps 1 to 3 is checked and passes, including th
   - a bill-level discount;
   - a claim where every line is non-payable, which is a proposed denial, not an error;
   - a package-billed cataract claim whose only payable line is the package line, which pays zero and raises `package_rate`, not `proposed_denial`.
+
+  Cases 01 to 24 already cover the worked example (01), the cataract as day care (08), the ambulance (06), the rounding (10) and the discount (09); case 07 exceeds the cover by ₹2,000. The rest are written as cases 26 to 32, with case 25 for the days-billed fix, and wait for their check: 26 is a paisa over the cover left and 27 a paisa under, 28 and 29 are the two cataract claims, 30 is the modern treatment, 31 the claim where every line is non-payable, and 32 the package-billed cataract.
 
 Done when every golden case written so far is checked and passes, and the worked example matches the plan's table line by line.
 
