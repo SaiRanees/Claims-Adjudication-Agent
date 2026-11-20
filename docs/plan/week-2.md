@@ -2,7 +2,9 @@
 
 By the end of the week, one versioned rule pack encodes Go Digit's wording of Arogya Sanjeevani, the pure engine in `internal/rules` turns a claim's facts into a payable amount with one adjustment per rule applied, and 40 independently checked golden cases pass from a CLI. Nothing touches the database, Temporal or a model this week: the engine is a library, and the workflow starts calling it in M3.
 
-Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010 are accepted. Session 1 is done: the rule pack loads, validates and is selected through the policy period. Session 2's code is done, with the three fixes from the session 1 review; its first 10 golden cases wait for your check.
+Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010 are accepted. Session 1 is done: the rule pack loads, validates and is selected through the policy period. Session 2 is done, with the three fixes from the session 1 review, and its first 10 golden cases are checked.
+
+Progress, 20 November: session 3's golden cases (11 to 21) are written and wait for their check. No step is coded yet.
 
 ## Decide first
 
@@ -125,8 +127,8 @@ Three fixes from the review of session 1 come first. The pack is unpublished, so
 - [x] A test outside `internal/rules`, which can't read files, embeds every case and runs it. On a failure it prints a diff per line and per adjustment. A second test compares `golden-cases.csv` with the expected figures in the case files, following the row rules and the identity check above.
   - Until every step is coded, the runner compares a figure only once the engine codes its step and every step before it in the pack (`rules.Implemented`). Payables and the ledger need every step. Eligibility counts as coded for a case that expects no eligibility adjustment and no `tranche_excluded`, because until session 5 it passes every tranche, which is what such a case expects. A checked case fails the test when a compared figure differs; otherwise it is reported as pending, with every figure that differs. Once session 5 codes eligibility, every figure is compared.
   - Each case file is also checked against itself: one payable per line, billed less payable equal to the line's adjustments, lines adding up to the claim, and every rule and flag known.
-- [ ] I write the first 10 cases, starting with the plan's worked example, and you check them and send their CSV rows before any step is coded.
-  - Written, with their arithmetic in comments, in `evals/engine/golden/`. Waiting for your check.
+- [x] I write the first 10 cases, starting with the plan's worked example, and you check them and send their CSV rows before any step is coded.
+  - Written, with their arithmetic in comments, in `evals/engine/golden/`. Their checked figures are in `golden-cases.csv`, and the CSV test matches all 10.
 
 Done when money's new functions pass their table and fuzz tests, the input-check table tests pass, the CSV test matches your rows for every checked case, and the golden runner loads all 10 cases and reports each one failing against the stub engine.
 
