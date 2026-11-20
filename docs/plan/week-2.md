@@ -103,14 +103,14 @@ Three fixes from the review of session 1 come first. The pack is unpublished, so
 
   | Code | About | Raised when | Figure |
   | --- | --- | --- | --- |
-  | `room_days_mismatch` | Line | The days a category's bucket lines cover together in a segment are neither its calendar days nor one fewer; raised on each of those lines | None |
+  | `room_days_mismatch` | Line | The days a category's bucket lines cover together in a segment are neither its calendar days nor one fewer, raised on each of those lines; or two room-rent lines in a segment cover the same day, raised on both | None |
   | `bucket_segment_mismatch` | Line | A bucket line is dated in a segment of the other kind: nursing or patient diet on an ICU day, or ICU charges on a room day | None |
   | `undated_line` | Line | A line has no date in a stay with more than one rate | None |
   | `outside_stay` | Line | The unmodelled-lines step deducts a line dated outside the stay | None |
   | `package_rate` | Line | The unmodelled-lines step deducts a line billed at a package rate | None |
   | `bill_discount` | Claim | The bill carries a discount | The discount |
   | `differential_billing_unknown` | Claim | The facts don't say whether the hospital uses differential billing | None |
-  | `no_room_charge` | Claim | A segment has no room or ICU charge, so it has no ratio | None |
+  | `no_room_charge` | Claim | In a stay longer than one day, the bill has no room or ICU line at all for a segment that still has a line to scale | None |
   | `icu_ratio_scaling` | Claim | Lines are scaled by an ICU ratio | The total ICU-ratio deduction |
   | `cover_exceeded` | Claim | The admissible total exceeds the cover left | The co-pay-first payable, after the same discount |
   | `tranche_excluded` | Claim | A sum-insured tranche is still inside a waiting period | The total excluded sum insured |
@@ -142,7 +142,7 @@ Done when money's new functions pass their table and fuzz tests, the input-check
   - Neither rule rests on a clause of the wording, so their clause field is empty. The pack marks both rules unmodelled, which is the only way a rule may cite no clause, and a comment points to architecture.md's review triggers.
 - [x] Step 2: each bucket is capped per day, at the lower of a share of the eligible sum insured and a rupee ceiling: 2% or ₹5,000 for the room bucket, and 5% or ₹10,000 for ICU.
   - The daily cap is multiplied by the smaller of the days billed and the segment's calendar days, so billing extra days never raises the allowance. Each line covers its quantity of days from its service date, so a bucket's days billed are the days its lines cover together (session 4 fixed this; see there).
-  - The days billed may equal the segment's calendar days or be one fewer, because hospitals often skip the discharge day. This is judged per category, on the days that category's lines cover together. Anything else raises `room_days_mismatch` on each of that category's lines, including a lump-sum line billed as one unit for a longer stay.
+  - The days billed may equal the segment's calendar days or be one fewer, because hospitals often skip the discharge day. This is judged per category, on the days that category's lines cover together. Anything else raises `room_days_mismatch` on each of that category's lines, including a lump-sum line billed as one unit for a longer stay. Two room-rent lines in a segment that cover the same day also raise it, on both (session 5).
   - A bucket line's service date is its first billed day, and that picks its segment. So in a stay with more than one segment, an undated bucket line is an input error naming the line; in a stay with one segment, it belongs to that one.
   - The bucket's reduction is spread across its lines with `Allocate`, sorted by ID, in the same way as the claim-level reductions.
   - A bucket line dated in a segment of the other kind raises `bucket_segment_mismatch` and is held to both caps. First its own bucket's cap applies, under that bucket's rule. Then it joins the segment's bucket at what that cap left, and the segment's cap applies under the segment's rule. Per day that pays min(segment lines + min(line, own cap), segment cap). Its billed amount counts in the segment's ratio.
@@ -152,7 +152,7 @@ Done when money's new functions pass their table and fuzz tests, the input-check
   - A line held to both caps (`bucket_segment_mismatch`) is held to both in the ratio too: the admissible side is min(segment lines + min(line, own cap × its days billed), segment cap × days billed), over the segment's billed total, which includes the line's billed amount. Without such a line, that is the cap × the days billed ÷ the billed total.
   - The room ratio and the ICU ratio are separate rules, and the ICU rule raises `icu_ratio_scaling` (ADR 0010). ICU charge lines are capped but never scaled.
   - A rule whose effect is `no-scaling` skips scaling in segments of its kind, deducts nothing and raises nothing. A test runs a pack variant whose ICU rule is `no-scaling`.
-  - A segment with no room or ICU charge has no ratio: scaling is skipped there, and the engine raises `no_room_charge`.
+  - A segment with no room or ICU charge left to pay has no ratio, and scaling is skipped there. It raises `no_room_charge` only as session 5 narrowed it: the bill has no room or ICU line for that segment at all, the stay is longer than one day, and the segment still has a scaled line to scale.
   - For a hospital without differential billing, the step is skipped (Note 3), so it raises neither `no_room_charge` nor `undated_line`: no ratio is needed. When the facts don't say, the step follows the wording and raises `differential_billing_unknown`.
 - [x] An undated line in a stay with more than one rate gets the lowest ratio in the stay and raises `undated_line`, so its interim figure is never above any reading of the bill. A reviewer supplies the date.
   - Only a scaled line raises it. An exempt line's figure doesn't depend on its date, and a bucket line needs a date (step 2).
@@ -215,13 +215,22 @@ Done when every golden case written so far is checked and passes, and the worked
 
 ## Session 5: eligibility and waiting periods
 
+Two rule changes from the review of session 4 come first. They were decided before case 31 was checked, so changing that case isn't a test fix.
+
+- [ ] `no_room_charge` means the bill has no room or ICU line for that segment at all. A line a list zeroed, or that the unmodelled step set aside, still counts, and so does one the eligibility step zeroed.
+  - It is raised only for a stay longer than one day, and only when the segment still has a scaled line to scale. A same-day stay without a room line is normal day care, and Note 2 applies only after an admission to a room.
+  - Case 31 now raises only `proposed_denial`. Cases 15 (two days, with scaled lines) and 28, 29 and 32 (no differential billing) don't change.
+- [ ] Two room-rent lines in one segment that cover the same day raise `room_days_mismatch` on both, as a day billed twice.
+  - Not for `icu-charges`: Definition 24 puts the ICU bed, the intensivist and ICU nursing on the same day, as in case 05. Not for `nursing`, since shifts can be billed separately.
+  - Case 33 is a room day billed twice, under the cap: the cap doesn't catch it, so the flag must.
 - [ ] The eligibility step, declared first since session 1, stops being a pass-through. Every percentage limit and the cap use the eligible sum insured.
 - [ ] The waiting periods:
   - 30 days at the start (Excl03). It doesn't apply to accidents, and Excl03(ii) drops it once cover has run continuously for more than 12 months.
-  - 24 or 36 months for listed conditions (Excl02).
-  - 36 months for pre-existing disease (Excl01). Where a listed condition is also pre-existing, the longer period applies (Excl02(c)).
+  - 24 or 36 months for listed conditions (Excl02). Excl02(a) doesn't apply it to accidents either.
+  - 36 months for pre-existing disease (Excl01), accident or not. Where a listed condition is also pre-existing, the longer period applies (Excl02(c)).
 
-  The facts say which group the condition falls into; deciding that is the agent's job in M3.
+  The facts say which group the condition falls into; deciding that is the agent's job in M3. Which waits an accident lifts is pack data, `waived_for_accident` on each rule, because the engine knows the policy only through the pack.
+- [ ] Where a period ends. A wait of N days or months starting on a tranche's continuous-cover date D runs through (D − 1 day) + N, the way a policy schedule's "one year less a day" does, and the first day after it is covered. So the 30-day wait's last day is D + 29 (day 30), 24 months from 1 April 2022 run through 31 March 2024, and 24 months from 29 February 2024 run through 28 February 2026. Adding N months to D instead would end that last one a day sooner, on 27 February, which is the higher reading.
 - [ ] Each tranche is tested on its own. An increase in the sum insured restarts the waiting periods for the added amount (Excl01(b), Excl02(b), Excl03(iii)), so only the tranches past the relevant period count toward the eligible sum insured. A tranche that is left out raises `tranche_excluded`, carrying the total sum insured excluded.
 - [ ] Excl03 excludes "treatment of any illness within 30 days".
   - When the facts give an onset date inside the first 30 days, the claim gets a proposed denial and its flag. That follows the lower reading, by the plan's rule that an interim figure is never above any reading.
@@ -229,6 +238,8 @@ Done when every golden case written so far is checked and passes, and the worked
 
   A comment in the pack records this.
 - [ ] When no tranche is eligible, the claim gets a proposed denial: payable zero, each line's billed amount deducted by an adjustment citing Excl01, Excl02 or Excl03, and `proposed_denial`. The engine never denies.
+  - The rule cited is the oldest tranche's: of the waits that exclude it, the one that ends last, with ties going to the pack's order. The oldest tranche is the first to become eligible, so its wait is what stands between the claim and payment.
+  - `tranche_excluded` is raised too, carrying the whole sum insured.
 - [ ] Golden cases:
   - the last day inside each period and the first day after it;
   - for Excl03, an admission on day 30 and on day 31 with no onset date, and an onset inside the 30 days with an admission after them (a proposed denial, flagged);
@@ -237,6 +248,18 @@ Done when every golden case written so far is checked and passes, and the worked
   - an inception on 29 February;
   - a listed condition that is also pre-existing;
   - a sum-insured increase still inside its waiting period, which excludes the tranche, raises the flag and uses the lower sum insured for the percentage limits.
+
+  Written as cases 34 to 48, with case 33 for the double-billed room day, and waiting for their check:
+  - 34 and 35: the last day inside and the first day after a 24-month wait;
+  - 36 and 37: the same for a 36-month listed condition;
+  - 38 and 39: the same for a pre-existing disease;
+  - 40 and 41: an admission on day 30 and on day 31;
+  - 42: an onset inside the 30 days;
+  - 43: an accident in the first 30 days;
+  - 44: early in the second year;
+  - 45 and 46: a 29 February inception, on the last day inside and the first day after;
+  - 47: a listed condition that is also pre-existing;
+  - 48: a sum-insured increase.
 
 Done when every boundary case is checked and passes on both sides, and every proposed denial and every excluded tranche carries its flag.
 

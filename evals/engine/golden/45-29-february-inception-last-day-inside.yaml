@@ -1,0 +1,56 @@
+# An inception on 29 February 2024, on the last day inside a 24-month wait
+# for a listed condition (Excl02): a hernia repair. The wait runs through
+# 28 February 2024 + 24 months = 28 February 2026, the day of this
+# admission, as a policy schedule's "one year less a day" would. Adding 24
+# months to 29 February 2024 instead gives 28 February 2026 as the first
+# day after, a day sooner, which is the higher reading. The policy year
+# runs from 1 March 2025 to 28 February 2026.
+#
+# Sum insured ₹3,00,000, in one tranche. A 2-day stay, the room billed for
+# 1 day.
+#
+# Eligibility: the only tranche is still inside the wait, so no sum
+#   insured is eligible. Each line's billed amount is deducted under
+#   waiting-period-listed-24-months (Excl02):
+#   L01 ₹4,000, L02 ₹30,000. tranche_excluded carries the ₹3,00,000
+#   excluded.
+# Steps 2 to 6: nothing is left to pay. The bill has a room line, so
+#   no_room_charge isn't raised.
+# Payable: ₹0, a proposed denial. The engine never denies: a person
+#   decides (rule 6).
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-03-01
+  period_end: 2026-02-28
+
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: 2024-02-29
+
+facts:
+  admission: 2026-02-28
+  discharge: 2026-03-01
+  segments:
+    - {from: 2026-02-28, to: 2026-03-01, kind: room}
+  differential_billing: yes
+  condition:
+    listed_group: listed-24-months
+  lines:
+    - {id: L01, category: room-rent, service_date: 2026-02-28, quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: professional-fees, service_date: 2026-02-28, quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 0}
+    - {id: L02, payable_paise: 0}
+  adjustments:
+    - {line: L01, rule: waiting-period-listed-24-months, paise: 400000}
+    - {line: L02, rule: waiting-period-listed-24-months, paise: 3000000}
+  flags:
+    - {code: tranche_excluded, paise: 30000000}
+    - {code: proposed_denial}
+  claim_payable_paise: 0
+  ledger:
+    paid_paise: 0

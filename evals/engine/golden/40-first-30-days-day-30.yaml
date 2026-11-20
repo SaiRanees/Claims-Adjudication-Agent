@@ -1,0 +1,52 @@
+# An admission on day 30 of the first policy, with no onset date known
+# (Excl03): typhoid fever, not a listed condition, not pre-existing and not
+# an accident. The first policy began on 1 May 2025, so the 30-day wait
+# runs through 30 April + 30 days = 30 May, day 30, the day of this
+# admission. With no onset date, the admission date decides.
+#
+# Sum insured ₹3,00,000, in one tranche. A 2-day stay, the room billed for
+# 1 day.
+#
+# Eligibility: the only tranche is still inside the wait, so no sum
+#   insured is eligible. Each line's billed amount is deducted under
+#   waiting-period-first-30-days (Excl03):
+#   L01 ₹4,000, L02 ₹30,000. tranche_excluded carries the ₹3,00,000
+#   excluded.
+# Steps 2 to 6: nothing is left to pay. The bill has a room line, so
+#   no_room_charge isn't raised.
+# Payable: ₹0, a proposed denial. The engine never denies: a person
+#   decides (rule 6).
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-05-01
+  period_end: 2026-04-30
+
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: 2025-05-01
+
+facts:
+  admission: 2025-05-30
+  discharge: 2025-05-31
+  segments:
+    - {from: 2025-05-30, to: 2025-05-31, kind: room}
+  differential_billing: yes
+  lines:
+    - {id: L01, category: room-rent, service_date: 2025-05-30, quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: professional-fees, service_date: 2025-05-30, quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 0}
+    - {id: L02, payable_paise: 0}
+  adjustments:
+    - {line: L01, rule: waiting-period-first-30-days, paise: 400000}
+    - {line: L02, rule: waiting-period-first-30-days, paise: 3000000}
+  flags:
+    - {code: tranche_excluded, paise: 30000000}
+    - {code: proposed_denial}
+  claim_payable_paise: 0
+  ledger:
+    paid_paise: 0
