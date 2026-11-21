@@ -1,14 +1,20 @@
 package rules
 
-import "github.com/SaiRanees/Claims-Adjudication-Agent/internal/rules/money"
+import (
+	"encoding/json"
+
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/rules/money"
+)
 
 // Result is the engine's answer for one claim. Every reduction is an
 // adjustment, including a line's share of a claim-level reduction, so for
 // every line, billed less payable equals the sum of its adjustments.
 type Result struct {
-	// Pack identifies the pack used, so a replay can prove it used the same
-	// one.
-	Pack Identity
+	// Engine is the EngineVersion that computed the result, and Pack
+	// identifies the pack it used, so a replay can prove it used the same
+	// code and the same rules.
+	Engine string
+	Pack   Identity
 	// Lines are sorted by ID.
 	Lines []LineResult
 	// Adjustments are in step order, then by line ID. None has a zero amount.
@@ -43,8 +49,27 @@ type Adjustment struct {
 // Input is one named figure an adjustment used: an amount in paise, a rate
 // in basis points or a count of days.
 type Input struct {
-	Name  string
-	Value int64
+	Name  string `json:"name"`
+	Value int64  `json:"value"`
+}
+
+// MarshalJSON writes the adjustment as M3 stores it, in the adjustments
+// table and in audit details: IDs, reason codes and integer amounts only,
+// never text from the documents. The keys follow the API's spelling. The
+// clause ID is empty for an unmodelled rule, and the inputs are a list,
+// empty when there are none.
+func (a Adjustment) MarshalJSON() ([]byte, error) {
+	inputs := a.Inputs
+	if inputs == nil {
+		inputs = []Input{}
+	}
+	return json.Marshal(struct {
+		LineID      string      `json:"lineId"`
+		RuleID      string      `json:"ruleId"`
+		ClauseID    string      `json:"clauseId"`
+		Inputs      []Input     `json:"inputs"`
+		AmountPaise money.Paise `json:"amountPaise"`
+	}{a.LineID, a.RuleID, a.Clause, inputs, a.Amount})
 }
 
 // Flag is a reason a person must look at the claim: valid input the engine
@@ -57,6 +82,22 @@ type Flag struct {
 	// Figure is set only for the codes that carry one.
 	Figure    money.Paise
 	HasFigure bool
+}
+
+// MarshalJSON writes the flag as M3 stores it: its code, the line ID for a
+// flag about one line, and the figure for a code that carries one, even
+// when it is zero. A key that doesn't apply is left out.
+func (f Flag) MarshalJSON() ([]byte, error) {
+	out := struct {
+		Code        FlagCode     `json:"code"`
+		LineID      string       `json:"lineId,omitempty"`
+		FigurePaise *money.Paise `json:"figurePaise,omitempty"`
+	}{Code: f.Code, LineID: f.LineID}
+	if f.HasFigure {
+		figure := f.Figure
+		out.FigurePaise = &figure
+	}
+	return json.Marshal(out)
 }
 
 // Ledger is what the claim adds to the policy year's balances. Its terms

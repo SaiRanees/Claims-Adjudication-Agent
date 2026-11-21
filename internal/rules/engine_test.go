@@ -167,8 +167,8 @@ func TestAdjudicateValidClaim(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Pack != pack.Identity() {
-		t.Errorf("result pack = %s, want %s", res.Pack, pack.Identity())
+	if res.Engine != rules.EngineVersion || res.Pack != pack.Identity() {
+		t.Errorf("result engine %q and pack %s, want %q and %s", res.Engine, res.Pack, rules.EngineVersion, pack.Identity())
 	}
 	var ids []string
 	for _, l := range res.Lines {
