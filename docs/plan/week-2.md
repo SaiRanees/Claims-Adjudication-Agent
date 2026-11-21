@@ -265,6 +265,14 @@ Done when every boundary case is checked and passes on both sides, and every pro
 
 ## Session 6: properties, fuzzing and explanations
 
+Two additions from the review of session 5 come first, each with its case written before the code.
+
+- [ ] An onset before a tranche's cover began stays outside its 30-day wait; otherwise a pre-existing disease would be excluded under Excl03 however long it had been covered. But on a condition not marked pre-existing, such an onset may be an undeclared pre-existing disease, which the engine can't decide. It raises a claim-level flag, `onset_before_cover`, with no figure, which joins the closed list.
+  - Case 49: an onset three weeks before the cover began, admitted in month 4. The claim pays, and the flag sends it to a person.
+- [ ] Excl03(ii) for the onset rule: an illness that began in the first 30 days stops being excluded once cover has run continuously for more than 12 months, judged at the admission.
+  - Case 50: onset on day 20, admitted on the last day of the first 12 months, which is excluded.
+  - Case 51: the same, admitted the next day, which pays.
+
 - [ ] Property tests over generated claims, using native fuzzing so no dependency is added:
   - No line pays more than it billed or less than zero.
   - The lines add up to the totals.
