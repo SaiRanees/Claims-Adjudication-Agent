@@ -114,6 +114,7 @@ Three fixes from the review of session 1 come first. The pack is unpublished, so
   | `icu_ratio_scaling` | Claim | Lines are scaled by an ICU ratio | The total ICU-ratio deduction |
   | `cover_exceeded` | Claim | The admissible total exceeds the cover left | The co-pay-first payable, after the same discount |
   | `tranche_excluded` | Claim | A sum-insured tranche is still inside a waiting period | The total excluded sum insured |
+  | `onset_before_cover` | Claim | The onset is before a tranche's continuous cover began, on a condition not marked pre-existing (added in session 6) | None |
   | `proposed_denial` | Claim | Every tranche is excluded; or the payable is zero, no line was zeroed as unmodelled (`package_rate`, `outside_stay`), and the discount didn't take it to zero | None |
 - [x] Input checks:
   - Line IDs are unique.
@@ -267,9 +268,11 @@ Done when every boundary case is checked and passes on both sides, and every pro
 
 Two additions from the review of session 5 come first, each with its case written before the code.
 
-- [ ] An onset before a tranche's cover began stays outside its 30-day wait; otherwise a pre-existing disease would be excluded under Excl03 however long it had been covered. But on a condition not marked pre-existing, such an onset may be an undeclared pre-existing disease, which the engine can't decide. It raises a claim-level flag, `onset_before_cover`, with no figure, which joins the closed list.
+- [x] An onset before a tranche's cover began stays outside its 30-day wait; otherwise a pre-existing disease would be excluded under Excl03 however long it had been covered. But on a condition not marked pre-existing, such an onset may be an undeclared pre-existing disease, which the engine can't decide. It raises a claim-level flag, `onset_before_cover`, with no figure, which joins the closed list.
   - Case 49: an onset three weeks before the cover began, admitted in month 4. The claim pays, and the flag sends it to a person.
-- [ ] Excl03(ii) for the onset rule: an illness that began in the first 30 days stops being excluded once cover has run continuously for more than 12 months, judged at the admission.
+  - It is raised for each tranche, so an onset between the base's start and an increase's raises it too, and an accident doesn't lift it: an injury can be pre-existing.
+- [x] Excl03(ii) for the onset rule: an illness that began in the first 30 days stops being excluded once cover has run continuously for more than 12 months, judged at the admission.
+  - The waiver used to be judged at the onset, the same date as the wait, which inside the 30 days is never past 12 months, so case 51 was a proposed denial until it moved to the admission.
   - Case 50: onset on day 20, admitted on the last day of the first 12 months, which is excluded.
   - Case 51: the same, admitted the next day, which pays.
 

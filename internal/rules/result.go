@@ -88,6 +88,7 @@ const (
 	FlagICURatioScaling            FlagCode = "icu_ratio_scaling"
 	FlagCoverExceeded              FlagCode = "cover_exceeded"
 	FlagTrancheExcluded            FlagCode = "tranche_excluded"
+	FlagOnsetBeforeCover           FlagCode = "onset_before_cover"
 	FlagProposedDenial             FlagCode = "proposed_denial"
 )
 
@@ -105,6 +106,7 @@ func FlagCodes() []FlagCode {
 		FlagICURatioScaling,
 		FlagCoverExceeded,
 		FlagTrancheExcluded,
+		FlagOnsetBeforeCover,
 		FlagProposedDenial,
 	}
 }
@@ -117,7 +119,7 @@ func (c FlagCode) AboutLine() bool {
 		FlagOutsideStay, FlagPackageRate:
 		return true
 	case FlagBillDiscount, FlagDifferentialBillingUnknown, FlagNoRoomCharge,
-		FlagICURatioScaling, FlagCoverExceeded, FlagTrancheExcluded, FlagProposedDenial:
+		FlagICURatioScaling, FlagCoverExceeded, FlagTrancheExcluded, FlagOnsetBeforeCover, FlagProposedDenial:
 		return false
 	}
 	return false
@@ -131,7 +133,8 @@ func (c FlagCode) HasFigure() bool {
 	case FlagBillDiscount, FlagICURatioScaling, FlagCoverExceeded, FlagTrancheExcluded:
 		return true
 	case FlagRoomDaysMismatch, FlagBucketSegmentMismatch, FlagUndatedLine, FlagOutsideStay,
-		FlagPackageRate, FlagDifferentialBillingUnknown, FlagNoRoomCharge, FlagProposedDenial:
+		FlagPackageRate, FlagDifferentialBillingUnknown, FlagNoRoomCharge, FlagOnsetBeforeCover,
+		FlagProposedDenial:
 		return false
 	}
 	return false
@@ -141,7 +144,7 @@ func (c FlagCode) HasFigure() bool {
 // or for a flag whose figure needs later steps, the latest of those.
 func (c FlagCode) Step() StepName {
 	switch c {
-	case FlagTrancheExcluded:
+	case FlagTrancheExcluded, FlagOnsetBeforeCover:
 		return StepCheckEligibility
 	case FlagOutsideStay, FlagPackageRate:
 		return StepSetAsideUnmodelledLines

@@ -239,8 +239,8 @@ func TestAdjudicateLineOrder(t *testing.T) {
 // The flag list is closed, and what it says about each code is consistent.
 func TestFlagCodes(t *testing.T) {
 	codes := rules.FlagCodes()
-	if len(codes) != 12 {
-		t.Errorf("%d flag codes, want 12", len(codes))
+	if len(codes) != 13 {
+		t.Errorf("%d flag codes, want 13", len(codes))
 	}
 	lineFlags := []rules.FlagCode{
 		rules.FlagRoomDaysMismatch, rules.FlagBucketSegmentMismatch, rules.FlagUndatedLine,

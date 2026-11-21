@@ -647,13 +647,54 @@ func TestEligibility(t *testing.T) {
 		{
 			// When the onset is known it decides the 30-day wait, and an
 			// onset before cover began isn't inside it; a pre-existing
-			// disease is for Excl01, which the facts don't claim here.
+			// disease is for Excl01, which the facts don't claim here, so
+			// onset_before_cover asks a person whether it is one.
 			name: "an onset before cover began isn't inside the 30-day wait",
 			facts: func(t *testing.T) rules.Facts {
 				return stay(t, "2025-05-10", rules.Condition{Onset: date(t, "2025-04-20")})
 			},
 			tranches: func(t *testing.T) []rules.Tranche { return []rules.Tranche{tranche(t, 30_000_000, "2025-05-01")} },
 			adjs:     eligible,
+			flags:    []wantFlag{{rules.FlagOnsetBeforeCover, "", 0}},
+			payable:  3_230_000,
+		},
+		{
+			// A declared pre-existing disease, past its 36 months: Excl01
+			// has done its work, so there is nothing for a person to ask.
+			name: "an onset before cover on a pre-existing disease raises no flag",
+			facts: func(t *testing.T) rules.Facts {
+				return stay(t, "2025-08-04", rules.Condition{PreExisting: true, Onset: date(t, "2019-06-01")})
+			},
+			tranches: func(t *testing.T) []rules.Tranche { return []rules.Tranche{tranche(t, 30_000_000, "2020-04-01")} },
+			adjs:     eligible,
+			payable:  3_230_000,
+		},
+		{
+			// The onset is after the base began but before the increase:
+			// for the increase it is before its cover, so the flag is
+			// raised, once, though the base is untouched.
+			name: "an onset before an increase began raises the flag",
+			facts: func(t *testing.T) rules.Facts {
+				return stay(t, "2025-08-04", rules.Condition{Onset: date(t, "2025-02-01")})
+			},
+			tranches: func(t *testing.T) []rules.Tranche {
+				return []rules.Tranche{tranche(t, 10_000_000, "2020-04-01"), tranche(t, 20_000_000, "2025-04-01")}
+			},
+			adjs:    eligible,
+			flags:   []wantFlag{{rules.FlagOnsetBeforeCover, "", 0}},
+			payable: 3_230_000,
+		},
+		{
+			// An injury before the cover began may be pre-existing too: the
+			// definition is "any condition, ailment, injury or disease". So
+			// an accident doesn't lift the flag.
+			name: "an accident before cover began raises the flag",
+			facts: func(t *testing.T) rules.Facts {
+				return stay(t, "2025-05-10", rules.Condition{Accident: true, Onset: date(t, "2025-04-28")})
+			},
+			tranches: func(t *testing.T) []rules.Tranche { return []rules.Tranche{tranche(t, 30_000_000, "2025-05-01")} },
+			adjs:     eligible,
+			flags:    []wantFlag{{rules.FlagOnsetBeforeCover, "", 0}},
 			payable:  3_230_000,
 		},
 		{
