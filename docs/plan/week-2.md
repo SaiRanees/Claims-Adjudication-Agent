@@ -240,7 +240,7 @@ Two rule changes from the review of session 4 come first. They were decided befo
 - [x] When no tranche is eligible, the claim gets a proposed denial: payable zero, each line's billed amount deducted by an adjustment citing Excl01, Excl02 or Excl03, and `proposed_denial`. The engine never denies.
   - The rule cited is the oldest tranche's: of the waits that exclude it, the one that ends last, with ties going to the pack's order. The oldest tranche is the first to become eligible, so its wait is what stands between the claim and payment.
   - `tranche_excluded` is raised too, carrying the whole sum insured.
-- [ ] Golden cases:
+- [x] Golden cases:
   - the last day inside each period and the first day after it;
   - for Excl03, an admission on day 30 and on day 31 with no onset date, and an onset inside the 30 days with an admission after them (a proposed denial, flagged);
   - an accident in the first 30 days;
