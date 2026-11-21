@@ -657,6 +657,38 @@ func TestEligibility(t *testing.T) {
 			payable:  3_230_000,
 		},
 		{
+			// Excl03(ii) and (iii): the increase's onset is on its day 20,
+			// and the admission is on the last day of its first 12 months,
+			// so its 30-day exclusion stands. Only the base counts, as in
+			// the test above.
+			name: "an increase's onset in its 30 days excludes it through its 12th month",
+			facts: func(t *testing.T) rules.Facts {
+				return stay(t, "2026-04-30", rules.Condition{Onset: date(t, "2025-05-20")})
+			},
+			tranches: func(t *testing.T) []rules.Tranche {
+				return []rules.Tranche{tranche(t, 10_000_000, "2023-04-01"), tranche(t, 20_000_000, "2025-05-01")}
+			},
+			adjs: []wantAdj{
+				{"L01", "daily-cap-room", 200_000}, {"L02", "proportionate-deduction-room", 1_500_000},
+				{"L01", "co-payment", 10_000}, {"L02", "co-payment", 75_000},
+			},
+			flags:   []wantFlag{{rules.FlagTrancheExcluded, "", 20_000_000}},
+			payable: 1_615_000,
+		},
+		{
+			// The next day the increase has run for more than 12 months, so
+			// Excl03(ii) lifts its 30 days, though the onset is inside them.
+			name: "an increase's onset in its 30 days stops excluding it after 12 months",
+			facts: func(t *testing.T) rules.Facts {
+				return stay(t, "2026-05-01", rules.Condition{Onset: date(t, "2025-05-20")})
+			},
+			tranches: func(t *testing.T) []rules.Tranche {
+				return []rules.Tranche{tranche(t, 10_000_000, "2023-04-01"), tranche(t, 20_000_000, "2025-05-01")}
+			},
+			adjs:    eligible,
+			payable: 3_230_000,
+		},
+		{
 			// Both tranches are inside a hernia's 24-month wait: the claim is
 			// a proposed denial, every line cites the oldest tranche's wait,
 			// and tranche_excluded carries the whole ₹3,00,000.

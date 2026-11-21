@@ -220,9 +220,10 @@ steps:
       # onset date, the onset decides: an onset inside the 30 days excludes
       # the claim even if the admission is after them, the lower reading.
       # The admission date decides only when no onset is known. Excl03(ii)
-      # lifts the wait once continuous coverage has run for "more than twelve
-      # months", which within the 30 days of a tranche's own date it never
-      # has, so an increase gets its own 30 days (Excl03(iii)).
+      # lifts the wait once the tranche's continuous coverage has run for
+      # "more than twelve months" by the admission, so an illness that began
+      # in the first 30 days is covered when treated after the 12 months.
+      # An increase gets its own 30 days and its own 12 months (Excl03(iii)).
       - id: waiting-period-first-30-days
         clause: Excl03
         applies_to: any-illness

@@ -109,13 +109,16 @@ func (c *claim) bindingWait(s Step, t Tranche) (Rule, bool, error) {
 			continue
 		}
 		if r.WaivedAfterMonths > 0 {
-			// "Continuous Coverage for more than" that many months by the
-			// test date.
+			// "Continuous Coverage for more than" that many months, judged
+			// at the admission even when the onset decides the wait: an
+			// illness that began in the first days stops being excluded
+			// once it is treated after them (Excl03(ii)). An onset inside
+			// the wait is never past the waiver itself.
 			waiver, err := waitEnd(t.ContinuousSince, 0, r.WaivedAfterMonths)
 			if err != nil {
 				return Rule{}, false, fmt.Errorf("%s: %w", r.ID, err)
 			}
-			if test.After(waiver) {
+			if c.facts.Admission.After(waiver) {
 				continue
 			}
 		}
