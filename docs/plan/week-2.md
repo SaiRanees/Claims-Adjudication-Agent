@@ -6,6 +6,8 @@ Progress, 18 November: the plan is approved with changes, and ADRs 0009 and 0010
 
 Progress, 20 November: sessions 3 and 4 are done, with golden cases 01 to 32 checked and passing. Session 5 makes the two rule changes from the session 4 review and codes eligibility, so every step is coded; all 48 golden cases pass in full, and cases 33 to 48 wait for their check.
 
+Progress, 22 November: cases 33 to 48 are checked. Session 6 adds cases 49 to 51 and the property and limit fuzzers. The property fuzzer found that a higher sum insured could lower the payable, and [ADR 0011](../adr/0011-cut-lines-held-to-both-caps-first.md) fixes it, which changes case 05's split between lines but not its total. Cases 01 to 48 are checked and pass, and 49 to 51 wait for their check.
+
 ## Decide first
 
 - [x] Co-payment after the cap ([ADR 0009](../adr/0009-cap-before-co-payment.md)). Step 5 caps the admissible total at the cover left. Step 6 takes 5% of the capped amount, with `Percent` once and then `Allocate`. E.II.28(c) applies the 5% to the amount "admissible and payable", and Definition 10 says a co-payment doesn't reduce the sum insured, so the ledger records only what's paid. The two orders can differ only when the admissible amount exceeds the cover left. Every such claim gets a `cover_exceeded` flag carrying the co-pay-first payable after the same bill discount, which is never lower than the payable.
@@ -146,7 +148,7 @@ Done when money's new functions pass their table and fuzz tests, the input-check
   - The days billed may equal the segment's calendar days or be one fewer, because hospitals often skip the discharge day. This is judged per category, on the days that category's lines cover together. Anything else raises `room_days_mismatch` on each of that category's lines, including a lump-sum line billed as one unit for a longer stay. Two room-rent lines in a segment that cover the same day also raise it, on both (session 5).
   - A bucket line's service date is its first billed day, and that picks its segment. So in a stay with more than one segment, an undated bucket line is an input error naming the line; in a stay with one segment, it belongs to that one.
   - The bucket's reduction is spread across its lines with `Allocate`, sorted by ID, in the same way as the claim-level reductions.
-  - A bucket line dated in a segment of the other kind raises `bucket_segment_mismatch` and is held to both caps. First its own bucket's cap applies, under that bucket's rule. Then it joins the segment's bucket at what that cap left, and the segment's cap applies under the segment's rule. Per day that pays min(segment lines + min(line, own cap), segment cap). Its billed amount counts in the segment's ratio.
+  - A bucket line dated in a segment of the other kind raises `bucket_segment_mismatch` and is held to both caps. First its own bucket's cap applies, under that bucket's rule. Then it joins the segment's bucket at what that cap left, and the segment's cap applies under the segment's rule. Per day that pays min(segment lines + min(line, own cap), segment cap). Its billed amount counts in the segment's ratio. Since session 6, the segment's cap takes its cut from such a line before the segment's own lines ([ADR 0011](../adr/0011-cut-lines-held-to-both-caps-first.md); see there).
 - [x] Step 3: each scaled line is multiplied by its segment's ratio in one `MulDiv`, so it's rounded once.
   - The ratio follows Note 2's wording, "the admissible rate per day bears to the actual rate per day", at most 1. It counts the days billed: the cap × the days billed ÷ the bucket's billed total.
   - When the days billed are at most the segment's calendar days, that is the capped bucket total over the billed bucket total. When more days are billed, the allowance (step 2) still counts only the segment's calendar days, but the ratio doesn't, so an extra billed day lowers the bucket's payable and not the other lines'. `room_days_mismatch` still sends the claim to a person. Case 22 pins this.
@@ -272,21 +274,40 @@ Two additions from the review of session 5 come first, each with its case writte
   - Case 49: an onset three weeks before the cover began, admitted in month 4. The claim pays, and the flag sends it to a person.
   - It is raised for each tranche, so an onset between the base's start and an increase's raises it too, and an accident doesn't lift it: an injury can be pre-existing.
 - [x] Excl03(ii) for the onset rule: an illness that began in the first 30 days stops being excluded once cover has run continuously for more than 12 months, judged at the admission.
-  - The waiver used to be judged at the onset, the same date as the wait, which inside the 30 days is never past 12 months, so case 51 was a proposed denial until it moved to the admission.
   - Case 50: onset on day 20, admitted on the last day of the first 12 months, which is excluded.
   - Case 51: the same, admitted the next day, which pays.
+  - The waiver used to be judged at the onset, the same date as the wait, which inside the 30 days is never past 12 months, so case 51 was a proposed denial until it moved to the admission.
+- [x] A line held to both daily caps takes the segment cap's cut before the segment's own lines ([ADR 0011](../adr/0011-cut-lines-held-to-both-caps-first.md)). The property fuzzer found the pro-rata split letting a higher sum insured lower the payable (see the property tests below). This was decided before case 05's new figures were checked, so changing that case isn't a test fix.
+  - The cut is taken from the lines held to both caps, spread across them with `Allocate`, up to what their own cap left them. What is left is spread across the segment's own lines with `Allocate`, as in any bucket. A line's own cap, the bucket's totals, the ratio and the flags don't change.
+  - Case 05 is the only golden case with such a line. Its nursing line now pays nothing and the ICU and intensivist lines more, and the total stays ₹24,700. Your independent figures for it match the case file.
+  - The fuzzer's input is kept as a regression seed in `internal/rules/testdata/fuzz/FuzzAdjudicateProperties/`. Step tests cover the cut in both directions (lines of the room kind on an ICU day, and ICU charges on a room day), and ADR 0011's example at ₹2,00,000 and ₹2,50,000.
 
-- [ ] Property tests over generated claims, using native fuzzing so no dependency is added:
+- [x] Property tests over generated claims, using native fuzzing so no dependency is added:
   - No line pays more than it billed or less than zero.
   - The lines add up to the totals.
   - For every line, billed less payable equals the sum of its adjustments.
-  - Raising the sum insured never lowers the payable.
+  - Raising the sum insured never lowers the payable by more than rounding can. The bound is worked out per claim, and it is zero, so the property holds exactly, unless a cut is split across lines that a later sub-limit treats differently (ADR 0011).
   - Shuffling the lines changes nothing.
   - The same input run twice gives identical results.
   - `cover_exceeded`'s figure is never lower than the payable.
-- [ ] Fuzz the engine with packs and facts near the `int64` limits. The result must be an error, never a panic or a silent overflow.
-- [ ] Adjustments and flags marshal to JSON holding only IDs, reason codes and amounts, ready for the `adjustments` table and audit `details` in M3. A golden JSON file pins the shape.
-- [ ] An `EngineVersion` constant joins the pack's identity on every result.
+
+  `FuzzAdjudicateProperties` in `internal/rules/properties_test.go`; its 300 seeds reach every rule and every flag code. The fuzzer found that a higher sum insured could lower the payable by moving a cut onto a line held to both daily caps and tied to a sub-limit that binds (₹2,25,000 to ₹3,09,644.33 lowered the payable by ₹195.75). ADR 0011 fixes that.
+
+  Its second find showed that rounding can still lower the payable by a paisa. Decided on 22 November: the property allows a rounding bound worked out per claim (`roundingBound`), with the derivation in [ADR 0011](../adr/0011-cut-lines-held-to-both-caps-first.md#the-rounding-bound). Largest remainder, the double rounding and every golden figure stay as they are.
+  - Without rounding, a higher sum insured never lowers the payable. Largest remainder keeps each line of a split within a paisa of its exact share, and the shares add up to the split's total, so rounding moves less than a paisa per line between that split's lines. That reaches the payable only through a later sub-limit that holds some of the split's lines and not others. The steps after the sub-limits move the payable by no more than they move the total.
+  - B counts, for each split the claim made and each sub-limit after it, the smaller of the split's lines inside and outside that sub-limit. The splits are a daily cap's cut over a segment's own lines, and over its lines held to both caps, counted once at each cap; and the cataract and modern-treatment limits' cuts, ahead of the road-ambulance limit. At each sum insured the payable is less than B paise from the unrounded one, so the drop is at most B₁ + B₂ − 1 paise, and nothing when both are zero.
+  - The bound is zero for 279 of the 300 seed claims. On the engine before ADR 0011, the first fuzz input still fails: it drops 19,575 paise against a bound of 3.
+  - Three sources are known, and `TestRoundingBound` pins each one at a drop of exactly one paisa, within its bound:
+    - The Alabama paradox (largest remainder isn't monotone in its total). A room day billed ₹691.06 for the room, untied, and ₹2,954.23 for nursing and ₹2,258.26 for diet, both tied to a cataract whose ₹40,000 implant reaches the limit, pays 3,844,483 paise at ₹2,00,000 and 3,844,482 at ₹2,00,000.50. Its bound is 1.
+    - The double rounding of lines held to both caps. Fuzz input `9d50a174da0c39c0`, two room lines on an ICU day, one of them tied, goes from 4,785,234 paise to 4,785,233. Its bound is 3.
+    - A sub-limit's own split: the cataract limit's cut, spread across a road-ambulance line and others, leaves the ambulance line a paisa more, and the ambulance limit takes it off. 3,629,282 paise to 3,629,281. Its bound is 1.
+  - Both fuzz inputs are kept as regression seeds in `internal/rules/testdata/fuzz/FuzzAdjudicateProperties/`.
+  - With the bound, the property fuzzer ran clean for 10 minutes locally (7,558,793 runs).
+- [x] Fuzz the engine with packs and facts near the `int64` limits. The result must be an error, never a panic or a silent overflow.
+  - `FuzzAdjudicateLimits`: an error must be an overflow, input or date error, and a result keeps every invariant, checked in big integers. It ran clean for 10 minutes locally (514,940 runs), and again after ADR 0011 changed `capGroup` (441,747 runs). Its claim never splits a cut across lines that a sub-limit treats differently, so its rounding bound is zero and it checks the sum insured exactly.
+- [x] Adjustments and flags marshal to JSON holding only IDs, reason codes and amounts, ready for the `adjustments` table and audit `details` in M3. A golden JSON file pins the shape.
+  - Keys follow the API's spelling (`lineId`, `ruleId`, `clauseId`, `inputs`, `amountPaise`; `code`, `lineId`, `figurePaise`). `internal/rules/testdata/explanation.golden.json`, compiled in with `go:embed`, holds an entry of every kind, one per line.
+- [x] An `EngineVersion` constant joins the pack's identity on every result: `Result.Engine`, 0.1.0 for now, changed with any change that could move a figure, an adjustment or a flag.
 
 Done when the property tests pass, each fuzzer runs clean for 10 minutes locally (CI runs their seed corpora), and `go run ./cmd/dev check` passes.
 
