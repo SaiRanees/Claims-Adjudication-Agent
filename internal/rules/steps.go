@@ -150,7 +150,10 @@ func (c *claim) applyDailyCaps(s Step) error {
 // A bucket line dated in a segment of the other kind (nursing on an ICU day,
 // say) raises bucket_segment_mismatch and is held to both caps: first its
 // own bucket's cap, then the segment's, whose bucket it joins at what its own
-// cap left. A bucket's days billed are the days its lines cover together
+// cap left. The segment's cap takes its cut from such lines before the
+// segment's own lines (ADR 0011), so a higher sum insured, which lets more of
+// such a line into the bucket, never moves a cut onto it from the segment's
+// own lines. A bucket's days billed are the days its lines cover together
 // (daysCovered). room_days_mismatch is judged per category: when the days a
 // category's lines cover together in a segment are neither its calendar
 // days nor one fewer, each of those lines raises it.
@@ -208,7 +211,7 @@ func (c *claim) planDailyCaps(s Step) (capPlan, error) {
 
 		// Lines of the other kind meet their own bucket's cap first.
 		var admissible []money.Paise
-		var native []int
+		var native, other []int
 		for _, i := range members {
 			if c.bucket[i] == sg.Kind {
 				native = append(native, i)
@@ -228,7 +231,8 @@ func (c *claim) planDailyCaps(s Step) (capPlan, error) {
 			if len(group) == 0 {
 				continue
 			}
-			groupTotal, perDay, err := c.capGroup(&p, s, sg, amt, group, kind, sumInsured)
+			other = append(other, group...)
+			groupTotal, perDay, err := c.capGroup(&p, s, sg, amt, [][]int{group}, kind, sumInsured)
 			if err != nil {
 				return p, err
 			}
@@ -240,8 +244,11 @@ func (c *claim) planDailyCaps(s Step) (capPlan, error) {
 		}
 		admissible = append(admissible, nativeTotal)
 
-		// Then the segment's cap, over every line in its bucket.
-		_, perDay, err := c.capGroup(&p, s, sg, amt, members, sg.Kind, sumInsured)
+		// Then the segment's cap, over every line in its bucket. Its cut
+		// comes off the lines of the other kind first (ADR 0011). Both
+		// tiers are in ID order, since members is.
+		slices.Sort(other)
+		_, perDay, err := c.capGroup(&p, s, sg, amt, [][]int{other, native}, sg.Kind, sumInsured)
 		if err != nil {
 			return p, err
 		}
@@ -255,14 +262,16 @@ func (c *claim) planDailyCaps(s Step) (capPlan, error) {
 	return p, nil
 }
 
-// capGroup caps the lines in group, which belong to kind's bucket and are
+// capGroup caps the lines in tiers, which belong to kind's bucket and are
 // dated in segment sg, at its daily cap times the smaller of the days they
-// cover together and the segment's calendar days. It spreads any reduction
-// across them by amount, adds it to p's cuts and takes it off amt.
+// cover together and the segment's calendar days. The reduction comes off
+// the tiers in order: each tier takes what is left of it, up to its own
+// total, spread across its lines by amount. capGroup adds the cuts to p and
+// takes them off amt.
 //
-// It returns the group's total before the cap, and the daily cap times the
+// It returns the lines' total before the cap, and the daily cap times the
 // days billed, which is what the ratio counts.
-func (c *claim) capGroup(p *capPlan, s Step, sg Segment, amt []money.Paise, group []int, kind SegmentKind, sumInsured money.Paise) (groupTotal, perDay money.Paise, err error) {
+func (c *claim) capGroup(p *capPlan, s Step, sg Segment, amt []money.Paise, tiers [][]int, kind SegmentKind, sumInsured money.Paise) (groupTotal, perDay money.Paise, err error) {
 	r, err := ruleFor(s, string(kind))
 	if err != nil {
 		return 0, 0, err
@@ -271,10 +280,7 @@ func (c *claim) capGroup(p *capPlan, s Step, sg Segment, amt []money.Paise, grou
 	if err != nil {
 		return 0, 0, fmt.Errorf("%s: %w", r.ID, err)
 	}
-	weights := make([]int64, len(group))
-	for k, i := range group {
-		weights[k] = int64(amt[i])
-	}
+	group := slices.Concat(tiers...)
 	if groupTotal, err = total(amt, group); err != nil {
 		return 0, 0, err
 	}
@@ -287,20 +293,38 @@ func (c *claim) capGroup(p *capPlan, s Step, sg Segment, amt []money.Paise, grou
 	if perDay, err = money.MulDiv(daily, billedDays, 1); err != nil {
 		return 0, 0, fmt.Errorf("%s: %w", r.ID, err)
 	}
-	if groupTotal > allowance {
-		shares, err := money.Allocate(groupTotal-allowance, weights)
+	if groupTotal <= allowance {
+		return groupTotal, perDay, nil
+	}
+	inputs := []Input{
+		{"daily_cap", int64(daily)}, {"days", counted}, {"bucket_total", int64(groupTotal)}, {"allowance", int64(allowance)},
+	}
+	left := groupTotal - allowance
+	for _, tier := range tiers {
+		tierTotal, err := total(amt, tier)
+		if err != nil {
+			return 0, 0, err
+		}
+		// Allocate needs a weight, so a tier with nothing left takes nothing.
+		take := min(left, tierTotal)
+		if take == 0 {
+			continue
+		}
+		weights := make([]int64, len(tier))
+		for k, i := range tier {
+			weights[k] = int64(amt[i])
+		}
+		shares, err := money.Allocate(take, weights)
 		if err != nil {
 			return 0, 0, fmt.Errorf("%s: %w", r.ID, err)
 		}
-		inputs := []Input{
-			{"daily_cap", int64(daily)}, {"days", counted}, {"bucket_total", int64(groupTotal)}, {"allowance", int64(allowance)},
-		}
-		for k, i := range group {
+		for k, i := range tier {
 			if shares[k] > 0 {
 				p.cuts = append(p.cuts, cut{line: i, rule: r, amount: shares[k], inputs: inputs})
 				amt[i] -= shares[k]
 			}
 		}
+		left -= take
 	}
 	return groupTotal, perDay, nil
 }

@@ -171,6 +171,49 @@ func TestStepsOneToThree(t *testing.T) {
 			},
 		},
 		{
+			// ADR 0011: the ICU bucket's ₹26,000 is over its ₹20,000
+			// allowance. Nursing and diet, held to both caps, take the
+			// ₹6,000 cut first, spread 600:200 between them, and the ICU's
+			// own line keeps all of its ₹18,000.
+			name:       "lines held to both caps take the segment cap's cut first",
+			sumInsured: 50_000_000,
+			facts: func(t *testing.T) rules.Facts {
+				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-07-01", "2025-07-03", rules.SegmentICU)},
+					ln(t, "L01", rules.CategoryICUCharges, "2025-07-01", 2, 900_000),
+					ln(t, "L02", rules.CategoryNursing, "2025-07-01", 2, 300_000),
+					ln(t, "L03", rules.CategoryPatientDiet, "2025-07-01", 2, 100_000),
+				)
+			},
+			adjs: []wantAdj{
+				{"L02", "daily-cap-icu", 450_000},
+				{"L03", "daily-cap-icu", 150_000},
+			},
+			flags: []wantFlag{
+				{rules.FlagBucketSegmentMismatch, "L02", 0},
+				{rules.FlagBucketSegmentMismatch, "L03", 0},
+			},
+		},
+		{
+			// ADR 0011 the other way round: ICU charges on a room day take
+			// the room cap's ₹4,000 cut before the room's own line. The
+			// ratio is unchanged: ₹10,000 ÷ ₹14,000, so the fee keeps
+			// 714,285.71, rounded to 714,286.
+			name:       "an ICU line on a room day takes the room cap's cut first",
+			sumInsured: 50_000_000,
+			facts: func(t *testing.T) rules.Facts {
+				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-06-10", "2025-06-12", rules.SegmentRoom)},
+					ln(t, "L01", rules.CategoryRoomRent, "2025-06-10", 2, 400_000),
+					ln(t, "L02", rules.CategoryICUCharges, "2025-06-10", 2, 300_000),
+					ln(t, "L03", rules.CategoryProfessionalFees, "2025-06-11", 1, 1_000_000),
+				)
+			},
+			adjs: []wantAdj{
+				{"L02", "daily-cap-room", 400_000},
+				{"L03", "proportionate-deduction-room", 285_714},
+			},
+			flags: []wantFlag{{rules.FlagBucketSegmentMismatch, "L02", 0}},
+		},
+		{
 			// A stay with one segment has one rate, so an undated room line
 			// joins it and nothing is flagged. 1,000,000 × 1,500,000 ÷
 			// 1,800,000 = 833,333.33, rounded to 833,333.
@@ -435,6 +478,14 @@ func TestStepsFourToSix(t *testing.T) {
 		l.Treatment = rules.Treatment{Kind: rules.TreatmentCataract, Eye: eye}
 		return l
 	}
+	// One ICU day billed in a 2-day ICU segment, which is accepted.
+	tiedNursingOnICUDay := func(t *testing.T) rules.Facts {
+		return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-07-01", "2025-07-02", rules.SegmentICU)},
+			ln(t, "L01", rules.CategoryICUCharges, "2025-07-01", 1, 1_200_000),
+			cataract(ln(t, "L02", rules.CategoryNursing, "2025-07-01", 1, 600_000), rules.EyeLeft),
+			cataract(ln(t, "L03", rules.CategoryImplantsDevices, "2025-07-01", 1, 4_000_000), rules.EyeLeft),
+		)
+	}
 	tests := []struct {
 		name    string
 		facts   func(t *testing.T) rules.Facts
@@ -541,6 +592,42 @@ func TestStepsFourToSix(t *testing.T) {
 			flags:   []wantFlag{{rules.FlagCoverExceeded, "", 2_000_000}},
 			payable: 1_900_000,
 			ledger:  rules.Ledger{Paid: 1_900_000, CataractUsed: rules.EyeAmounts{Right: 2_000_000}},
+		},
+		{
+			// ADR 0011's example at ₹2,00,000: an ICU day of ₹12,000, and
+			// ₹6,000 of nursing tied to a cataract whose ₹40,000 implant
+			// reaches the limit. Nursing meets the ₹4,000 room cap, then
+			// takes the ICU cap's ₹6,000 cut first, so it pays nothing and
+			// the ICU line pays ₹10,000. The cataract limit takes nothing:
+			// ₹50,000 admitted, less 5%.
+			name:  "a tied line held to both caps takes the ICU cut first, at ₹2,00,000",
+			facts: tiedNursingOnICUDay,
+			cover: func(c *rules.Cover) { c.Tranches[0].SumInsured = 20_000_000 },
+			adjs: []wantAdj{
+				{"L01", "daily-cap-icu", 200_000}, {"L02", "daily-cap-room", 200_000}, {"L02", "daily-cap-icu", 400_000},
+				{"L01", "co-payment", 50_000}, {"L03", "co-payment", 200_000},
+			},
+			flags:   []wantFlag{{rules.FlagBucketSegmentMismatch, "L02", 0}},
+			payable: 4_750_000,
+			ledger:  rules.Ledger{Paid: 4_750_000, CataractUsed: rules.EyeAmounts{Left: 4_000_000}},
+		},
+		{
+			// The same at ₹2,50,000: the room cap is ₹5,000, so more of the
+			// nursing joins the ICU bucket, and the ICU cut grows by as much.
+			// Nursing takes all of it, so the payable stays at ₹47,500. Split
+			// pro rata, the ICU line would have paid less and the cataract
+			// limit taken back what nursing gained: ₹47,058.82 admitted
+			// instead of ₹47,500.
+			name:  "a tied line held to both caps takes the ICU cut first, at ₹2,50,000",
+			facts: tiedNursingOnICUDay,
+			cover: func(c *rules.Cover) { c.Tranches[0].SumInsured = 25_000_000 },
+			adjs: []wantAdj{
+				{"L01", "daily-cap-icu", 200_000}, {"L02", "daily-cap-room", 100_000}, {"L02", "daily-cap-icu", 500_000},
+				{"L01", "co-payment", 50_000}, {"L03", "co-payment", 200_000},
+			},
+			flags:   []wantFlag{{rules.FlagBucketSegmentMismatch, "L02", 0}},
+			payable: 4_750_000,
+			ledger:  rules.Ledger{Paid: 4_750_000, CataractUsed: rules.EyeAmounts{Left: 4_000_000}},
 		},
 	}
 	for _, tt := range tests {
