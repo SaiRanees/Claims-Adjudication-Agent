@@ -264,10 +264,207 @@ func seeds(n int) [][]byte {
 	return out
 }
 
+// roundingBound is the most that rounding can lower the payable when the
+// sum insured rises, lo and hi being the results at the lower and the
+// higher. ADR 0011 has the derivation:
+//
+//   - Without rounding, a higher sum insured never lowers the payable.
+//   - Largest remainder keeps each line of a split within a paisa of its
+//     exact share, and the shares add up to the split's total. So a split
+//     only moves less than a paisa per line between its lines.
+//   - That reaches the payable only through a later sub-limit that holds
+//     some of the split's lines and not others. Across that sub-limit the
+//     paise moved add up to less than the smaller of its lines inside and
+//     outside it (roundingSplits).
+//   - After the sub-limits the steps act on the total, and none of them
+//     moves the payable by more than the total moves.
+//
+// At each sum insured the payable is then less than that count away from
+// the unrounded one, which doesn't fall. The drop is less than the two
+// counts together, so at most their sum less a paisa, and nothing when both
+// are zero.
+func roundingBound(t *testing.T, pack *rules.Pack, f rules.Facts, lo, hi rules.Result) money.Paise {
+	t.Helper()
+	n := roundingSplits(t, pack, f, lo) + roundingSplits(t, pack, f, hi)
+	if n == 0 {
+		return 0
+	}
+	return money.Paise(n - 1)
+}
+
+// subLimitGroup is one sub-limit's lines: rule is its rule's ID, and in
+// reports whether a line is tied to it.
+type subLimitGroup struct {
+	rule string
+	in   func(rules.Line) bool
+}
+
+// roundingSplits counts, for one result, the lines that rounding can move a
+// paisa between and that a later sub-limit treats differently. It looks at
+// each split the result made (a split made a cut, so at least one of its
+// lines took a share) whose lines a later sub-limit tells apart:
+//
+//   - A daily cap's cut over a segment's bucket: the segment's own lines,
+//     or the lines held to both caps, once for each cap (ADR 0011). Every
+//     sub-limit comes later.
+//   - A sub-limit's cut over its lines. Only the sub-limits after it in the
+//     pack count. For the Go Digit pack that is the road-ambulance limit,
+//     after the cataract and modern-treatment limits.
+//
+// For each split and each later sub-limit, it adds the smaller of the
+// split's lines inside the sub-limit and outside it. A line counts only if
+// it entered the split with something to pay, because a line of zero
+// weight takes an exact share of zero.
+func roundingSplits(t *testing.T, pack *rules.Pack, f rules.Facts, res rules.Result) int64 {
+	t.Helper()
+	caps, okCaps := pack.Step(rules.StepApplyDailyCaps)
+	subs, okSubs := pack.Step(rules.StepApplySubLimits)
+	if !okCaps || !okSubs {
+		t.Fatal("the pack has no daily caps or no sub-limits")
+	}
+	bucketOf := map[rules.Category]rules.SegmentKind{}
+	capRule := map[rules.SegmentKind]string{}
+	for _, r := range caps.Rules {
+		kind := rules.SegmentKind(r.AppliesTo)
+		capRule[kind] = r.ID
+		for _, c := range r.Categories {
+			bucketOf[c] = kind
+		}
+	}
+	// The sub-limits in the order step 4 applies them.
+	var groups []subLimitGroup
+	for _, r := range subs.Rules {
+		switch r.AppliesTo {
+		case "cataract":
+			for _, eye := range []rules.Eye{rules.EyeLeft, rules.EyeRight} {
+				groups = append(groups, subLimitGroup{r.ID, func(l rules.Line) bool {
+					return l.Treatment.Kind == rules.TreatmentCataract && l.Treatment.Eye == eye
+				}})
+			}
+		case "modern-treatment":
+			groups = append(groups, subLimitGroup{r.ID, func(l rules.Line) bool { return l.Treatment.Kind == rules.TreatmentModernTreatment }})
+		case "road-ambulance":
+			groups = append(groups, subLimitGroup{r.ID, func(l rules.Line) bool { return l.Category == rules.CategoryRoadAmbulance }})
+		default:
+			t.Fatalf("sub-limit rule %s applies to %q, which roundingBound doesn't know", r.ID, r.AppliesTo)
+		}
+	}
+
+	// The rules that act before the daily caps, and before the sub-limits.
+	beforeCaps, beforeSubs := map[string]bool{}, map[string]bool{}
+	capsSeen := false
+	for _, s := range pack.Steps {
+		if s.Name == rules.StepApplySubLimits {
+			break
+		}
+		capsSeen = capsSeen || s.Name == rules.StepApplyDailyCaps
+		for _, r := range s.Rules {
+			beforeSubs[r.ID] = true
+			if !capsSeen {
+				beforeCaps[r.ID] = true
+			}
+		}
+	}
+	if !capsSeen {
+		t.Fatal("roundingBound expects the daily caps before the sub-limits")
+	}
+	// What each line had left entering the daily caps and the sub-limits,
+	// and which rules cut which lines.
+	toCaps, toSubs := map[string]money.Paise{}, map[string]money.Paise{}
+	for _, l := range f.Lines {
+		toCaps[l.ID], toSubs[l.ID] = l.Amount, l.Amount
+	}
+	cutBy := map[[2]string]bool{}
+	for _, a := range res.Adjustments {
+		cutBy[[2]string{a.LineID, a.RuleID}] = true
+		if beforeCaps[a.RuleID] {
+			toCaps[a.LineID] -= a.Amount
+		}
+		if beforeSubs[a.RuleID] {
+			toSubs[a.LineID] -= a.Amount
+		}
+	}
+	took := func(split []rules.Line, rule func(rules.Line) string) bool {
+		return slices.ContainsFunc(split, func(l rules.Line) bool { return cutBy[[2]string{l.ID, rule(l)}] })
+	}
+	across := func(split []rules.Line, later []subLimitGroup) int64 {
+		var n int64
+		for _, g := range later {
+			var in int64
+			for _, l := range split {
+				if g.in(l) {
+					in++
+				}
+			}
+			n += min(in, int64(len(split))-in)
+		}
+		return n
+	}
+
+	var n int64
+	for si, sg := range f.Segments {
+		// The segment's own bucket lines, and the lines of the other kind
+		// held to both caps.
+		var own, held []rules.Line
+		for _, l := range f.Lines {
+			kind, ok := bucketOf[l.Category]
+			if !ok || toCaps[l.ID] <= 0 || segmentIndex(f, l.ServiceDate) != si {
+				continue
+			}
+			if kind == sg.Kind {
+				own = append(own, l)
+			} else {
+				held = append(held, l)
+			}
+		}
+		segmentCap := func(rules.Line) string { return capRule[sg.Kind] }
+		ownCap := func(l rules.Line) string { return capRule[bucketOf[l.Category]] }
+		if took(held, ownCap) {
+			n += across(held, groups)
+		}
+		if took(held, segmentCap) {
+			n += across(held, groups)
+		}
+		if took(own, segmentCap) {
+			n += across(own, groups)
+		}
+	}
+	for k, g := range groups {
+		var split []rules.Line
+		for _, l := range f.Lines {
+			if g.in(l) && toSubs[l.ID] > 0 {
+				split = append(split, l)
+			}
+		}
+		if took(split, func(rules.Line) string { return g.rule }) {
+			n += across(split, groups[k+1:])
+		}
+	}
+	return n
+}
+
+// segmentIndex returns the index of the segment d falls in: an undated line
+// is in a stay's only segment, and otherwise in none (-1).
+func segmentIndex(f rules.Facts, d rules.Date) int {
+	if d.IsZero() {
+		if len(f.Segments) == 1 {
+			return 0
+		}
+		return -1
+	}
+	for i, s := range f.Segments {
+		if !d.Before(s.From) && !d.After(s.To) {
+			return i
+		}
+	}
+	return -1
+}
+
 // FuzzAdjudicateProperties checks, on every generated claim, the invariants
 // of checkResult and four more: the same input run twice gives identical
 // results and isn't changed by the engine, shuffling the lines changes
-// nothing, and raising a tranche's sum insured never lowers the payable.
+// nothing, and raising a tranche's sum insured never lowers the payable by
+// more than rounding can (roundingBound), which for most claims is nothing.
 func FuzzAdjudicateProperties(f *testing.F) {
 	f.Add([]byte{})
 	for _, s := range seeds(300) {
@@ -313,11 +510,142 @@ func FuzzAdjudicateProperties(f *testing.F) {
 		if err != nil {
 			t.Fatalf("raising tranche %d's sum insured: %v", k, err)
 		}
-		if up.Payable < res.Payable {
-			t.Errorf("raising tranche %d's sum insured from %d to %d lowered the payable from %d to %d",
-				k, cover.Tranches[k].SumInsured, raised.Tranches[k].SumInsured, res.Payable, up.Payable)
+		if drop := res.Payable - up.Payable; drop > 0 {
+			if bound := roundingBound(t, pack, facts, res, up); drop > bound {
+				t.Errorf("raising tranche %d's sum insured from %d to %d lowered the payable from %d to %d, more than the rounding bound of %d",
+					k, cover.Tranches[k].SumInsured, raised.Tranches[k].SumInsured, res.Payable, up.Payable, bound)
+			}
 		}
 	})
+}
+
+// TestRoundingBound pins the three ways rounding is known to lower the
+// payable by a paisa when the sum insured rises, each within its bound, and
+// ADR 0011's example, whose bound is zero.
+func TestRoundingBound(t *testing.T) {
+	pack := goDigitPack(t)
+	cataract := func(l rules.Line) rules.Line {
+		l.Treatment = rules.Treatment{Kind: rules.TreatmentCataract, Eye: rules.EyeLeft}
+		return l
+	}
+	oneTranche := func(t *testing.T, sumInsured money.Paise, since string) rules.Cover {
+		return rules.Cover{Tranches: []rules.Tranche{{SumInsured: sumInsured, ContinuousSince: date(t, since)}}}
+	}
+	tests := []struct {
+		name                   string
+		facts                  func(t *testing.T) rules.Facts
+		since                  string
+		sumInsured, raised     money.Paise
+		payable, raisedPayable money.Paise
+		bound                  money.Paise
+	}{
+		{
+			// The Alabama paradox. 50 paise more sum insured raises the
+			// room cap by a paisa, so the room bucket's cut falls by one,
+			// yet largest remainder takes a paisa more from the untied room
+			// line (22,282 to 22,283) and one less from nursing and diet.
+			// Both are tied to a cataract whose ₹40,000 implant already
+			// reaches the limit, so the limit takes their paisa off again.
+			// The bucket's split counts min(2 tied, 1 untied) = 1 at each
+			// sum insured, so the bound is 1 + 1 − 1.
+			name: "the Alabama paradox in a bucket of three lines, two tied",
+			facts: func(t *testing.T) rules.Facts {
+				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-07-01", "2025-07-02", rules.SegmentRoom)},
+					ln(t, "L01", rules.CategoryRoomRent, "2025-07-01", 1, 69_106),
+					cataract(ln(t, "L02", rules.CategoryNursing, "2025-07-01", 1, 295_423)),
+					cataract(ln(t, "L03", rules.CategoryPatientDiet, "2025-07-01", 1, 225_826)),
+					cataract(ln(t, "L04", rules.CategoryImplantsDevices, "2025-07-01", 1, 4_000_000)),
+				)
+			},
+			since:      "2023-04-01",
+			sumInsured: 20_000_000, raised: 20_000_050,
+			payable: 3_844_483, raisedPayable: 3_844_482,
+			bound: 1,
+		},
+		{
+			// The double rounding: fuzz input 9d50a174da0c39c0. Two room
+			// lines on an ICU day, one tied to a cataract, are rounded at
+			// the room cap and again at the ICU cap. Their total is 383,187
+			// at both sums insured, but the tied line's share rises from
+			// 64,600 to 64,601 and the cataract limit takes the paisa. The
+			// two lines count min(1, 1) = 1 at each cap, so 2 at each sum
+			// insured, and the bound is 2 + 2 − 1.
+			name: "the double rounding of lines held to both caps",
+			facts: func(t *testing.T) rules.Facts {
+				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2019-11-04", "2019-11-05", rules.SegmentICU)},
+					cataract(ln(t, "L01", rules.CategoryProfessionalFees, "2019-11-04", 1, 8_464_416)),
+					cataract(ln(t, "L02", rules.CategoryRoomRent, "2019-11-04", 1, 158_061)),
+					ln(t, "L03", rules.CategoryProfessionalFees, "", 1, 158_061),
+					ln(t, "L04", rules.CategoryRoomRent, "2019-11-04", 1, 779_499),
+					ln(t, "L05", rules.CategoryICUCharges, "2019-11-04", 1, 616_813),
+				)
+			},
+			since:      "2018-12-03",
+			sumInsured: 22_500_000, raised: 30_964_433,
+			payable: 4_785_234, raisedPayable: 4_785_233,
+			bound: 3,
+		},
+		{
+			// A sub-limit's own split. The capped room line enters the
+			// cataract limit a paisa higher, so its cut grows by one, yet
+			// largest remainder takes a paisa less from the road-ambulance
+			// line (120,930 to 120,929), and the ambulance limit, which
+			// comes later and binds, takes it off. The cataract split
+			// counts min(1 ambulance line, 2 others) = 1 at each sum
+			// insured, so the bound is 1 + 1 − 1.
+			name: "the cataract limit's split ahead of the ambulance limit",
+			facts: func(t *testing.T) rules.Facts {
+				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-07-01", "2025-07-02", rules.SegmentRoom)},
+					cataract(ln(t, "L01", rules.CategoryRoomRent, "2025-07-01", 1, 534_829)),
+					cataract(ln(t, "L02", rules.CategoryImplantsDevices, "2025-07-01", 1, 4_373_303)),
+					cataract(ln(t, "L03", rules.CategoryRoadAmbulance, "2025-07-01", 1, 500_633)),
+				)
+			},
+			since:      "2023-04-01",
+			sumInsured: 20_000_000, raised: 20_000_050,
+			payable: 3_629_282, raisedPayable: 3_629_281,
+			bound: 1,
+		},
+		{
+			// ADR 0011's example: no split mixes lines a sub-limit tells
+			// apart, so the property holds exactly, and it does.
+			name: "ADR 0011's example has a bound of zero",
+			facts: func(t *testing.T) rules.Facts {
+				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-07-01", "2025-07-02", rules.SegmentICU)},
+					ln(t, "L01", rules.CategoryICUCharges, "2025-07-01", 1, 1_200_000),
+					cataract(ln(t, "L02", rules.CategoryNursing, "2025-07-01", 1, 600_000)),
+					cataract(ln(t, "L03", rules.CategoryImplantsDevices, "2025-07-01", 1, 4_000_000)),
+				)
+			},
+			since:      "2023-04-01",
+			sumInsured: 20_000_000, raised: 25_000_000,
+			payable: 4_750_000, raisedPayable: 4_750_000,
+			bound: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := tt.facts(t)
+			lo, err := rules.Adjudicate(pack, f, oneTranche(t, tt.sumInsured, tt.since))
+			if err != nil {
+				t.Fatal(err)
+			}
+			hi, err := rules.Adjudicate(pack, f, oneTranche(t, tt.raised, tt.since))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if lo.Payable != tt.payable || hi.Payable != tt.raisedPayable {
+				t.Errorf("payable %d, then %d; want %d, then %d", lo.Payable, hi.Payable, tt.payable, tt.raisedPayable)
+			}
+			bound := roundingBound(t, pack, f, lo, hi)
+			if bound != tt.bound {
+				t.Errorf("rounding bound %d, want %d", bound, tt.bound)
+			}
+			if drop := lo.Payable - hi.Payable; drop > bound {
+				t.Errorf("the payable fell by %d, more than the bound of %d", drop, bound)
+			}
+		})
+	}
 }
 
 // limitsPack is the Go Digit pack with every ceiling and share and the
