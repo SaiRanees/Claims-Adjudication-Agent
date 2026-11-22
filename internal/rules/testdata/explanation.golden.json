@@ -1,0 +1,28 @@
+{
+  "adjustments": [
+    {"lineId":"L05","ruleId":"annexure-a-list-ii","clauseId":"Annexure A List II","inputs":[{"name":"amount","value":200000}],"amountPaise":200000},
+    {"lineId":"L08","ruleId":"unmodelled-package-rate","clauseId":"","inputs":[{"name":"amount","value":2000000}],"amountPaise":2000000},
+    {"lineId":"L01","ruleId":"daily-cap-room","clauseId":"C.I.1(i)","inputs":[{"name":"daily_cap","value":500000},{"name":"days","value":2},{"name":"bucket_total","value":1200000},{"name":"allowance","value":1000000}],"amountPaise":200000},
+    {"lineId":"L06","ruleId":"proportionate-deduction-room","clauseId":"C.I.1 Note 2","inputs":[{"name":"admissible","value":1000000},{"name":"billed","value":1200000},{"name":"amount","value":1000000}],"amountPaise":166667},
+    {"lineId":"L07","ruleId":"proportionate-deduction-room","clauseId":"C.I.1 Note 2","inputs":[{"name":"admissible","value":1000000},{"name":"billed","value":1200000},{"name":"amount","value":300000}],"amountPaise":50000},
+    {"lineId":"L04","ruleId":"sub-limit-cataract","clauseId":"C.I.3","inputs":[{"name":"limit","value":4000000},{"name":"used","value":0},{"name":"left","value":4000000},{"name":"tied_total","value":5000000}],"amountPaise":1000000},
+    {"lineId":"L01","ruleId":"co-payment","clauseId":"E.II.28(c)","inputs":[{"name":"rate_bp","value":500},{"name":"base","value":10883333}],"amountPaise":50000},
+    {"lineId":"L02","ruleId":"co-payment","clauseId":"E.II.28(c)","inputs":[{"name":"rate_bp","value":500},{"name":"base","value":10883333}],"amountPaise":90000},
+    {"lineId":"L03","ruleId":"co-payment","clauseId":"E.II.28(c)","inputs":[{"name":"rate_bp","value":500},{"name":"base","value":10883333}],"amountPaise":150000},
+    {"lineId":"L04","ruleId":"co-payment","clauseId":"E.II.28(c)","inputs":[{"name":"rate_bp","value":500},{"name":"base","value":10883333}],"amountPaise":200000},
+    {"lineId":"L06","ruleId":"co-payment","clauseId":"E.II.28(c)","inputs":[{"name":"rate_bp","value":500},{"name":"base","value":10883333}],"amountPaise":41667},
+    {"lineId":"L07","ruleId":"co-payment","clauseId":"E.II.28(c)","inputs":[{"name":"rate_bp","value":500},{"name":"base","value":10883333}],"amountPaise":12500},
+    {"lineId":"L01","ruleId":"bill-discount","clauseId":"Definition 26","inputs":[{"name":"discount","value":100000},{"name":"payable","value":10339166}],"amountPaise":9188},
+    {"lineId":"L02","ruleId":"bill-discount","clauseId":"Definition 26","inputs":[{"name":"discount","value":100000},{"name":"payable","value":10339166}],"amountPaise":16539},
+    {"lineId":"L03","ruleId":"bill-discount","clauseId":"Definition 26","inputs":[{"name":"discount","value":100000},{"name":"payable","value":10339166}],"amountPaise":27565},
+    {"lineId":"L04","ruleId":"bill-discount","clauseId":"Definition 26","inputs":[{"name":"discount","value":100000},{"name":"payable","value":10339166}],"amountPaise":36754},
+    {"lineId":"L06","ruleId":"bill-discount","clauseId":"Definition 26","inputs":[{"name":"discount","value":100000},{"name":"payable","value":10339166}],"amountPaise":7657},
+    {"lineId":"L07","ruleId":"bill-discount","clauseId":"Definition 26","inputs":[{"name":"discount","value":100000},{"name":"payable","value":10339166}],"amountPaise":2297}
+  ],
+  "flags": [
+    {"code":"undated_line","lineId":"L07"},
+    {"code":"package_rate","lineId":"L08"},
+    {"code":"bill_discount","figurePaise":100000},
+    {"code":"differential_billing_unknown"}
+  ]
+}

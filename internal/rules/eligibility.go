@@ -19,6 +19,12 @@ const (
 // the eligible sum insured, which the later steps use. An excluded tranche
 // raises tranche_excluded, carrying the total excluded.
 //
+// An onset before a tranche's cover began is outside its waits, or a
+// pre-existing disease would be excluded under Excl03 however long it had
+// been covered. On a condition not marked pre-existing, such an onset may
+// be an undeclared pre-existing disease (Excl01), which the engine can't
+// decide, so it raises onset_before_cover.
+//
 // When no tranche is eligible, every line's amount is deducted under the
 // oldest tranche's binding wait, and the claim is a proposed denial. The
 // engine never denies; a person decides.
@@ -26,7 +32,11 @@ func (c *claim) checkEligibility(s Step) error {
 	var eligible, excluded []money.Paise
 	oldest := -1
 	var oldestRule Rule
+	cond := c.facts.Condition
 	for i, t := range c.cover.Tranches {
+		if !cond.Onset.IsZero() && !cond.PreExisting && cond.Onset.Before(t.ContinuousSince) {
+			c.flagClaim(FlagOnsetBeforeCover, 0)
+		}
 		r, out, err := c.bindingWait(s, t)
 		if err != nil {
 			return err
@@ -109,13 +119,16 @@ func (c *claim) bindingWait(s Step, t Tranche) (Rule, bool, error) {
 			continue
 		}
 		if r.WaivedAfterMonths > 0 {
-			// "Continuous Coverage for more than" that many months by the
-			// test date.
+			// "Continuous Coverage for more than" that many months, judged
+			// at the admission even when the onset decides the wait: an
+			// illness that began in the first days stops being excluded
+			// once it is treated after them (Excl03(ii)). An onset inside
+			// the wait is never past the waiver itself.
 			waiver, err := waitEnd(t.ContinuousSince, 0, r.WaivedAfterMonths)
 			if err != nil {
 				return Rule{}, false, fmt.Errorf("%s: %w", r.ID, err)
 			}
-			if test.After(waiver) {
+			if c.facts.Admission.After(waiver) {
 				continue
 			}
 		}

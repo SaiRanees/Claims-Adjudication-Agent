@@ -192,8 +192,8 @@ func diff(c Case, pack *rules.Pack, res rules.Result, implemented func(rules.Ste
 // engine codes the step it comes from and every step before that in the
 // pack's order. Payables and the ledger come from the last step. Until week
 // 2, session 5, eligibility passes every tranche through, which is what a
-// case expects when it has no eligibility adjustment or tranche_excluded
-// flag, so for such a case eligibility counts as coded.
+// case expects when it has no eligibility adjustment or flag, so for such a
+// case eligibility counts as coded.
 func scope(c Case, pack *rules.Pack, implemented func(rules.StepName) bool) func(Row) bool {
 	stepOf := map[string]rules.StepName{}
 	for _, s := range pack.Steps {
@@ -204,7 +204,7 @@ func scope(c Case, pack *rules.Pack, implemented func(rules.StepName) bool) func
 	needsEligibility := false
 	for _, r := range ExpectedRows(c) {
 		if (r.Kind == KindAdjustment && stepOf[r.Code] == rules.StepCheckEligibility) ||
-			(r.Kind == KindFlag && rules.FlagCode(r.Code) == rules.FlagTrancheExcluded) {
+			(r.Kind == KindFlag && rules.FlagCode(r.Code).Step() == rules.StepCheckEligibility) {
 			needsEligibility = true
 		}
 	}

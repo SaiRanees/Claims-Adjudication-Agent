@@ -1,0 +1,62 @@
+# An onset before the cover began, on a condition not marked pre-existing:
+# not listed, not pre-existing and not an accident. The first policy began
+# on 1 June 2025, so the 30-day wait (Excl03) runs through 31 May + 30 days
+# = 30 June. The onset, 10 May, is three weeks before the cover began; the
+# admission, 15 September, is in month 4, so Excl03(ii)'s 12 months haven't
+# passed.
+#
+# When the facts give an onset date, it decides Excl03. An onset before a
+# tranche's cover began is outside its 30-day wait: otherwise a
+# pre-existing disease would be excluded under Excl03 however long it had
+# been covered. So nothing is excluded and the claim pays. But an illness
+# that began before the cover, on a condition not marked pre-existing, may
+# be an undeclared pre-existing disease (Excl01), which the engine can't
+# decide: onset_before_cover, with no figure, sends the claim to a person.
+#
+# Sum insured ₹3,00,000, in one tranche, so the room cap is the lower of 2%
+# (₹6,000) and ₹5,000: ₹5,000 a day. A 2-day stay, the room billed for 1
+# day.
+#
+# Eligibility: the only tranche is past every wait that applies, so the
+#   eligible sum insured is ₹3,00,000. onset_before_cover is raised.
+# Steps 2 and 3: the room, ₹4,000, is under its cap, so nothing is capped
+#   or scaled.
+# Subtotal: ₹4,000 + ₹30,000 = ₹34,000.
+# Step 6, co-payment: 5% of ₹34,000 = ₹1,700. Every share is exact:
+#   L01 ₹200, L02 ₹1,500.
+# Payable: ₹34,000 − ₹1,700 = ₹32,300.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-06-01
+  period_end: 2026-05-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: 2025-06-01
+
+facts:
+  admission: 2025-09-15
+  discharge: 2025-09-16
+  segments:
+    - {from: 2025-09-15, to: 2025-09-16, kind: room}
+  differential_billing: yes
+  condition:
+    onset: 2025-05-10
+  lines:
+    - {id: L01, category: room-rent, service_date: 2025-09-15, quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: professional-fees, service_date: 2025-09-15, quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 380000}
+    - {id: L02, payable_paise: 2850000}
+  adjustments:
+    - {line: L01, rule: co-payment, paise: 20000}
+    - {line: L02, rule: co-payment, paise: 150000}
+  flags:
+    - {code: onset_before_cover}
+  claim_payable_paise: 3230000
+  ledger:
+    paid_paise: 3230000

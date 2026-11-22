@@ -150,6 +150,7 @@ func TestGoldenCSV(t *testing.T) {
 		ids = append(ids, id)
 	}
 	slices.Sort(ids)
+	t.Logf("%d of %d cases checked in %s", len(ids), len(cases), engine.CSVPath)
 	for _, id := range ids {
 		rows := byCase[id]
 		c, ok := known[id]

@@ -153,7 +153,10 @@ func (c *claim) flagClaim(code FlagCode, figure money.Paise) {
 }
 
 func (c *claim) result() (Result, error) {
-	res := Result{Pack: c.pack.Identity(), Lines: make([]LineResult, len(c.lines)), Adjustments: c.adjustments}
+	res := Result{
+		Engine: EngineVersion, Pack: c.pack.Identity(),
+		Lines: make([]LineResult, len(c.lines)), Adjustments: c.adjustments,
+	}
 	billed := make([]money.Paise, len(c.lines))
 	// A treatment's sub-limit use is what its lines were admitted at before
 	// the co-payment, because the sub-limits apply before it.

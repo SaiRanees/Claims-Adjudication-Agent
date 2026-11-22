@@ -8,6 +8,13 @@ import (
 // ErrNoPackGiven means Adjudicate was called without a pack.
 var ErrNoPackGiven = errors.New("rules: no pack")
 
+// EngineVersion identifies the engine's code, as the pack's Identity
+// identifies its rules. Every result records both, so replaying a claim can
+// prove it ran the same rules through the same code. Change it with any
+// change that could move a figure, an adjustment or a flag for the same
+// pack, facts and cover.
+const EngineVersion = "0.1.0"
+
 // Implemented reports whether the engine codes a step. The golden runner
 // compares only what coded steps produce, so while the steps were coded one
 // session at a time, a checked case could wait for its steps without

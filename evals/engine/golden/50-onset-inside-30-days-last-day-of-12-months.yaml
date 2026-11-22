@@ -1,0 +1,61 @@
+# An illness whose onset falls inside the first 30 days, admitted on the
+# last day of the first 12 months of continuous cover. Excl03(ii) lifts the
+# 30-day exclusion once the insured has "Continuous Coverage for more than
+# twelve months", judged at the admission. The first policy began on 1 May
+# 2025, so the 30-day wait runs through 30 May and the first 12 months
+# through 30 April 2025 + 12 months = 30 April 2026. The onset, 20 May
+# 2025, is day 20; the admission, 30 April 2026, is the last day of the 12
+# months, so cover hasn't yet run for more than 12 months and the
+# exclusion stands. The discharge, 1 May 2026, falls in the renewal; the
+# claim takes its cover from the policy period that contains the
+# admission.
+#
+# Typhoid fever: not listed, not pre-existing and not an accident. Sum
+# insured ₹3,00,000, in one tranche. A 2-day stay, the room billed for 1
+# day.
+#
+# Eligibility: the onset is inside the only tranche's 30 days and the
+#   waiver hasn't been reached, so no sum insured is eligible. Each line's
+#   billed amount is deducted under waiting-period-first-30-days (Excl03):
+#   L01 ₹4,000, L02 ₹30,000. tranche_excluded carries the ₹3,00,000
+#   excluded.
+# Steps 2 to 6: nothing is left to pay. The bill has a room line, so
+#   no_room_charge isn't raised.
+# Payable: ₹0, a proposed denial. The engine never denies: a person
+#   decides (rule 6).
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-05-01
+  period_end: 2026-04-30
+
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: 2025-05-01
+
+facts:
+  admission: 2026-04-30
+  discharge: 2026-05-01
+  segments:
+    - {from: 2026-04-30, to: 2026-05-01, kind: room}
+  differential_billing: yes
+  condition:
+    onset: 2025-05-20
+  lines:
+    - {id: L01, category: room-rent, service_date: 2026-04-30, quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: professional-fees, service_date: 2026-04-30, quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 0}
+    - {id: L02, payable_paise: 0}
+  adjustments:
+    - {line: L01, rule: waiting-period-first-30-days, paise: 400000}
+    - {line: L02, rule: waiting-period-first-30-days, paise: 3000000}
+  flags:
+    - {code: tranche_excluded, paise: 30000000}
+    - {code: proposed_denial}
+  claim_payable_paise: 0
+  ledger:
+    paid_paise: 0

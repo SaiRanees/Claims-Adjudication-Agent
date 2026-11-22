@@ -167,8 +167,8 @@ func TestAdjudicateValidClaim(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Pack != pack.Identity() {
-		t.Errorf("result pack = %s, want %s", res.Pack, pack.Identity())
+	if res.Engine != rules.EngineVersion || res.Pack != pack.Identity() {
+		t.Errorf("result engine %q and pack %s, want %q and %s", res.Engine, res.Pack, rules.EngineVersion, pack.Identity())
 	}
 	var ids []string
 	for _, l := range res.Lines {
@@ -239,8 +239,8 @@ func TestAdjudicateLineOrder(t *testing.T) {
 // The flag list is closed, and what it says about each code is consistent.
 func TestFlagCodes(t *testing.T) {
 	codes := rules.FlagCodes()
-	if len(codes) != 12 {
-		t.Errorf("%d flag codes, want 12", len(codes))
+	if len(codes) != 13 {
+		t.Errorf("%d flag codes, want 13", len(codes))
 	}
 	lineFlags := []rules.FlagCode{
 		rules.FlagRoomDaysMismatch, rules.FlagBucketSegmentMismatch, rules.FlagUndatedLine,
