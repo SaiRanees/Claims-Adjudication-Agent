@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/audit"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/platform"
 )
 
@@ -100,17 +101,20 @@ type CreateResult struct {
 	Replayed bool
 }
 
-// Document is one file of a claim.
+// Document is one file of a claim. The API calls it a document; week 3's plan calls it
+// a file, since one upload can hold several logical documents.
 type Document struct {
-	ID              uuid.UUID
-	ClaimID         uuid.UUID
-	Status          string
-	FileName        string
-	ContentType     string
-	SizeBytes       int64
-	SHA256          []byte
+	ID          uuid.UUID
+	ClaimID     uuid.UUID
+	Status      DocumentStatus
+	FileName    string
+	ContentType string
+	SizeBytes   int64
+	SHA256      []byte
+	// ObjectKey is where the file is stored, made from IDs only, never the file's name.
+	ObjectKey       string
 	PageCount       *int32
-	RejectionReason *string
+	RejectionReason *RejectionReason
 	CreatedAt       time.Time
 	UploadedAt      *time.Time
 }
@@ -137,10 +141,14 @@ type DB interface {
 }
 
 // Store reads and writes claims as claims_app.
-type Store struct{ db DB }
+type Store struct {
+	db DB
+	// now is the clock for audit events and upload times.
+	now func() time.Time
+}
 
 // NewStore returns a Store on db.
-func NewStore(db DB) *Store { return &Store{db: db} }
+func NewStore(db DB) *Store { return &Store{db: db, now: time.Now} }
 
 // Create creates a draft claim, idempotently. In one transaction it writes the claim, the
 // outbox row that starts its workflow (ADR-0003), and the idempotency key with the
@@ -175,6 +183,20 @@ func (s *Store) Create(ctx context.Context, req CreateRequest) (CreateResult, er
 	}
 	claim, err := insertClaim(ctx, tx, req)
 	if err != nil {
+		return CreateResult{}, err
+	}
+	// The claim's first audit event. No lock is needed: until this transaction commits, no
+	// other transaction can see the claim.
+	if _, err := audit.Append(ctx, tx, audit.Entry{
+		ClaimID: claim.ID,
+		At:      s.now(),
+		Actor:   audit.Actor{Type: audit.ActorUser, ID: req.Principal},
+		Action:  audit.ActionClaimCreated,
+		Details: audit.Details{
+			"memberId":           claim.MemberID.String(),
+			"claimedAmountPaise": claim.ClaimedAmountPaise,
+		},
+	}); err != nil {
 		return CreateResult{}, err
 	}
 	if err := insertWorkflowStart(ctx, tx, claim); err != nil {
@@ -273,9 +295,7 @@ func insertClaim(ctx context.Context, tx pgx.Tx, req CreateRequest) (Claim, erro
 		INSERT INTO claims (id, member_id, admitted_on, discharged_on, hospital_name,
 		                    claimed_amount_paise, workflow_id, created_by)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING id, member_id, status, admitted_on, discharged_on, hospital_name,
-		          claimed_amount_paise, workflow_id, created_by, version, created_at, updated_at,
-		          submitted_at, decided_at`,
+		RETURNING `+claimColumns,
 		id, d.MemberID, d.AdmittedOn, d.DischargedOn, d.HospitalName, d.ClaimedAmountPaise,
 		"claim-"+id.String(), req.Principal))
 	if err != nil {
@@ -284,25 +304,35 @@ func insertClaim(ctx context.Context, tx pgx.Tx, req CreateRequest) (Claim, erro
 	return c, nil
 }
 
-// insertWorkflowStart queues the message that starts the claim's workflow. The payload
-// carries IDs only (ADR-0004); the row also carries the request's trace context.
+// insertWorkflowStart queues the message that starts the claim's workflow.
 func insertWorkflowStart(ctx context.Context, tx pgx.Tx, c Claim) error {
+	payload := struct {
+		ClaimID uuid.UUID `json:"claimId"`
+	}{c.ID}
+	if err := queue(ctx, tx, c, "workflow_start", WorkflowType, payload); err != nil {
+		return fmt.Errorf("queueing the workflow start: %w", err)
+	}
+	return nil
+}
+
+// queue writes an outbox row for the claim's workflow in tx (ADR-0003): a start or a
+// signal, with a payload of IDs only (ADR-0004). The row also carries the request's trace
+// context, so the relay continues this request's trace into the workflow. Every caller but
+// Create holds the claim's row lock, which keeps the claim's rows in commit order.
+func queue(ctx context.Context, tx pgx.Tx, c Claim, kind, name string, payload any) error {
 	eventID, err := uuid.NewV7()
 	if err != nil {
 		return fmt.Errorf("generating an event ID: %w", err)
 	}
-	payload, err := json.Marshal(struct {
-		ClaimID uuid.UUID `json:"claimId"`
-	}{c.ID})
+	body, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("encoding the workflow payload: %w", err)
+		return fmt.Errorf("encoding the payload: %w", err)
 	}
-	// traceparent lets the relay continue this request's trace into the workflow.
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO outbox (event_id, claim_id, kind, workflow_id, name, payload, traceparent)
-		VALUES ($1, $2, 'workflow_start', $3, $4, $5, $6)`,
-		eventID, c.ID, c.WorkflowID, WorkflowType, payload, platform.Traceparent(ctx)); err != nil {
-		return fmt.Errorf("queueing the workflow start: %w", err)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		eventID, c.ID, kind, c.WorkflowID, name, body, platform.Traceparent(ctx)); err != nil {
+		return fmt.Errorf("inserting the outbox row: %w", err)
 	}
 	return nil
 }
@@ -326,12 +356,7 @@ func insertKey(ctx context.Context, tx pgx.Tx, req CreateRequest, claimID uuid.U
 
 // Get returns the claim with the ID, or ErrNotFound.
 func (s *Store) Get(ctx context.Context, id uuid.UUID) (Claim, error) {
-	c, err := scanClaim(s.db.QueryRow(ctx, `
-		SELECT id, member_id, status, admitted_on, discharged_on, hospital_name,
-		       claimed_amount_paise, workflow_id, created_by, version, created_at, updated_at,
-		       submitted_at, decided_at
-		FROM claims
-		WHERE id = $1`, id))
+	c, err := scanClaim(s.db.QueryRow(ctx, `SELECT `+claimColumns+` FROM claims WHERE id = $1`, id))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Claim{}, ErrNotFound
 	}
@@ -340,6 +365,11 @@ func (s *Store) Get(ctx context.Context, id uuid.UUID) (Claim, error) {
 	}
 	return c, nil
 }
+
+// claimColumns are the columns scanClaim reads, in its order.
+const claimColumns = `id, member_id, status, admitted_on, discharged_on, hospital_name,
+	claimed_amount_paise, workflow_id, created_by, version, created_at, updated_at,
+	submitted_at, decided_at`
 
 func scanClaim(row pgx.Row) (Claim, error) {
 	var c Claim
@@ -352,8 +382,7 @@ func scanClaim(row pgx.Row) (Claim, error) {
 // Documents returns the claim's documents, oldest first.
 func (s *Store) Documents(ctx context.Context, claimID uuid.UUID) ([]Document, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT id, claim_id, status, file_name, content_type, size_bytes, sha256, page_count,
-		       rejection_reason, created_at, uploaded_at
+		SELECT `+documentColumns+`
 		FROM documents
 		WHERE claim_id = $1
 		ORDER BY created_at, id`, claimID)
@@ -362,13 +391,21 @@ func (s *Store) Documents(ctx context.Context, claimID uuid.UUID) ([]Document, e
 	}
 	defer rows.Close()
 	docs, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (Document, error) {
-		var d Document
-		err := row.Scan(&d.ID, &d.ClaimID, &d.Status, &d.FileName, &d.ContentType, &d.SizeBytes,
-			&d.SHA256, &d.PageCount, &d.RejectionReason, &d.CreatedAt, &d.UploadedAt)
-		return d, err
+		return scanDocument(row)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("reading claim %s's documents: %w", claimID, err)
 	}
 	return docs, nil
+}
+
+// documentColumns are the columns scanDocument reads, in its order.
+const documentColumns = `id, claim_id, status, file_name, content_type, size_bytes, sha256,
+	object_key, page_count, rejection_reason, created_at, uploaded_at`
+
+func scanDocument(row pgx.Row) (Document, error) {
+	var d Document
+	err := row.Scan(&d.ID, &d.ClaimID, &d.Status, &d.FileName, &d.ContentType, &d.SizeBytes,
+		&d.SHA256, &d.ObjectKey, &d.PageCount, &d.RejectionReason, &d.CreatedAt, &d.UploadedAt)
+	return d, err
 }
