@@ -1,10 +1,7 @@
 package engine_test
 
 import (
-	"errors"
 	"fmt"
-	"io/fs"
-	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -36,18 +33,10 @@ func registry(t *testing.T) *rules.Registry {
 	return reg
 }
 
-// checked reads golden-cases.csv. Until the first export, there is none and
-// every case is unchecked.
+// checked reads golden-cases.csv, as compiled into the package.
 func checked(t *testing.T) map[string][]engine.Row {
 	t.Helper()
-	data, err := os.ReadFile(engine.CSVPath)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		t.Fatal(err)
-	}
-	rows, err := engine.ParseCSV(data)
+	rows, err := engine.Checked()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,10 +126,6 @@ func TestGoldenCasesConsistent(t *testing.T) {
 func TestGoldenCSV(t *testing.T) {
 	cases := loadCases(t)
 	byCase := checked(t)
-	if byCase == nil {
-		t.Logf("no %s yet, so all %d cases are unchecked", engine.CSVPath, len(cases))
-		return
-	}
 	known := map[string]engine.Case{}
 	for _, c := range cases {
 		known[c.ID] = c
@@ -158,9 +143,8 @@ func TestGoldenCSV(t *testing.T) {
 			t.Errorf("%s has rows for %s, which isn't a case", engine.CSVPath, id)
 			continue
 		}
-		want := engine.ExpectedRows(c)
-		if !slices.Equal(rows, want) {
-			t.Errorf("%s: the CSV and the case file differ:\n csv  %v\n case %v", id, rows, want)
+		if diffs := engine.CheckedDiffs(c, rows); len(diffs) > 0 {
+			t.Errorf("%s: the CSV and the case file differ:%s", id, describe(diffs, "csv", "case"))
 		}
 		// The identity, on the CSV's own rows: billed less line payable
 		// equals the line's adjustments.
@@ -183,39 +167,40 @@ func TestGoldenCSV(t *testing.T) {
 	}
 }
 
-// TestGoldenEngine runs every case through the engine and reports it as
-// pass, fail or pending, with each differing figure. A checked case that
-// fails fails the test. Until the steps are coded, a case is pending: its
-// figures from coded steps match, but it needs a step that isn't coded yet.
+// TestGoldenEngine runs every case through engine.Evaluate, the definition
+// of a pass that cmd/evalrunner shares, and reports its verdict with each
+// differing figure. A checked case that doesn't pass fails the test. An
+// unchecked case is only reported: the gate, `go run ./cmd/dev golden`,
+// needs every case checked.
 func TestGoldenEngine(t *testing.T) {
 	reg := registry(t)
 	byCase := checked(t)
 	for _, c := range loadCases(t) {
-		rep := engine.Run(c, reg)
-		state := "unchecked"
-		if len(byCase[c.ID]) > 0 {
-			state = "checked"
+		o := engine.Evaluate(c, reg, byCase)
+		msg := c.ID + ": " + string(o.Verdict())
+		if !o.Checked && o.Verdict() == engine.VerdictFail {
+			msg += " (unchecked)"
 		}
-		var b strings.Builder
-		for _, d := range rep.Diffs {
-			when := "compared"
-			if !d.Compared {
-				when = "not yet"
-			}
-			b.WriteString("\n    " + when + "  " + d.Key + ": want " + d.Want + ", got " + d.Got)
+		if o.Err != nil {
+			msg += ": " + o.Err.Error()
+		} else if len(o.Diffs) > 0 {
+			msg += ", " + plural(len(o.Diffs), "figure differs", "figures differ") + " from the case file"
 		}
-		msg := c.ID + ": " + state + ", " + string(rep.Status)
-		if rep.Err != nil {
-			msg += ": " + rep.Err.Error()
-		} else if len(rep.Diffs) > 0 {
-			msg += ", " + plural(len(rep.Diffs), "figure differs", "figures differ") + " from the full expectation"
-		}
-		if state == "checked" && rep.Status == engine.StatusFail {
-			t.Error(msg + b.String())
+		msg += describe(o.Diffs, "case", "engine") + describe(o.CheckedDiffs, "csv", "case")
+		if o.Checked && o.Verdict() != engine.VerdictPass {
+			t.Error(msg)
 		} else {
-			t.Log(msg + b.String())
+			t.Log(msg)
 		}
 	}
+}
+
+func describe(diffs []engine.Diff, want, got string) string {
+	var b strings.Builder
+	for _, d := range diffs {
+		b.WriteString("\n    " + d.Describe(want, got))
+	}
+	return b.String()
 }
 
 func plural(n int, one, many string) string {

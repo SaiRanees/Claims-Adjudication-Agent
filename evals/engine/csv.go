@@ -2,6 +2,7 @@ package engine
 
 import (
 	"bytes"
+	_ "embed" // golden-cases.csv
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -15,6 +16,16 @@ import (
 
 // CSVPath is where the checked figures live, relative to this package.
 const CSVPath = "golden-cases.csv"
+
+// checkedCSV is golden-cases.csv, compiled in beside the case files, so the
+// tests and cmd/evalrunner judge the same figures wherever they run.
+//
+//go:embed golden-cases.csv
+var checkedCSV []byte
+
+// Checked returns the checked figures in golden-cases.csv, grouped by case
+// and sorted. A case with no rows is unchecked.
+func Checked() (map[string][]Row, error) { return ParseCSV(checkedCSV) }
 
 var csvHeader = []string{"case_id", "kind", "line_id", "code", "paise"}
 
