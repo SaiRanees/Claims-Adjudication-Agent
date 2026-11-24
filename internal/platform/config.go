@@ -19,6 +19,25 @@ type APIConfig struct {
 	// LogLevel is debug, info, warn or error. Default info.
 	LogLevel  slog.Level
 	Telemetry TelemetryConfig
+	// S3 is the object store that claim documents are uploaded to.
+	S3 S3Config
+}
+
+// S3Config says where the object store is (SeaweedFS in development) and how to sign in.
+// Every value is required.
+type S3Config struct {
+	// Endpoint is S3_ENDPOINT, the URL the service calls, such as http://seaweedfs:8333.
+	Endpoint string
+	// PublicEndpoint is S3_PUBLIC_ENDPOINT, the URL upload links are signed for: the address
+	// a client can reach, such as http://localhost:8333, not the in-network name.
+	PublicEndpoint string
+	// Region is S3_REGION. SeaweedFS accepts any; the signature covers it.
+	Region string
+	// Bucket is S3_BUCKET.
+	Bucket string
+	// AccessKeyID and SecretAccessKey are AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
+	AccessKeyID     string
+	SecretAccessKey string
 }
 
 // RelayConfig is the relay's configuration, read from the environment as compose.yaml
@@ -67,6 +86,14 @@ func LoadAPIConfig(getenv func(string) string) (APIConfig, error) {
 		DatabaseURL: env.required("DATABASE_URL"),
 		JWTSecret:   []byte(env.required("AUTH_JWT_SECRET")),
 		HTTPAddr:    getenv("HTTP_ADDR"),
+		S3: S3Config{
+			Endpoint:        env.required("S3_ENDPOINT"),
+			PublicEndpoint:  env.required("S3_PUBLIC_ENDPOINT"),
+			Region:          env.required("S3_REGION"),
+			Bucket:          env.required("S3_BUCKET"),
+			AccessKeyID:     env.required("AWS_ACCESS_KEY_ID"),
+			SecretAccessKey: env.required("AWS_SECRET_ACCESS_KEY"),
+		},
 	}
 	if err := env.err(); err != nil {
 		return APIConfig{}, err
