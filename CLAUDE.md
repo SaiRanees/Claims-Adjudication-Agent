@@ -48,7 +48,7 @@ An AI agent that adjudicates Indian health insurance reimbursement claims, start
 | Regenerate `internal/api/apigen` | `go run ./cmd/dev gen` |
 | Vet, lint and tests | `go run ./cmd/dev check` |
 | The golden cases as pass, fail or unchecked (M1's gate) / lay out one case | `go run ./cmd/dev golden` / `go run ./cmd/evalrunner explain <case.yaml>` |
-| Include the database and Temporal tests | automatic in `check` and `test` when the stack is up and `dev app`'s relay and worker aren't running (README, "First run") |
+| Include the database, Temporal and SeaweedFS tests | automatic in `check` and `test` when the stack is up and `dev app`'s relay and worker aren't running (README, "First run") |
 | Lint the API contract | `go run ./cmd/dev lint-api` |
 | Format the Go code | `go run ./cmd/dev fmt` |
 | Run api, relay and worker in containers | `go run ./cmd/dev app` |

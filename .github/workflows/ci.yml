@@ -16,8 +16,9 @@ env:
   GO_VERSION: "1.27.x"
   GOLANGCI_LINT_VERSION: v2.15.0
   MIGRATE_IMAGE: migrate/migrate:v4.20.1
-  # Keep in step with compose.yaml.
+  # Keep these two in step with compose.yaml.
   TEMPORAL_IMAGE: temporalio/temporal:1.10.0
+  SEAWEEDFS_IMAGE: chrislusf/seaweedfs:4.53
   REDOCLY_CLI: "@redocly/cli@2.77.0"
 
 jobs:
@@ -74,6 +75,9 @@ jobs:
       CLAIMS_APP_PASSWORD: app-ci
       OWNER_URL: postgresql://claims_owner:owner-ci@localhost:5432/claims
       APP_URL: postgresql://claims_app:app-ci@localhost:5432/claims
+      S3_ACCESS_KEY: claims-ci
+      S3_SECRET_KEY: claims-ci-secret
+      S3_BUCKET: claim-documents
     steps:
       - uses: actions/checkout@v7
       # Temporal, with the claims namespace, for the relay's end-to-end test. A service
@@ -83,6 +87,13 @@ jobs:
         run: |
           docker run --detach --name temporal --publish 7233:7233 "$TEMPORAL_IMAGE" \
             server start-dev --ip=0.0.0.0 --namespace=claims
+      # SeaweedFS's S3 API, for the upload tests, started as compose.yaml starts it: `weed
+      # mini` makes the bucket named in S3_BUCKET and takes the keys from the AWS variables.
+      - name: Start SeaweedFS
+        run: |
+          docker run --detach --name seaweedfs --publish 8333:8333 \
+            --env AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" --env AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" \
+            --env S3_BUCKET="$S3_BUCKET" "$SEAWEEDFS_IMAGE" mini -master.telemetry=false
       - name: Create the roles and database
         run: psql -X -d postgres -f db/init/01-roles.sql
       - name: Apply the migrations
@@ -114,12 +125,31 @@ jobs:
           done
           docker logs temporal
           exit 1
-      # The tests that need the migrated, seeded database, as claims_app, and Temporal.
-      # They skip themselves in the other jobs, which have neither variable.
-      - name: Database and Temporal tests
+      - name: Wait for SeaweedFS and its bucket
+        run: |
+          for _ in $(seq 60); do
+            if curl -fsS -o /dev/null http://localhost:8333/healthz &&
+              docker exec seaweedfs sh -c 'echo s3.bucket.list | weed shell -master=localhost:9333' 2>/dev/null |
+              grep -q "$S3_BUCKET"; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs seaweedfs
+          exit 1
+      # The tests that need the migrated, seeded database, as claims_app, Temporal and
+      # SeaweedFS. They skip themselves in the other jobs, which have none of the variables.
+      # Here TEST_S3_REQUIRED makes the upload tests fail rather than skip if theirs go
+      # missing, so they can't look done without running.
+      - name: Database, Temporal and S3 tests
         env:
           TEST_DATABASE_URL: ${{ env.APP_URL }}?sslmode=disable
           TEST_TEMPORAL_ADDRESS: localhost:7233
+          TEST_S3_ENDPOINT: http://localhost:8333
+          TEST_S3_BUCKET: ${{ env.S3_BUCKET }}
+          TEST_S3_ACCESS_KEY: ${{ env.S3_ACCESS_KEY }}
+          TEST_S3_SECRET_KEY: ${{ env.S3_SECRET_KEY }}
+          TEST_S3_REQUIRED: "1"
         run: go test -race -count=1 ./internal/...
 
   openapi:

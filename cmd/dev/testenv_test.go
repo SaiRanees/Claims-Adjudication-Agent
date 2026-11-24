@@ -15,6 +15,12 @@ func TestLocalTestEnv(t *testing.T) {
 	dbURL := func(escapedPW string) string {
 		return "postgres://claims_app:" + escapedPW + "@localhost:5432/claims?sslmode=disable"
 	}
+	s3 := map[string]string{"S3_BUCKET": "claim-documents", "S3_ACCESS_KEY": "claims-dev", "S3_SECRET_KEY": "s3-secret"}
+	withS3 := func(vars map[string]string) map[string]string {
+		out := maps.Clone(vars)
+		maps.Copy(out, s3)
+		return out
+	}
 	tests := []struct {
 		name   string
 		dotenv map[string]string
@@ -27,9 +33,24 @@ func TestLocalTestEnv(t *testing.T) {
 			want:   map[string]string{"TEST_DATABASE_URL": dbURL(plainPW), "TEST_TEMPORAL_ADDRESS": "localhost:7233"},
 		},
 		{
-			name:   "keeps variables already set",
-			dotenv: map[string]string{appVar: plainPW},
+			name:   "fills the S3 variables from .env",
+			dotenv: withS3(map[string]string{appVar: plainPW}),
 			set:    []string{"TEST_DATABASE_URL", "TEST_TEMPORAL_ADDRESS"},
+			want: map[string]string{
+				"TEST_S3_ENDPOINT": "http://localhost:8333", "TEST_S3_BUCKET": "claim-documents",
+				"TEST_S3_ACCESS_KEY": "claims-dev", "TEST_S3_SECRET_KEY": "s3-secret",
+			},
+		},
+		{
+			name:   "no S3 variables without all three S3 values",
+			dotenv: map[string]string{"S3_BUCKET": "claim-documents", "S3_ACCESS_KEY": "claims-dev"},
+			set:    []string{"TEST_TEMPORAL_ADDRESS"},
+			want:   map[string]string{},
+		},
+		{
+			name:   "keeps variables already set",
+			dotenv: withS3(map[string]string{appVar: plainPW}),
+			set:    []string{"TEST_DATABASE_URL", "TEST_TEMPORAL_ADDRESS", "TEST_S3_ENDPOINT"},
 			want:   map[string]string{},
 		},
 		{
