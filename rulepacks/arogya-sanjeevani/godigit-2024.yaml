@@ -377,8 +377,20 @@ steps:
 
   # A limit with both a share and a ceiling is the lower of the two. Shares
   # are of the eligible sum insured, without the cumulative bonus.
+  #
+  # The road-ambulance limit comes first (ADR 0012). It is that line's own
+  # limit, and a treatment limit caps what is left of the lines the facts
+  # tie to the treatment, an ambulance line included. The wording doesn't
+  # say which comes first, and this order is the reading kinder to the
+  # insured. The parser rejects a pack that puts the cataract or
+  # modern-treatment limit before it.
   - step: apply-sub-limits
     rules:
+      - id: sub-limit-road-ambulance
+        clause: C.I.1.1(v)
+        applies_to: road-ambulance
+        ceiling_paise: 200000
+        per: hospitalisation
       - id: sub-limit-cataract
         clause: C.I.3
         applies_to: cataract
@@ -391,11 +403,6 @@ steps:
         applies_to: modern-treatment
         share_of_sum_insured_bp: 5000
         per: policy-year
-      - id: sub-limit-road-ambulance
-        clause: C.I.1.1(v)
-        applies_to: road-ambulance
-        ceiling_paise: 200000
-        per: hospitalisation
 
   # The admissible total is capped at the cover left: the eligible sum insured
   # plus the cumulative bonus granted for the year, less what has been paid

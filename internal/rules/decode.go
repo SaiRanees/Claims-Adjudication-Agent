@@ -290,7 +290,34 @@ func (d *decoder) step(path string, f *fields, name StepName) (Step, error) {
 			return s, fail(rulesPath, rulesNode, ErrTarget, "no rule applies to %q", t)
 		}
 	}
+	if name == StepApplySubLimits {
+		return s, subLimitOrder(rulesPath, items, s.Rules)
+	}
 	return s, nil
+}
+
+// subLimitOrder checks that the road-ambulance limit comes before the
+// cataract and modern-treatment limits. It is that line's own limit, and a
+// treatment limit caps what is left of the lines the facts tie to the
+// treatment, an ambulance line included (ADR 0012).
+func subLimitOrder(rulesPath string, items []*yaml.Node, rs []Rule) error {
+	for i, r := range rs {
+		switch r.AppliesTo {
+		case targetRoadAmbulance:
+			return nil
+		case targetCataract, targetModernTreatment:
+			path := index(rulesPath, i)
+			n := items[i]
+			if f, err := mapping(path, n); err == nil {
+				if v, _, ok := f.get("applies_to"); ok {
+					n = v
+				}
+			}
+			return fail(join(path, "applies_to"), n, ErrInvalidValue,
+				"the %s limit comes before the road-ambulance limit, which ADR 0012 puts first", r.AppliesTo)
+		}
+	}
+	return nil
 }
 
 // categoryList reads a required list of categories, each listed nowhere else.
