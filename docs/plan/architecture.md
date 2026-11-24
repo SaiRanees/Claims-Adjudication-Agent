@@ -181,13 +181,14 @@ The same tools are served over MCP with the [official Go SDK](https://github.com
 - The engine recomputes the payable from the submitted classifications. Any number the model writes is ignored.
 - Item-list matching also runs in code. Where the code lookup marks a line not payable, the agent can't mark it payable; the disagreement goes to review.
 - Text copied from documents, such as descriptions and diagnoses, is length-capped and passed as data the prompt marks as untrusted.
+- Extraction copies amounts, quantities and dates exactly as printed. Code parses them into paise and dates and checks them against the page's text; the model never converts or adds up ([ADR 0015](../adr/0015-model-copies-printed-values-code-converts.md)).
 - Category values are compared case-insensitively, because structured outputs don't guarantee enum capitalization ([source](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)).
 - A `refusal` or `max_tokens` stop counts as a failed step, since the output may not match the schema then ([source](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)).
 - Schemas stay lean: one request allows at most 20 strict tools and 24 optional parameters ([source](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)).
 
 **Documents and citations**
 
-- Preparation runs in code before any model call: photos become PDFs, pages are split and de-duplicated by hash, and a text layer is pulled where one exists (for example with pdfcpu and Poppler).
+- Preparation runs in code before any model call: photos become PDFs, pages are split and de-duplicated by a hash of their rendering, and a text layer is pulled where one exists. PDFium, in WebAssembly, reads every upload first, and pdfcpu splits and writes ([ADR 0013](../adr/0013-pdfium-reads-pdfcpu-writes-gopdf-draws.md)).
 - With the Claude adapter, PDFs go straight to the API, which reads each page as an image plus its extracted text ([source](https://platform.claude.com/docs/en/build-with-claude/pdf-support)).
 - On Claude, a request holds at most 100 pages below a 1M-token context window, and encrypted PDFs aren't accepted ([source](https://platform.claude.com/docs/en/build-with-claude/pdf-support)). So documents go in page ranges, and encrypted files are rejected at intake.
 - Page ranges also keep a long pharmacy bill from overflowing the output limit. Tables that run across pages are stitched in code and checked against the bill total.
@@ -399,7 +400,7 @@ Evals gate every merge. Engine tests run on every pull request, and any change t
 - A 30-claim smoke set from the dev half runs on PRs that touch prompts, schemas or model config, three times per claim to measure variance. Cached extraction results are replayed when only the agent changed. A metric that drops beyond its tolerance fails the build.
 - The full suite runs before a release and on demand, not nightly. Page classification and extraction go through the Batch API at half price ([source](https://platform.claude.com/docs/en/about-claude/pricing)). The agent loop is multi-turn, so it runs live.
 - Budget before running. Text alone is 1,500 to 3,000 tokens a page ([source](https://platform.claude.com/docs/en/build-with-claude/pdf-support)), so 280 claims of 30 pages need 13 to 25 million input tokens for one extraction pass. At $2 per million input tokens on Claude Sonnet 5.5 ([source](https://platform.claude.com/docs/en/about-claude/pricing)), that is $25 to $50 a pass before page images, output and the agent loop. Keep most synthetic packets to about ten pages.
-- Record-and-replay mode caches model responses by request hash, so changes that don't touch the model test deterministically.
+- Record-and-replay mode keeps model responses for synthetic packets as committed cassettes, keyed by request hash, so changes that don't touch the model test deterministically and CI replays them with no key ([ADR 0014](../adr/0014-record-and-replay-model-calls.md)).
 
 ## Security, privacy and prompt-injection defense
 
@@ -534,7 +535,7 @@ Each gate is a demo you can record. If a gate slips, cut scope from the next mil
 
 **Never cut:** the engine's golden cases, the outbox and workflow, the review queue, and held-out test numbers.
 
-This week's tasks are in [week-2.md](week-2.md).
+This week's tasks are in [week-3.md](week-3.md).
 
 ## Risks and open decisions
 
