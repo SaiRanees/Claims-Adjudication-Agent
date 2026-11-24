@@ -127,9 +127,17 @@ paths:
       tags: [documents]
       summary: Get a short-lived upload URL for one file
       description: |
-        Registers a file the client is about to upload and returns a signed `PUT` URL for it.
-        Allowed while the claim is `draft` or `awaiting_documents`. The same file (same SHA-256)
-        can't be attached to a claim twice. Role: submitter.
+        Registers a file the client is about to upload and returns a signed `PUT` URL for it,
+        valid for 15 minutes. The signature covers the declared `contentType` and `sizeBytes`:
+        send the headers in `upload.headers` and a body of exactly `sizeBytes` bytes, or the
+        object store refuses it.
+
+        Allowed for the submitter who created the claim, while it is `draft` or
+        `awaiting_documents`, up to 50 files a claim (rejected ones included). Registering
+        the same file (same SHA-256, size and type) again while it waits for its upload
+        returns it with a fresh URL and a 200. The same SHA-256 with a different size or
+        type, or a file already uploaded, is a 409; a rejected file can be registered again.
+        Rate-limited per caller. Role: submitter.
       parameters:
         - $ref: "#/components/parameters/ClaimId"
       requestBody:
@@ -139,6 +147,14 @@ paths:
             schema:
               $ref: "#/components/schemas/CreateDocumentUploadRequest"
       responses:
+        "200":
+          description: |
+            Already registered and still waiting for its upload: the same document, with a
+            fresh upload URL.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentUpload"
         "201":
           description: Registered. Upload the file to `upload.url` before `upload.expiresAt`.
           content:
@@ -167,9 +183,11 @@ paths:
       summary: Confirm an upload so it can be checked
       description: |
         Checks the stored object against the declared size and SHA-256. A match marks the
-        document `uploaded` and tells the workflow; a mismatch marks it `rejected` with a
-        reason, and the client can upload the file again. Calling this twice is safe.
-        Role: submitter.
+        document `uploaded` and tells the workflow; a missing object or a mismatch marks it
+        `rejected` with a reason (`missing_object`, `size_mismatch` or `checksum_mismatch`),
+        and the client can register and upload the file again. Calling this twice returns
+        the same result. Once the claim is past `draft` and `awaiting_documents`, it's a
+        409. Role: the submitter who created the claim.
       parameters:
         - $ref: "#/components/parameters/ClaimId"
         - $ref: "#/components/parameters/DocumentId"

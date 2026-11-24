@@ -1,7 +1,7 @@
 // Command api serves the claims REST API defined in api/openapi.yaml.
 //
 // It reads its configuration from the environment (platform.LoadAPIConfig), connects to
-// Postgres as claims_app, and serves the generated handler behind the contract checks
+// Postgres as claims_app and to the object store, and serves the generated handler behind the contract checks
 // in internal/api. On SIGINT or SIGTERM it reports unhealthy, then lets in-flight
 // requests finish before it exits.
 package main
@@ -21,6 +21,7 @@ import (
 
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/api"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/claims"
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/documents"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/platform"
 )
 
@@ -59,11 +60,18 @@ func run() error {
 		return fmt.Errorf("reaching the database: %w", err)
 	}
 
+	objects := documents.NewObjects(cfg.S3)
+	if err := objects.Ping(ctx); err != nil {
+		return err
+	}
+
 	auth, err := platform.NewAuthenticator(cfg.JWTSecret, time.Now)
 	if err != nil {
 		return err
 	}
-	srv := api.NewServer(claims.NewStore(pool), log)
+	store := claims.NewStore(pool)
+	srv := api.NewServer(store, documents.NewService(store, objects),
+		api.NewRateLimiter(api.RateBurst, api.RateInterval, time.Now), log)
 	handler, err := api.NewHandler(srv, auth, log)
 	if err != nil {
 		return err

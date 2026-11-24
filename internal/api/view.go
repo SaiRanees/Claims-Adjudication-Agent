@@ -12,6 +12,7 @@ import (
 
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/api/apigen"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/claims"
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/documents"
 )
 
 // renderCreated is the response to a create. The store keeps it under the idempotency key,
@@ -66,6 +67,19 @@ func timeline(c claims.Claim) []apigen.ClaimStatusEvent {
 		events = append(events, apigen.ClaimStatusEvent{Status: apigen.ClaimStatus(c.Status), Version: c.Version, At: c.UpdatedAt.UTC()})
 	}
 	return events
+}
+
+// uploadView is a registered file and how to upload it.
+func uploadView(r documents.Registered) apigen.DocumentUpload {
+	return apigen.DocumentUpload{
+		Document: documentView(r.Document),
+		Upload: apigen.UploadInstructions{
+			Method:    apigen.PUT,
+			URL:       r.Upload.URL,
+			Headers:   r.Upload.Headers,
+			ExpiresAt: r.Upload.ExpiresAt.UTC(),
+		},
+	}
 }
 
 func documentView(d claims.Document) apigen.Document {
