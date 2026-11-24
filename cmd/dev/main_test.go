@@ -22,7 +22,7 @@ func TestTasksAreWellFormed(t *testing.T) {
 		}
 		seen[task.name] = true
 	}
-	for _, name := range []string{"up", "migrate", "seed", "db-check", "gen", "test", "lint", "check"} {
+	for _, name := range []string{"up", "migrate", "seed", "db-check", "gen", "test", "lint", "check", "golden"} {
 		if !seen[name] {
 			t.Errorf("task %q is missing", name)
 		}
