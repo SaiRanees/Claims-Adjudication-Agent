@@ -455,3 +455,14 @@ case_id,kind,line_id,code,paise
 51-onset-inside-30-days-after-12-months,claim_payable,,,3230000
 51-onset-inside-30-days-after-12-months,line_payable,L01,,380000
 51-onset-inside-30-days-after-12-months,line_payable,L02,,2850000
+52-ambulance-tied-to-cataract,adjustment,L01,co-payment,62500
+52-ambulance-tied-to-cataract,adjustment,L01,sub-limit-cataract,350000
+52-ambulance-tied-to-cataract,adjustment,L02,co-payment,54688
+52-ambulance-tied-to-cataract,adjustment,L02,sub-limit-cataract,306250
+52-ambulance-tied-to-cataract,adjustment,L03,co-payment,7812
+52-ambulance-tied-to-cataract,adjustment,L03,sub-limit-cataract,43750
+52-ambulance-tied-to-cataract,adjustment,L03,sub-limit-road-ambulance,100000
+52-ambulance-tied-to-cataract,claim_payable,,,2375000
+52-ambulance-tied-to-cataract,line_payable,L01,,1187500
+52-ambulance-tied-to-cataract,line_payable,L02,,1039062
+52-ambulance-tied-to-cataract,line_payable,L03,,148438
