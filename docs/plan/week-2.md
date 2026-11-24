@@ -8,6 +8,8 @@ Progress, 20 November: sessions 3 and 4 are done, with golden cases 01 to 32 che
 
 Progress, 22 November: cases 33 to 48 are checked. Session 6 adds cases 49 to 51 and the property and limit fuzzers. The property fuzzer found that a higher sum insured could lower the payable, and [ADR 0011](../adr/0011-cut-lines-held-to-both-caps-first.md) fixes it, which changes case 05's split between lines but not its total. Cases 01 to 48 are checked and pass, and 49 to 51 wait for their check.
 
+Progress, 24 November: cases 49 to 51 are checked. [ADR 0012](../adr/0012-road-ambulance-limit-before-treatment-limits.md) puts the road-ambulance limit before the treatment limits, with case 52 to pin it. Session 7 adds `cmd/evalrunner`, publishes the pack and passes the gate: 52 cases checked and passing. M1 is done.
+
 ## Decide first
 
 - [x] Co-payment after the cap ([ADR 0009](../adr/0009-cap-before-co-payment.md)). Step 5 caps the admissible total at the cover left. Step 6 takes 5% of the capped amount, with `Percent` once and then `Allocate`. E.II.28(c) applies the 5% to the amount "admissible and payable", and Definition 10 says a co-payment doesn't reduce the sum insured, so the ledger records only what's paid. The two orders can differ only when the admissible amount exceeds the cover left. Every such claim gets a `cover_exceeded` flag carrying the co-pay-first payable after the same bill discount, which is never lower than the payable.
@@ -313,11 +315,22 @@ Done when the property tests pass, each fuzzer runs clean for 10 minutes locally
 
 ## Session 7: the CLI, 40 cases and the gate
 
-- [ ] `cmd/evalrunner` gets two commands. `engine` reports each golden case as pass, fail or unchecked, with the diff for each failure. `explain <case.yaml>` prints one claim's lines and adjustments laid out like the plan's worked example. `go run ./cmd/dev golden` runs `engine`.
-- [ ] Bring the golden set to 40 checked cases. Every ambiguity met this week has an ADR or a comment in the pack, and a case that pins it.
-- [ ] Publish the pack: a test pins its SHA-256, and from here on any change to it means a new version.
-- [ ] Update the status in CLAUDE.md.
-- [ ] Gate: from a fresh clone, `go run ./cmd/dev golden` reports 40 cases checked and passing, and `go run ./cmd/dev check` passes. There's no recording: paste the `explain` output for the worked example into the PR.
+Cases 49 to 51 are checked first, and pass. Then a rule change from the review of session 6, decided and given its case before the code.
+
+- [x] The road-ambulance limit comes before the treatment limits ([ADR 0012](../adr/0012-road-ambulance-limit-before-treatment-limits.md)). In the pack's old order, a road-ambulance line tied to a cataract or modern treatment took a share of that treatment's cut, and then the ₹2,000 limit cut it again, so the claim got less than the treatment limit even when what was admissible after the ambulance limit was above it. `TestRoundingBound`'s third case, recorded in session 6 as rounding, was this fault.
+  - The pack lists `sub-limit-road-ambulance` first, with a comment citing ADR 0012. The parser rejects a pack that puts the cataract or modern-treatment limit before it, with an error naming the ADR; the order between those two stays free, since they share no line.
+  - Case 52, a left-eye cataract as day care with a tied ₹3,000 ambulance, pins it: ₹25,000 admitted and ₹23,750 paid, where the old order paid ₹23,490.91. No checked figure moved: case 06's ambulance isn't tied.
+  - `EngineVersion` stays 0.1.0: the engine runs the pack's order, so the figures move because the pack changed, and its SHA-256 records that.
+  - `TestRoundingBound`'s third case now pays 3,800,000 paise at both sums insured, with a bound of 0. No sub-limit's split can lower the payable any more; `roundingBound` keeps its general count, which reads the pack's order. `limitsPack` now checks that each value it writes lands on the rule it names.
+  - The property fuzzer ran clean for 10 minutes after the change (6,794,563 runs).
+- [x] `cmd/evalrunner` gets two commands. `engine` reports each golden case as pass, fail or unchecked, with the diff for each failure. `explain <case.yaml>` prints one claim's lines and adjustments laid out like the plan's worked example. `go run ./cmd/dev golden` runs `engine`.
+  - A pass has one definition, `evals/engine`'s `Evaluate`: a checked case whose checked rows match its case file and whose engine result matches both. The golden tests use it too, and golden-cases.csv is compiled in beside the case files.
+  - `engine` ends with "N cases: C checked, P passing" and exits 1 unless every case is checked and passing.
+  - `explain` adds the subtotal, the claim-level steps and each line's payable, the flags and the ledger, and refuses to print rows that don't add up to the payable. A test lays out every golden case.
+- [x] Bring the golden set to 40 checked cases. Every ambiguity met this week has an ADR or a comment in the pack, and a case that pins it. The set has 52 cases, all checked.
+- [x] Publish the pack: a test pins its SHA-256, and from here on any change to it means a new version. `TestPublishedPacks` pins version 1 (`731dbeb1…295eb`) and fails if any embedded pack isn't pinned. `.gitattributes` names the packs as LF text.
+- [x] Update the status in CLAUDE.md.
+- [x] Gate: from a fresh clone, `go run ./cmd/dev golden` reports 52 cases checked and passing, and `go run ./cmd/dev check` passes. There's no recording: the `explain` output for the worked example is in the PR.
 
 Done when all 40 golden cases are checked and pass, which is M1's exit gate.
 
@@ -336,6 +349,6 @@ Done when all 40 golden cases are checked and pass, which is M1's exit gate.
 
 - One rule pack encodes the Arogya Sanjeevani wording, every limit in it cites its clause, and its SHA-256 is pinned.
 - `internal/rules` computes the payable and explains it with one adjustment per rule. It stays pure and gives the same answer every time.
-- 40 golden cases, independently checked, pass in CI and through `go run ./cmd/dev golden`, and property and fuzz tests cover the rest.
+- 40 golden cases, independently checked, pass in CI and through `go run ./cmd/dev golden`, and property and fuzz tests cover the rest. The set ended at 52.
 
 Next is M2, intake and extraction. The build plan is in [architecture.md](architecture.md#repo-structure-and-build-plan).
