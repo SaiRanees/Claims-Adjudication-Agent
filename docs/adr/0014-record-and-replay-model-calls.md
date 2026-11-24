@@ -1,6 +1,6 @@
 # 0014. Record and replay model calls, with committed cassettes
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-24
 
 ## Context

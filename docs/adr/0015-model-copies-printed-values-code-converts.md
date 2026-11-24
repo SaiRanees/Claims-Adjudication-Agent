@@ -1,6 +1,6 @@
 # 0015. Have the model copy printed values, and convert them in code
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-24
 
 ## Context
