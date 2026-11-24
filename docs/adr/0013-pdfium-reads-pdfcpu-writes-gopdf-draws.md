@@ -1,6 +1,6 @@
 # 0013. Read PDFs with PDFium in WebAssembly, write them with pdfcpu, and draw them with gopdf
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-24
 
 ## Context

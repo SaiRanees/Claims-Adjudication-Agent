@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/api/apigen"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/claims"
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/documents"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/platform"
 )
 
@@ -23,6 +25,12 @@ type Claims interface {
 	Documents(ctx context.Context, claimID uuid.UUID) ([]claims.Document, error)
 }
 
+// Documents is what the handlers need for uploads: documents.Service.
+type Documents interface {
+	Register(ctx context.Context, nd claims.NewDocument) (documents.Registered, error)
+	Complete(ctx context.Context, principal string, claimID, documentID uuid.UUID) (claims.Document, error)
+}
+
 // ErrNotImplemented is what every operation not built yet returns. The strict handler's
 // response-error hook turns it into a 501 problem: oapi-codegen's net/http output has no
 // ready-made "unimplemented" type.
@@ -30,16 +38,20 @@ var ErrNotImplemented = errors.New("not implemented yet")
 
 // Server implements the contract in api/openapi.yaml.
 type Server struct {
-	claims   Claims
+	claims    Claims
+	documents Documents
+	// limiter caps each caller's rate of registering files.
+	limiter  *RateLimiter
 	log      *slog.Logger
 	draining atomic.Bool
 }
 
 var _ apigen.StrictServerInterface = (*Server)(nil)
 
-// NewServer returns a Server that keeps claims in c.
-func NewServer(c Claims, log *slog.Logger) *Server {
-	return &Server{claims: c, log: log}
+// NewServer returns a Server that keeps claims in c and runs uploads through d, with each
+// caller's registrations limited by limiter.
+func NewServer(c Claims, d Documents, limiter *RateLimiter, log *slog.Logger) *Server {
+	return &Server{claims: c, documents: d, limiter: limiter, log: log}
 }
 
 // Drain makes /healthz answer 503, so a load balancer stops sending new traffic while
@@ -163,6 +175,112 @@ func (s *Server) GetClaim(ctx context.Context, req apigen.GetClaimRequestObject)
 	return apigen.GetClaim200JSONResponse(claimView(c, docs)), nil
 }
 
+// CreateDocumentUpload registers a file and returns a signed URL to upload it to: 201 for a
+// new file, 200 for one already registered and still waiting for its upload. Role: the
+// submitter who created the claim, within the per-caller rate limit.
+func (s *Server) CreateDocumentUpload(ctx context.Context, req apigen.CreateDocumentUploadRequestObject) (apigen.CreateDocumentUploadResponseObject, error) {
+	caller, ok := principalFrom(ctx)
+	if !ok {
+		return nil, errors.New("no caller on an authenticated operation")
+	}
+	if caller.Role != platform.RoleSubmitter {
+		return apigen.CreateDocumentUpload403ApplicationProblemPlusJSONResponse{
+			ForbiddenApplicationProblemPlusJSONResponse: apigen.ForbiddenApplicationProblemPlusJSONResponse(
+				problem(ctx, http.StatusForbidden, typeForbidden, "role_not_allowed", "Only submitters can upload documents.")),
+		}, nil
+	}
+	if allowed, wait := s.limiter.Allow(caller.Subject); !allowed {
+		seconds := retryAfter(wait)
+		return apigen.CreateDocumentUpload429ApplicationProblemPlusJSONResponse{
+			TooManyRequestsApplicationProblemPlusJSONResponse: apigen.TooManyRequestsApplicationProblemPlusJSONResponse{
+				Body: problem(ctx, http.StatusTooManyRequests, typeTooManyRequests, "rate_limited",
+					"Too many requests. Retry after the number of seconds in Retry-After."),
+				Headers: apigen.TooManyRequestsResponseHeaders{RetryAfter: &seconds},
+			},
+		}, nil
+	}
+	body := req.Body
+	var sum [32]byte
+	// The contract's pattern holds the hash to 64 lower-case hex digits, so a failure here
+	// is ours, not the client's.
+	if _, err := hex.Decode(sum[:], []byte(body.Sha256)); err != nil {
+		return nil, fmt.Errorf("decoding a SHA-256 the contract let through: %w", err)
+	}
+
+	res, err := s.documents.Register(ctx, claims.NewDocument{
+		Principal:   caller.Subject,
+		ClaimID:     req.ClaimID,
+		FileName:    body.FileName,
+		ContentType: string(body.ContentType),
+		SizeBytes:   body.SizeBytes,
+		SHA256:      sum,
+	})
+	conflict := func(code, detail string) apigen.CreateDocumentUpload409ApplicationProblemPlusJSONResponse {
+		return apigen.CreateDocumentUpload409ApplicationProblemPlusJSONResponse{
+			ConflictApplicationProblemPlusJSONResponse: apigen.ConflictApplicationProblemPlusJSONResponse(
+				problem(ctx, http.StatusConflict, typeConflict, code, detail)),
+		}
+	}
+	switch {
+	case errors.Is(err, claims.ErrNotFound):
+		return apigen.CreateDocumentUpload404ApplicationProblemPlusJSONResponse{
+			NotFoundApplicationProblemPlusJSONResponse: apigen.NotFoundApplicationProblemPlusJSONResponse(notFoundProblem(ctx)),
+		}, nil
+	case errors.Is(err, claims.ErrNotAcceptingDocuments):
+		return conflict(codeNotAcceptingDocuments, detailNotAcceptingDocuments), nil
+	case errors.Is(err, claims.ErrAlreadyUploaded):
+		return conflict("document_already_uploaded", "This file (same SHA-256) is already uploaded to the claim."), nil
+	case errors.Is(err, claims.ErrDeclaredDifferently):
+		return conflict("document_declared_differently",
+			"This file (same SHA-256) is already registered on the claim with a different size or content type."), nil
+	case errors.Is(err, claims.ErrTooManyFiles):
+		return conflict("too_many_documents",
+			fmt.Sprintf("A claim can have at most %d files, rejected ones included.", claims.MaxFilesPerClaim)), nil
+	case err != nil:
+		return nil, fmt.Errorf("registering a document on claim %s: %w", req.ClaimID, err)
+	}
+	if res.Created {
+		return apigen.CreateDocumentUpload201JSONResponse(uploadView(res)), nil
+	}
+	return apigen.CreateDocumentUpload200JSONResponse(uploadView(res)), nil
+}
+
+// The conflict a claim past accepting documents gets, from either upload operation.
+const (
+	codeNotAcceptingDocuments   = "claim_not_accepting_documents"
+	detailNotAcceptingDocuments = "The claim is past accepting documents: it's no longer a draft or waiting for documents."
+)
+
+// CompleteDocumentUpload checks an uploaded file against its declaration and returns it,
+// now uploaded or rejected. Role: the submitter who created the claim.
+func (s *Server) CompleteDocumentUpload(ctx context.Context, req apigen.CompleteDocumentUploadRequestObject) (apigen.CompleteDocumentUploadResponseObject, error) {
+	caller, ok := principalFrom(ctx)
+	if !ok {
+		return nil, errors.New("no caller on an authenticated operation")
+	}
+	if caller.Role != platform.RoleSubmitter {
+		return apigen.CompleteDocumentUpload403ApplicationProblemPlusJSONResponse{
+			ForbiddenApplicationProblemPlusJSONResponse: apigen.ForbiddenApplicationProblemPlusJSONResponse(
+				problem(ctx, http.StatusForbidden, typeForbidden, "role_not_allowed", "Only submitters can upload documents.")),
+		}, nil
+	}
+	d, err := s.documents.Complete(ctx, caller.Subject, req.ClaimID, req.DocumentID)
+	switch {
+	case errors.Is(err, claims.ErrNotFound), errors.Is(err, claims.ErrDocumentNotFound):
+		return apigen.CompleteDocumentUpload404ApplicationProblemPlusJSONResponse{
+			NotFoundApplicationProblemPlusJSONResponse: apigen.NotFoundApplicationProblemPlusJSONResponse(notFoundProblem(ctx)),
+		}, nil
+	case errors.Is(err, claims.ErrNotAcceptingDocuments):
+		return apigen.CompleteDocumentUpload409ApplicationProblemPlusJSONResponse{
+			ConflictApplicationProblemPlusJSONResponse: apigen.ConflictApplicationProblemPlusJSONResponse(
+				problem(ctx, http.StatusConflict, typeConflict, codeNotAcceptingDocuments, detailNotAcceptingDocuments)),
+		}, nil
+	case err != nil:
+		return nil, fmt.Errorf("completing document %s: %w", req.DocumentID, err)
+	}
+	return apigen.CompleteDocumentUpload200JSONResponse(documentView(d)), nil
+}
+
 // The operations below arrive in later sessions; until then they answer 501.
 
 // GetAdjudication is not built yet.
@@ -172,16 +290,6 @@ func (s *Server) GetAdjudication(context.Context, apigen.GetAdjudicationRequestO
 
 // ListAuditEvents is not built yet.
 func (s *Server) ListAuditEvents(context.Context, apigen.ListAuditEventsRequestObject) (apigen.ListAuditEventsResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-// CreateDocumentUpload is not built yet.
-func (s *Server) CreateDocumentUpload(context.Context, apigen.CreateDocumentUploadRequestObject) (apigen.CreateDocumentUploadResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-// CompleteDocumentUpload is not built yet.
-func (s *Server) CompleteDocumentUpload(context.Context, apigen.CompleteDocumentUploadRequestObject) (apigen.CompleteDocumentUploadResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 

@@ -15,6 +15,7 @@ import (
 
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/api"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/claims"
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/documents"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/platform"
 )
 
@@ -38,7 +39,10 @@ func TestTwoIdenticalCreatesWithOneKeyMakeOneClaim(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h, err := api.NewHandler(api.NewServer(claims.NewStore(pool), log), auth, log)
+	// This test creates and reads claims only, so its uploads have no object store.
+	store := claims.NewStore(pool)
+	srv := api.NewServer(store, documents.NewService(store, nil), api.NewRateLimiter(api.RateBurst, api.RateInterval, time.Now), log)
+	h, err := api.NewHandler(srv, auth, log)
 	if err != nil {
 		t.Fatal(err)
 	}

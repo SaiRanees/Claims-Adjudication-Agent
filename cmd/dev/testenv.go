@@ -14,17 +14,21 @@ import (
 	"time"
 )
 
-// Where the local stack publishes Postgres and Temporal on the host (compose.yaml).
+// Where the local stack publishes Postgres, Temporal and SeaweedFS's S3 API on
+// the host (compose.yaml).
 const (
 	localPostgres = "localhost:5432"
 	localTemporal = "localhost:7233"
+	localS3       = "localhost:8333"
 )
 
-// localTestEnv returns the variables that point the database and Temporal
+// localTestEnv returns the variables that point the database, Temporal and S3
 // tests at the local stack: TEST_DATABASE_URL (the claims database as
-// claims_app, with the password from .env) and TEST_TEMPORAL_ADDRESS. A
+// claims_app, with the password from .env), TEST_TEMPORAL_ADDRESS, and the
+// four TEST_S3_* variables (SeaweedFS, with the bucket and keys from .env). A
 // variable that is already set, even to an empty value, is left alone, so
-// setting one to "" still skips those tests.
+// setting one to "" still skips those tests; TEST_S3_ENDPOINT stands for all
+// four S3 variables.
 func localTestEnv(dotenv map[string]string, isSet func(string) bool) map[string]string {
 	vars := map[string]string{}
 	if pw := dotenv["CLAIMS_APP_PASSWORD"]; pw != "" && !isSet("TEST_DATABASE_URL") {
@@ -40,7 +44,27 @@ func localTestEnv(dotenv map[string]string, isSet func(string) bool) map[string]
 	if !isSet("TEST_TEMPORAL_ADDRESS") {
 		vars["TEST_TEMPORAL_ADDRESS"] = localTemporal
 	}
+	bucket, key, secret := dotenv["S3_BUCKET"], dotenv["S3_ACCESS_KEY"], dotenv["S3_SECRET_KEY"]
+	if bucket != "" && key != "" && secret != "" && !isSet("TEST_S3_ENDPOINT") {
+		vars["TEST_S3_ENDPOINT"] = "http://" + localS3
+		vars["TEST_S3_BUCKET"] = bucket
+		vars["TEST_S3_ACCESS_KEY"] = key
+		vars["TEST_S3_SECRET_KEY"] = secret
+	}
 	return vars
+}
+
+// testAddress is where the service a test variable points at must answer.
+func testAddress(name string) string {
+	switch {
+	case name == "TEST_DATABASE_URL":
+		return localPostgres
+	case name == "TEST_TEMPORAL_ADDRESS":
+		return localTemporal
+	case strings.HasPrefix(name, "TEST_S3_"):
+		return localS3
+	}
+	return ""
 }
 
 // useLocalStack sets the local-stack test variables in this process, so the
@@ -68,21 +92,31 @@ func useLocalStack(ctx context.Context) error {
 			strings.Join(running, ", "), strings.Join(running, " "))
 		return nil
 	}
-	addr := map[string]string{"TEST_DATABASE_URL": localPostgres, "TEST_TEMPORAL_ADDRESS": localTemporal}
-	names := make([]string, 0, len(vars))
+	// Group the variables by the address that must answer for them.
+	byAddress := map[string][]string{}
 	for name := range vars {
-		names = append(names, name)
+		addr := testAddress(name)
+		byAddress[addr] = append(byAddress[addr], name)
 	}
-	slices.Sort(names)
-	for _, name := range names {
-		if !answers(ctx, addr[name]) {
-			fmt.Fprintf(os.Stderr, "note: nothing answers on %s, so the tests that need %s skip themselves. Run dev up first to include them.\n", addr[name], name)
+	addresses := make([]string, 0, len(byAddress))
+	for addr := range byAddress {
+		addresses = append(addresses, addr)
+	}
+	slices.Sort(addresses)
+	for _, addr := range addresses {
+		names := byAddress[addr]
+		slices.Sort(names)
+		list := strings.Join(names, ", ")
+		if !answers(ctx, addr) {
+			fmt.Fprintf(os.Stderr, "note: nothing answers on %s, so the tests that need %s skip themselves. Run dev up first to include them.\n", addr, list)
 			continue
 		}
-		if err := os.Setenv(name, vars[name]); err != nil {
-			return err
+		for _, name := range names {
+			if err := os.Setenv(name, vars[name]); err != nil {
+				return err
+			}
 		}
-		fmt.Fprintf(os.Stderr, "note: %s points at the local stack (%s).\n", name, addr[name])
+		fmt.Fprintf(os.Stderr, "note: %s set for the local stack (%s).\n", list, addr)
 	}
 	return nil
 }

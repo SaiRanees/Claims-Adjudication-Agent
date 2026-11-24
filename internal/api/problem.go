@@ -31,6 +31,7 @@ var (
 	typeInternal         = problemType{"urn:claims-agent:problem:internal", "Internal error"}
 	typeNotImplemented   = problemType{"urn:claims-agent:problem:not-implemented", "Not implemented yet"}
 	typeUnavailable      = problemType{"urn:claims-agent:problem:unavailable", "Unavailable"}
+	typeTooManyRequests  = problemType{"urn:claims-agent:problem:rate-limited", "Too many requests"}
 )
 
 // problem builds a problem. Its traceId is the request's trace, so a caller reporting

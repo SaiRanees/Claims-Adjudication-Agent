@@ -113,8 +113,13 @@ func (f *fakeClaims) createCalls() []claims.CreateRequest {
 
 func newAPI(t *testing.T, store *fakeClaims) (http.Handler, *api.Server) {
 	t.Helper()
+	return newAPIWith(t, store, &fakeDocuments{}, api.NewRateLimiter(1000, time.Millisecond, time.Now))
+}
+
+func newAPIWith(t *testing.T, store *fakeClaims, docs *fakeDocuments, limiter *api.RateLimiter) (http.Handler, *api.Server) {
+	t.Helper()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	srv := api.NewServer(store, log)
+	srv := api.NewServer(store, docs, limiter, log)
 	h, err := api.NewHandler(srv, authenticator(t, apiNow), log)
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)

@@ -13,15 +13,37 @@ func env(vars map[string]string) func(string) string {
 	return func(k string) string { return vars[k] }
 }
 
+// apiEnv is every variable the API requires, plus extra.
+func apiEnv(extra map[string]string) func(string) string {
+	vars := map[string]string{
+		"DATABASE_URL":          "postgres://db/claims",
+		"AUTH_JWT_SECRET":       "0123456789abcdef0123456789abcdef",
+		"S3_ENDPOINT":           "http://seaweedfs:8333",
+		"S3_PUBLIC_ENDPOINT":    "http://localhost:8333",
+		"S3_REGION":             "us-east-1",
+		"S3_BUCKET":             "claim-documents",
+		"AWS_ACCESS_KEY_ID":     "test-key",
+		"AWS_SECRET_ACCESS_KEY": "test-secret",
+	}
+	maps.Copy(vars, extra)
+	return env(vars)
+}
+
 func TestLoadAPIConfigReadsEveryVariable(t *testing.T) {
-	cfg, err := platform.LoadAPIConfig(env(map[string]string{
-		"DATABASE_URL":    "postgres://claims_app@db:5432/claims",
-		"AUTH_JWT_SECRET": "0123456789abcdef0123456789abcdef",
-		"HTTP_ADDR":       ":9090",
-		"LOG_LEVEL":       "debug",
+	cfg, err := platform.LoadAPIConfig(apiEnv(map[string]string{
+		"DATABASE_URL": "postgres://claims_app@db:5432/claims",
+		"HTTP_ADDR":    ":9090",
+		"LOG_LEVEL":    "debug",
 	}))
 	if err != nil {
 		t.Fatalf("LoadAPIConfig: %v", err)
+	}
+	want := platform.S3Config{
+		Endpoint: "http://seaweedfs:8333", PublicEndpoint: "http://localhost:8333", Region: "us-east-1",
+		Bucket: "claim-documents", AccessKeyID: "test-key", SecretAccessKey: "test-secret",
+	}
+	if cfg.S3 != want {
+		t.Errorf("S3 = %+v, want %+v", cfg.S3, want)
 	}
 	if cfg.DatabaseURL != "postgres://claims_app@db:5432/claims" {
 		t.Errorf("DatabaseURL = %q", cfg.DatabaseURL)
@@ -38,10 +60,7 @@ func TestLoadAPIConfigReadsEveryVariable(t *testing.T) {
 }
 
 func TestLoadAPIConfigDefaultsOptionalVariables(t *testing.T) {
-	cfg, err := platform.LoadAPIConfig(env(map[string]string{
-		"DATABASE_URL":    "postgres://db/claims",
-		"AUTH_JWT_SECRET": "0123456789abcdef0123456789abcdef",
-	}))
+	cfg, err := platform.LoadAPIConfig(apiEnv(nil))
 	if err != nil {
 		t.Fatalf("LoadAPIConfig: %v", err)
 	}
@@ -61,7 +80,8 @@ func TestLoadAPIConfigNamesEveryMissingVariable(t *testing.T) {
 	if err == nil {
 		t.Fatal("LoadAPIConfig succeeded with no environment")
 	}
-	for _, name := range []string{"DATABASE_URL", "AUTH_JWT_SECRET"} {
+	for _, name := range []string{"DATABASE_URL", "AUTH_JWT_SECRET", "S3_ENDPOINT", "S3_PUBLIC_ENDPOINT",
+		"S3_REGION", "S3_BUCKET", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"} {
 		if !strings.Contains(err.Error(), name) {
 			t.Errorf("error %q doesn't name %s", err, name)
 		}
@@ -69,11 +89,7 @@ func TestLoadAPIConfigNamesEveryMissingVariable(t *testing.T) {
 }
 
 func TestLoadAPIConfigRejectsUnknownLogLevel(t *testing.T) {
-	_, err := platform.LoadAPIConfig(env(map[string]string{
-		"DATABASE_URL":    "postgres://db/claims",
-		"AUTH_JWT_SECRET": "0123456789abcdef0123456789abcdef",
-		"LOG_LEVEL":       "loud",
-	}))
+	_, err := platform.LoadAPIConfig(apiEnv(map[string]string{"LOG_LEVEL": "loud"}))
 	if err == nil {
 		t.Fatal("LoadAPIConfig accepted LOG_LEVEL=loud")
 	}
