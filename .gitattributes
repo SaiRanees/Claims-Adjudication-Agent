@@ -1,5 +1,8 @@
 # Scripts run inside Linux containers, so keep LF line endings even on Windows.
 * text=auto eol=lf
+# Published rule packs are pinned by SHA-256 (rulepacks/rulepacks_test.go), so
+# they are text with LF endings everywhere, never left to auto-detection.
+rulepacks/**/*.yaml text eol=lf
 *.pdf binary
 *.png binary
 *.jpg binary

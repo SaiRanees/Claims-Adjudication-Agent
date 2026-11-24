@@ -6,9 +6,10 @@
 # zero, 0x, 0o or an underscore, anchors, aliases, merge keys, explicit tags and
 # a second document.
 #
-# Rule IDs, like clause IDs, never change once published. The M1 gate (week 2,
-# session 7) publishes this version and pins its SHA-256. After that, any change
-# to this file, even to a comment, means a new version in a new file.
+# Rule IDs, like clause IDs, never change once published. Version 1 was
+# published at the M1 gate (week 2, session 7, 24 November 2026), and
+# rulepacks/rulepacks_test.go pins its SHA-256. Any change to this file, even
+# to a comment, means a new version in a new file.
 #
 # Which copy the pages refer to
 #

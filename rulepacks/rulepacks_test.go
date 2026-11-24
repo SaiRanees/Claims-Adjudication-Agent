@@ -1,6 +1,8 @@
 package rulepacks_test
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"slices"
 	"testing"
 
@@ -23,6 +25,59 @@ func TestRegistry(t *testing.T) {
 	}
 	if got := len(r.Packs()); got != len(paths) {
 		t.Errorf("registry has %d packs, want %d", got, len(paths))
+	}
+}
+
+// published pins the SHA-256 of every published pack version. A published
+// pack never changes: a change to one, even to a comment, means a new
+// version in a new file, pinned here when it is published. Never edit a pin
+// to make this test pass. .gitattributes keeps the packs LF on every
+// platform, so a hash is the same on every machine and CI job.
+var published = []struct {
+	path    string
+	id      string
+	version int64
+	sha256  string
+}{
+	// Published at the M1 gate, week 2 session 7, 24 November 2026, with
+	// ADR 0012's sub-limit order.
+	{"arogya-sanjeevani/godigit-2024.yaml", "arogya-sanjeevani-godigit-2024", 1,
+		"731dbeb1ea9e3c14cb79b5707d8dfb09fc9f1ca02eee051008f98034c39295eb"},
+}
+
+func TestPublishedPacks(t *testing.T) {
+	pinned := map[string]bool{}
+	for _, pub := range published {
+		pinned[pub.path] = true
+		src, err := rulepacks.Source(pub.path)
+		if err != nil {
+			t.Errorf("published pack %s: %v", pub.path, err)
+			continue
+		}
+		sum := sha256.Sum256(src)
+		if got := hex.EncodeToString(sum[:]); got != pub.sha256 {
+			t.Errorf("%s has changed since %s version %d was published: its SHA-256 is %s, pinned %s. "+
+				"A published pack never changes; put the change in a new file as a new version.",
+				pub.path, pub.id, pub.version, got, pub.sha256)
+		}
+		p, err := rules.ParsePack(src)
+		if err != nil {
+			t.Errorf("published pack %s: %v", pub.path, err)
+			continue
+		}
+		if p.ID != pub.id || p.Version != pub.version {
+			t.Errorf("%s is %s, want %s version %d", pub.path, p.Identity(), pub.id, pub.version)
+		}
+	}
+	// Every pack the registry offers is a published one.
+	paths, err := rulepacks.Paths()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range paths {
+		if !pinned[path] {
+			t.Errorf("%s isn't published: pin its SHA-256 in published when its gate publishes it", path)
+		}
 	}
 }
 
