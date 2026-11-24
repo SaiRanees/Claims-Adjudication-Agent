@@ -64,6 +64,8 @@ Three sources are known. Each lowers the payable by one paisa, and `TestRounding
 - **The double rounding.** Lines held to both caps are split at their own cap and again at the segment's. The fuzzer's input `9d50a174da0c39c0` has two room lines on an ICU day, one of them tied to a cataract. Their total is 383,187 paise at both sums insured, but the tied line's share rises by a paisa, and the payable goes from 4,785,234 paise to 4,785,233. Its bound is 3.
 - **A sub-limit's own split.** The cataract limit's cut is spread across a road-ambulance line and other lines. It can leave the ambulance line a paisa more as the sum insured rises, and the ambulance limit takes it off. The payable goes from 3,629,282 paise to 3,629,281. Its bound is 1.
 
+  > Note, 24 November: this source was a rule fault, not rounding. [ADR 0012](0012-road-ambulance-limit-before-treatment-limits.md) puts the road-ambulance limit before the treatment limits, so the cataract limit's cut no longer lands on an ambulance line the ambulance limit cuts again. The same claim now pays 3,800,000 paise at both sums insured, with a bound of 0, and for the Go Digit pack no sub-limit's split can lower the payable. The second kind of split above, a treatment limit's cut ahead of the road-ambulance limit, no longer arises in that pack. `roundingBound` still counts a sub-limit's split ahead of a later sub-limit, so the bound stays sound for any order.
+
 ## Alternatives considered
 
 - **Narrow the property, and skip claims with a line held to both caps and a binding sub-limit.** Rejected: a property with an exception for the very claims that break it proves nothing about them, and a higher sum insured that pays less is a result no reviewer could explain.

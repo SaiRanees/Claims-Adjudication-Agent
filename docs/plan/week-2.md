@@ -295,12 +295,12 @@ Two additions from the review of session 5 come first, each with its case writte
 
   Its second find showed that rounding can still lower the payable by a paisa. Decided on 22 November: the property allows a rounding bound worked out per claim (`roundingBound`), with the derivation in [ADR 0011](../adr/0011-cut-lines-held-to-both-caps-first.md#the-rounding-bound). Largest remainder, the double rounding and every golden figure stay as they are.
   - Without rounding, a higher sum insured never lowers the payable. Largest remainder keeps each line of a split within a paisa of its exact share, and the shares add up to the split's total, so rounding moves less than a paisa per line between that split's lines. That reaches the payable only through a later sub-limit that holds some of the split's lines and not others. The steps after the sub-limits move the payable by no more than they move the total.
-  - B counts, for each split the claim made and each sub-limit after it, the smaller of the split's lines inside and outside that sub-limit. The splits are a daily cap's cut over a segment's own lines, and over its lines held to both caps, counted once at each cap; and the cataract and modern-treatment limits' cuts, ahead of the road-ambulance limit. At each sum insured the payable is less than B paise from the unrounded one, so the drop is at most B₁ + B₂ − 1 paise, and nothing when both are zero.
+  - B counts, for each split the claim made and each sub-limit after it in the pack, the smaller of the split's lines inside and outside that sub-limit. The splits are a daily cap's cut over a segment's own lines, and over its lines held to both caps, counted once at each cap; and a sub-limit's cut, ahead of the sub-limits after it. At each sum insured the payable is less than B paise from the unrounded one, so the drop is at most B₁ + B₂ − 1 paise, and nothing when both are zero.
   - The bound is zero for 279 of the 300 seed claims. On the engine before ADR 0011, the first fuzz input still fails: it drops 19,575 paise against a bound of 3.
-  - Three sources are known, and `TestRoundingBound` pins each one at a drop of exactly one paisa, within its bound:
+  - Three sources were found, and `TestRoundingBound` pinned each one at a drop of exactly one paisa, within its bound. The first two are rounding:
     - The Alabama paradox (largest remainder isn't monotone in its total). A room day billed ₹691.06 for the room, untied, and ₹2,954.23 for nursing and ₹2,258.26 for diet, both tied to a cataract whose ₹40,000 implant reaches the limit, pays 3,844,483 paise at ₹2,00,000 and 3,844,482 at ₹2,00,000.50. Its bound is 1.
     - The double rounding of lines held to both caps. Fuzz input `9d50a174da0c39c0`, two room lines on an ICU day, one of them tied, goes from 4,785,234 paise to 4,785,233. Its bound is 3.
-    - A sub-limit's own split: the cataract limit's cut, spread across a road-ambulance line and others, leaves the ambulance line a paisa more, and the ambulance limit takes it off. 3,629,282 paise to 3,629,281. Its bound is 1.
+    - A sub-limit's own split: the cataract limit's cut, spread across a road-ambulance line and others, left the ambulance line a paisa more, and the ambulance limit took it off. 3,629,282 paise to 3,629,281. That was a rule fault, not rounding, and [ADR 0012](../adr/0012-road-ambulance-limit-before-treatment-limits.md) fixes it in session 7: the same claim pays 3,800,000 paise at both sums insured, with a bound of 0.
   - Both fuzz inputs are kept as regression seeds in `internal/rules/testdata/fuzz/FuzzAdjudicateProperties/`.
   - With the bound, the property fuzzer ran clean for 10 minutes locally (7,558,793 runs).
 - [x] Fuzz the engine with packs and facts near the `int64` limits. The result must be an error, never a panic or a silent overflow.
@@ -329,6 +329,7 @@ Done when all 40 golden cases are checked and pass, which is M1's exit gate.
 - The workflow doesn't call the engine until M3. That is also where the review-routing thresholds get set: a billed or payable amount above a set value, or a payable near a limit.
 - Code-side item matching against the Annexure A text waits for M3, and rendering synthetic packets from scenario specs waits for M2.
 - M3's extraction must class intensivist and critical-care nursing charges as `icu-charges` (Definition 24), because the engine can't tell them from other doctors' fees or ward nursing.
+- Whether a road-ambulance line is tied to a treatment, and so counts toward its limit after the ambulance limit (ADR 0012), is the facts' call. M3's extraction decides it.
 - Differential billing judged per expense (para 6 of the 2020 circular), and pre- and post-hospitalisation expenses, are not modelled.
 
 ## Done by the end of week 2
