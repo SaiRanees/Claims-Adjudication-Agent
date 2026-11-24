@@ -78,7 +78,7 @@ func Cases() ([]Case, error) {
 		if err != nil {
 			return nil, err
 		}
-		c, err := parseCase(strings.TrimSuffix(path.Base(p), ".yaml"), src)
+		c, err := ParseCase(strings.TrimSuffix(path.Base(p), ".yaml"), src)
 		if err != nil {
 			return nil, fmt.Errorf("golden case %s: %w", p, err)
 		}
@@ -184,7 +184,9 @@ func (d *dates) parse(field, s string) rules.Date {
 	return v
 }
 
-func parseCase(id string, src []byte) (Case, error) {
+// ParseCase reads one case file. id names the case, by convention the
+// file's name without .yaml. Unknown fields are errors.
+func ParseCase(id string, src []byte) (Case, error) {
 	var s caseSpec
 	dec := yaml.NewDecoder(bytes.NewReader(src))
 	dec.KnownFields(true)

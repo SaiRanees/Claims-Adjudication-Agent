@@ -240,7 +240,7 @@ All money math runs in one pure Go package. Claim facts and a versioned rule pac
 1. Drop items the Annexure A lists mark as not payable.
 2. Cap room and ICU charges at their per-day limits.
 3. Scale non-exempt hospital expenses by the room-rate ratio of their stay segment.
-4. Apply sub-limits: cataract, modern treatments, ambulance.
+4. Apply sub-limits: road ambulance first, then cataract and modern treatments ([ADR 0012](../adr/0012-road-ambulance-limit-before-treatment-limits.md)).
 5. Cap at the sum insured plus cumulative bonus left for the policy year.
 6. Take the 5% co-payment of the capped amount ([ADR 0009](../adr/0009-cap-before-co-payment.md)).
 

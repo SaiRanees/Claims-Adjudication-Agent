@@ -62,7 +62,8 @@ type malformed struct {
 	old, new    string
 	wantErr     error
 	wantPath    string
-	appendToEnd bool // add new to the end of the pack instead of editing
+	wantText    string // when set, the error's message must contain it
+	appendToEnd bool   // add new to the end of the pack instead of editing
 }
 
 var malformedCases = []malformed{
@@ -86,7 +87,7 @@ var malformedCases = []malformed{
 	{name: "float in exponent form", old: "share_of_sum_insured_bp: 200\n", new: "share_of_sum_insured_bp: 2e2\n",
 		wantErr: rules.ErrFloat, wantPath: "steps[3].rules[0].share_of_sum_insured_bp"},
 	{name: "float infinity", old: "ceiling_paise: 200000\n", new: "ceiling_paise: .inf\n",
-		wantErr: rules.ErrFloat, wantPath: "steps[5].rules[2].ceiling_paise"},
+		wantErr: rules.ErrFloat, wantPath: "steps[5].rules[0].ceiling_paise"},
 	{name: "float in a string field", old: "    title: Co-payment\n", new: "    title: 2.5\n",
 		wantErr: rules.ErrFloat, wantPath: "clauses[1].title"},
 
@@ -106,7 +107,7 @@ var malformedCases = []malformed{
 	{name: "quoted integer", old: "rate_bp: 500\n", new: "rate_bp: \"500\"\n",
 		wantErr: rules.ErrInteger, wantPath: "steps[7].rules[0].rate_bp"},
 	{name: "integer over int64", old: "ceiling_paise: 200000\n", new: "ceiling_paise: 9223372036854775808\n",
-		wantErr: rules.ErrInteger, wantPath: "steps[5].rules[2].ceiling_paise"},
+		wantErr: rules.ErrInteger, wantPath: "steps[5].rules[0].ceiling_paise"},
 	{name: "leading zero version", old: "version: 1\n", new: "version: 01\n",
 		wantErr: rules.ErrInteger, wantPath: "version"},
 
@@ -127,7 +128,7 @@ var malformedCases = []malformed{
 
 	// Clauses.
 	{name: "undefined clause", old: "        clause: C.I.3\n", new: "        clause: C.I.4\n",
-		wantErr: rules.ErrUndefinedClause, wantPath: "steps[5].rules[0].clause"},
+		wantErr: rules.ErrUndefinedClause, wantPath: "steps[5].rules[1].clause"},
 	{name: "undefined see_also clause", old: "see_also: [Definition 40]", new: "see_also: [Definition 41]",
 		wantErr: rules.ErrUndefinedClause, wantPath: "steps[3].rules[0].see_also[0]"},
 	{name: "no clause and not unmodelled", old: "        clause: Definition 26\n", new: "",
@@ -163,7 +164,7 @@ var malformedCases = []malformed{
 	{name: "target repeated", old: "applies_to: list-v\n", new: "applies_to: list-iv\n",
 		wantErr: rules.ErrTarget, wantPath: "steps[1].rules[4].applies_to"},
 	{name: "unknown target", old: "applies_to: road-ambulance\n", new: "applies_to: air-ambulance\n",
-		wantErr: rules.ErrTarget, wantPath: "steps[5].rules[2].applies_to"},
+		wantErr: rules.ErrTarget, wantPath: "steps[5].rules[0].applies_to"},
 	{name: "duplicate rule ID", old: "      - id: annexure-a-list-v\n", new: "      - id: annexure-a-list-iv\n",
 		wantErr: rules.ErrDuplicateID, wantPath: "steps[1].rules[4].id"},
 
@@ -175,11 +176,11 @@ var malformedCases = []malformed{
 	{name: "list where a value goes", old: "    pages: 25\n", new: "    pages: [25]\n",
 		wantErr: rules.ErrType, wantPath: "documents[0].pages"},
 	{name: "share over 100%", old: "share_of_sum_insured_bp: 5000\n", new: "share_of_sum_insured_bp: 10001\n",
-		wantErr: rules.ErrInvalidValue, wantPath: "steps[5].rules[1].share_of_sum_insured_bp"},
+		wantErr: rules.ErrInvalidValue, wantPath: "steps[5].rules[2].share_of_sum_insured_bp"},
 	{name: "days and months", old: "        days: 30\n", new: "        days: 30\n        months: 1\n",
 		wantErr: rules.ErrInvalidValue, wantPath: "steps[0].rules[0].months"},
 	{name: "sub-limit with no limit", old: "        ceiling_paise: 200000\n", new: "",
-		wantErr: rules.ErrMissingField, wantPath: "steps[5].rules[2].ceiling_paise"},
+		wantErr: rules.ErrMissingField, wantPath: "steps[5].rules[0].ceiling_paise"},
 	{name: "unknown list effect", old: "effect: treatment-costs\n", new: "effect: treatment-cost\n",
 		wantErr: rules.ErrInvalidValue, wantPath: "steps[1].rules[3].effect"},
 	{name: "unknown ratio basis", old: "ratio_basis: bucket-daily-total\n", new: "ratio_basis: room-rent-only\n",
@@ -197,9 +198,20 @@ var malformedCases = []malformed{
 	{name: "waived_for_accident not a boolean", old: "        waived_for_accident: true\n        days: 30\n", new: "        waived_for_accident: yes\n        days: 30\n",
 		wantErr: rules.ErrType, wantPath: "steps[0].rules[0].waived_for_accident"},
 	{name: "waived_for_accident on a sub-limit", old: "        per: hospitalisation\n", new: "        per: hospitalisation\n        waived_for_accident: true\n",
-		wantErr: rules.ErrUnknownField, wantPath: "steps[5].rules[2].waived_for_accident"},
+		wantErr: rules.ErrUnknownField, wantPath: "steps[5].rules[0].waived_for_accident"},
 	{name: "unmodelled no-scaling rule", old: icuScalingRule, new: "      - id: no-proportionate-deduction-icu\n        unmodelled: true\n        applies_to: icu\n        effect: no-scaling\n",
 		wantErr: rules.ErrInvalidValue, wantPath: "steps[4].rules[1].unmodelled"},
+
+	// ADR 0012: the road-ambulance limit comes before the treatment limits.
+	{name: "cataract limit before the road-ambulance limit",
+		old: roadAmbulanceRule + cataractRule, new: cataractRule + roadAmbulanceRule,
+		wantErr: rules.ErrInvalidValue, wantPath: "steps[5].rules[0].applies_to", wantText: "ADR 0012"},
+	{name: "modern-treatment limit before the road-ambulance limit",
+		old: roadAmbulanceRule + cataractRule + modernTreatmentRule, new: modernTreatmentRule + roadAmbulanceRule + cataractRule,
+		wantErr: rules.ErrInvalidValue, wantPath: "steps[5].rules[0].applies_to", wantText: "ADR 0012"},
+	{name: "road-ambulance limit last",
+		old: roadAmbulanceRule + cataractRule + modernTreatmentRule, new: cataractRule + modernTreatmentRule + roadAmbulanceRule,
+		wantErr: rules.ErrInvalidValue, wantPath: "steps[5].rules[0].applies_to", wantText: "ADR 0012"},
 }
 
 // icuScalingRule is the pack's rule for scaling by an ICU ratio.
@@ -208,6 +220,27 @@ const icuScalingRule = "      - id: proportionate-deduction-icu\n" +
 	"        see_also: [C.I.1 Note 3, IRDAI/HLT/REG/CIR/151/06/2020 para 7]\n" +
 	"        applies_to: icu\n" +
 	"        effect: scale\n"
+
+// The pack's sub-limit rules, in the order it lists them (ADR 0012).
+const (
+	roadAmbulanceRule = "      - id: sub-limit-road-ambulance\n" +
+		"        clause: C.I.1.1(v)\n" +
+		"        applies_to: road-ambulance\n" +
+		"        ceiling_paise: 200000\n" +
+		"        per: hospitalisation\n"
+	cataractRule = "      - id: sub-limit-cataract\n" +
+		"        clause: C.I.3\n" +
+		"        applies_to: cataract\n" +
+		"        share_of_sum_insured_bp: 2500\n" +
+		"        ceiling_paise: 4000000\n" +
+		"        per: eye-per-policy-year\n"
+	modernTreatmentRule = "      # \"during the policy period\", which Definition 47 makes one policy year.\n" +
+		"      - id: sub-limit-modern-treatment\n" +
+		"        clause: C.I.6\n" +
+		"        applies_to: modern-treatment\n" +
+		"        share_of_sum_insured_bp: 5000\n" +
+		"        per: policy-year\n"
+)
 
 func (m malformed) apply(t testing.TB, src string) string {
 	t.Helper()
@@ -234,6 +267,9 @@ func TestParsePackMalformed(t *testing.T) {
 			}
 			if fe.Path != tt.wantPath {
 				t.Errorf("error names %q, want %q (%v)", fe.Path, tt.wantPath, err)
+			}
+			if !strings.Contains(err.Error(), tt.wantText) {
+				t.Errorf("error %q doesn't mention %q", err, tt.wantText)
 			}
 		})
 	}
@@ -273,6 +309,23 @@ func TestParsePackValidVariants(t *testing.T) {
 				t.Errorf("valid_until = %s", got)
 			}
 		}},
+		// ADR 0012 puts only the road-ambulance limit first. The cataract and
+		// modern-treatment limits share no line, so their order is free.
+		{
+			name: "treatment limits in the other order",
+			old:  cataractRule + modernTreatmentRule, new: modernTreatmentRule + cataractRule,
+			check: func(t *testing.T, p *rules.Pack) {
+				s, _ := p.Step(rules.StepApplySubLimits)
+				var ids []string
+				for _, r := range s.Rules {
+					ids = append(ids, r.ID)
+				}
+				want := []string{"sub-limit-road-ambulance", "sub-limit-modern-treatment", "sub-limit-cataract"}
+				if !slices.Equal(ids, want) {
+					t.Errorf("sub-limits = %v, want %v", ids, want)
+				}
+			},
+		},
 		// ADR 0010: a later version can stop scaling by an ICU ratio by
 		// changing only the pack. The no-scaling rule still covers the ICU
 		// target, and cites its reason.

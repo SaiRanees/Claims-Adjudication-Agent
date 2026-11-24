@@ -100,6 +100,8 @@ func tasks() []task {
 			help: "Format the Go code with gofmt and goimports"},
 		{name: "check", group: groupGo, run: inOrder(goTool("vet", "./..."), lintGo, lintAPI, test),
 			help: "Run what CI runs on the code: vet, lint and test"},
+		{name: "golden", group: groupGo, run: goTool("run", "./cmd/evalrunner", "engine"),
+			help: "Report every golden case as pass, fail or unchecked; fails unless all are checked and passing"},
 
 		{name: "images", group: groupApp, run: compose("--profile", "app", "build"),
 			help: "Build the api, relay and worker images"},

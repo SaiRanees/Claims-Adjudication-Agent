@@ -1,0 +1,87 @@
+# A left-eye cataract as day care, with a road ambulance the facts tie to
+# the cataract. The road-ambulance limit comes before the cataract limit
+# (ADR 0012), so the cataract limit caps what is left after the ambulance
+# limit. Like case 28, the stay is 22 September only, at an eye hospital
+# without room categories (no differential billing), which bills no bed.
+#
+# Sum insured ₹1,00,000: the cataract limit is the lower of 25% (₹25,000)
+# and ₹40,000, per eye per policy year, so ₹25,000 for the left eye, with
+# nothing used yet. Cataract has a 24-month wait (Excl02); cover has run
+# since 1 April 2022, so the wait ran through 31 March 2024.
+#
+# Eligibility: past the wait, so the eligible sum insured is ₹1,00,000.
+# Steps 1 to 3: no listed or unmodelled line and no bucket line. Nothing is
+#   scaled, because the hospital doesn't follow differential billing.
+# Step 4, sub-limits, in the pack's order:
+#   road ambulance, at most ₹2,000 per hospitalisation (C.I.1.1(v)): L03
+#   is billed ₹3,000, so sub-limit-road-ambulance takes ₹1,000 (100,000
+#   paise) and L03 is now ₹2,000.
+#   cataract, left eye: L01 ₹16,000 + L02 ₹14,000 + L03 ₹2,000 = ₹32,000,
+#   over ₹25,000. The ₹7,000 (700,000 paise) reduction is spread by amount
+#   over 3,200,000 paise, and every share is exact:
+#     L01 700,000 × 1,600,000 / 3,200,000 = 350,000
+#     L02 700,000 × 1,400,000 / 3,200,000 = 306,250
+#     L03 700,000 ×   200,000 / 3,200,000 =  43,750
+#   The left eye's lines are now 1,250,000 + 1,093,750 + 156,250 =
+#   2,500,000 paise.
+# Admissible: ₹25,000, under the cover left.
+# Step 6, co-payment: 5% of ₹25,000 = ₹1,250 (125,000 paise), spread:
+#     L01 62,500   L02 54,687.5   L03 7,812.5
+#   The floors add to 124,999. L02 and L03 have equal remainders (.5), and
+#   the paisa left goes to the earlier, L02: 54,688.
+# Payable: 2,500,000 − 125,000 = 2,375,000 paise (₹23,750).
+#   L01 1,250,000 − 62,500 = 1,187,500
+#   L02 1,093,750 − 54,688 = 1,039,062
+#   L03   156,250 −  7,812 =   148,438
+# Ledger: the left eye's use is what its lines, the ambulance included,
+#   were admitted at before the co-payment: ₹25,000.
+#
+# In the old order, cataract first, the cataract limit would cut ₹8,000
+# from ₹33,000, with ₹727.27 of it on L03, and the ambulance limit would
+# then cut L03's ₹2,272.73 by ₹272.73 more: ₹24,727.27 admitted and
+# ₹23,490.91 paid, below the ₹25,000 limit though the lines come to ₹32,000
+# after the ambulance limit.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 10000000
+      continuous_since: 2022-04-01
+
+facts:
+  admission: 2025-09-22
+  discharge: 2025-09-22
+  segments:
+    - {from: 2025-09-22, to: 2025-09-22, kind: room}
+  differential_billing: no
+  condition:
+    listed_group: listed-24-months
+  lines:
+    - {id: L01, category: professional-fees, service_date: 2025-09-22, quantity: 1, unit_price_paise: 1600000, amount_paise: 1600000, treatment: {kind: cataract, eye: left}}
+    # The left eye's intraocular lens.
+    - {id: L02, category: implants-devices, service_date: 2025-09-22, quantity: 1, unit_price_paise: 1400000, amount_paise: 1400000, treatment: {kind: cataract, eye: left}}
+    # The ambulance that brought the insured in for the operation.
+    - {id: L03, category: road-ambulance, service_date: 2025-09-22, quantity: 1, unit_price_paise: 300000, amount_paise: 300000, treatment: {kind: cataract, eye: left}}
+
+expected:
+  lines:
+    - {id: L01, payable_paise: 1187500}
+    - {id: L02, payable_paise: 1039062}
+    - {id: L03, payable_paise: 148438}
+  adjustments:
+    - {line: L03, rule: sub-limit-road-ambulance, paise: 100000}
+    - {line: L01, rule: sub-limit-cataract, paise: 350000}
+    - {line: L02, rule: sub-limit-cataract, paise: 306250}
+    - {line: L03, rule: sub-limit-cataract, paise: 43750}
+    - {line: L01, rule: co-payment, paise: 62500}
+    - {line: L02, rule: co-payment, paise: 54688}
+    - {line: L03, rule: co-payment, paise: 7812}
+  flags: []
+  claim_payable_paise: 2375000
+  ledger:
+    paid_paise: 2375000
+    cataract_used_paise: {left: 2500000, right: 0}

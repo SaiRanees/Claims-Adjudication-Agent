@@ -275,7 +275,8 @@ func seeds(n int) [][]byte {
 //   - That reaches the payable only through a later sub-limit that holds
 //     some of the split's lines and not others. Across that sub-limit the
 //     paise moved add up to less than the smaller of its lines inside and
-//     outside it (roundingSplits).
+//     outside it (roundingSplits). For the Go Digit pack, only the daily
+//     caps' splits can do that since ADR 0012.
 //   - After the sub-limits the steps act on the total, and none of them
 //     moves the payable by more than the total moves.
 //
@@ -308,13 +309,22 @@ type subLimitGroup struct {
 //     or the lines held to both caps, once for each cap (ADR 0011). Every
 //     sub-limit comes later.
 //   - A sub-limit's cut over its lines. Only the sub-limits after it in the
-//     pack count. For the Go Digit pack that is the road-ambulance limit,
-//     after the cataract and modern-treatment limits.
+//     pack count.
 //
 // For each split and each later sub-limit, it adds the smaller of the
 // split's lines inside the sub-limit and outside it. A line counts only if
 // it entered the split with something to pay, because a line of zero
 // weight takes an exact share of zero.
+//
+// For the Go Digit pack, since ADR 0012, no sub-limit's split can lower the
+// payable. The road-ambulance limit comes first, and its split works on
+// amounts the sum insured can't move: an ambulance line is in no bucket and
+// never scaled, and the limit is a fixed ceiling. The cataract and
+// modern-treatment limits share no line, so neither tells the other's
+// lines apart. The count still includes the ambulance limit's split ahead
+// of the treatment limits, when its lines are tied differently: that keeps
+// the bound sound for any order the parser accepts, at the cost of a bound
+// above zero for a claim that can't actually drop.
 func roundingSplits(t *testing.T, pack *rules.Pack, f rules.Facts, res rules.Result) int64 {
 	t.Helper()
 	caps, okCaps := pack.Step(rules.StepApplyDailyCaps)
@@ -519,9 +529,11 @@ func FuzzAdjudicateProperties(f *testing.F) {
 	})
 }
 
-// TestRoundingBound pins the three ways rounding is known to lower the
+// TestRoundingBound pins the two ways rounding is known to lower the
 // payable by a paisa when the sum insured rises, each within its bound, and
-// ADR 0011's example, whose bound is zero.
+// the examples of ADRs 0011 and 0012, whose bounds are zero. ADR 0011's
+// third source, a sub-limit's split ahead of the ambulance limit, is gone
+// since ADR 0012 put the ambulance limit first.
 func TestRoundingBound(t *testing.T) {
 	pack := goDigitPack(t)
 	cataract := func(l rules.Line) rules.Line {
@@ -586,14 +598,18 @@ func TestRoundingBound(t *testing.T) {
 			bound: 3,
 		},
 		{
-			// A sub-limit's own split. The capped room line enters the
-			// cataract limit a paisa higher, so its cut grows by one, yet
-			// largest remainder takes a paisa less from the road-ambulance
-			// line (120,930 to 120,929), and the ambulance limit, which
-			// comes later and binds, takes it off. The cataract split
-			// counts min(1 ambulance line, 2 others) = 1 at each sum
-			// insured, so the bound is 1 + 1 − 1.
-			name: "the cataract limit's split ahead of the ambulance limit",
+			// ADR 0012's example, once ADR 0011's third source of a drop.
+			// With the cataract limit first, its cut was split across the
+			// road-ambulance line and the others, and the ambulance limit,
+			// which came later, took the line's share off again: 3,629,282
+			// paise, then 3,629,281. That was a rule fault, not rounding.
+			// The ambulance limit now comes first and brings the line to
+			// ₹2,000, so the tied lines come to ₹49,733.03 (₹49,733.04 at the
+			// higher sum insured, the room cap a paisa higher), the cataract
+			// limit admits ₹40,000 under both, and ₹38,000 is paid. The
+			// ambulance split has one line, and the cataract split's lines
+			// are all tied to the cataract, so the bound is 0.
+			name: "ADR 0012's example: the ambulance limit before the cataract limit",
 			facts: func(t *testing.T) rules.Facts {
 				return facts(rules.AnswerYes, []rules.Segment{seg(t, "2025-07-01", "2025-07-02", rules.SegmentRoom)},
 					cataract(ln(t, "L01", rules.CategoryRoomRent, "2025-07-01", 1, 534_829)),
@@ -603,8 +619,8 @@ func TestRoundingBound(t *testing.T) {
 			},
 			since:      "2023-04-01",
 			sumInsured: 20_000_000, raised: 20_000_050,
-			payable: 3_629_282, raisedPayable: 3_629_281,
-			bound: 1,
+			payable: 3_800_000, raisedPayable: 3_800_000,
+			bound: 0,
 		},
 		{
 			// ADR 0011's example: no split mixes lines a sub-limit tells
@@ -651,22 +667,46 @@ func TestRoundingBound(t *testing.T) {
 // limitsPack is the Go Digit pack with every ceiling and share and the
 // co-payment rate replaced, each mapped into the range the pack allows.
 // The replacements are made in one pass over the original text, so a new
-// value can't be mistaken for one still to replace.
+// value can't be mistaken for one still to replace. Each must occur once,
+// and the parsed pack must carry each value on the rule it is meant for,
+// so moving a rule in the pack (ADR 0012) can't send a value to another.
 func limitsPack(t *testing.T, src string, ceilings [4]int64, shares [4]uint16, coPay uint16) *rules.Pack {
 	t.Helper()
-	ceiling := func(v int64) string { return strconv.FormatInt(max(1, v&math.MaxInt64), 10) }
-	share := func(v uint16) string { return strconv.Itoa(1 + int(v)%int(money.FullRate)) }
-	limit := func(sh uint16, c int64) string {
-		return "share_of_sum_insured_bp: " + share(sh) + "\n        ceiling_paise: " + ceiling(c) + "\n"
+	ceiling := func(v int64) money.Paise { return money.Paise(max(1, v&math.MaxInt64)) }
+	share := func(v uint16) money.BasisPoints { return money.BasisPoints(1 + int(v)%int(money.FullRate)) }
+	rate := money.BasisPoints(int(coPay) % (int(money.FullRate) + 1))
+	both := func(sh uint16, c int64) rules.Limit {
+		return rules.Limit{Share: share(sh), HasShare: true, Ceiling: ceiling(c), HasCeiling: true}
 	}
-	pairs := []string{
-		"share_of_sum_insured_bp: 200\n        ceiling_paise: 500000\n", limit(shares[0], ceilings[0]), // room
-		"share_of_sum_insured_bp: 500\n        ceiling_paise: 1000000\n", limit(shares[1], ceilings[1]), // ICU
-		"share_of_sum_insured_bp: 2500\n        ceiling_paise: 4000000\n", limit(shares[2], ceilings[2]), // cataract
-		"share_of_sum_insured_bp: 5000\n", "share_of_sum_insured_bp: " + share(shares[3]) + "\n", // C.I.6
-		"ceiling_paise: 200000\n", "ceiling_paise: " + ceiling(ceilings[3]) + "\n", // road ambulance
-		"rate_bp: 500\n", "rate_bp: " + strconv.Itoa(int(coPay)%(int(money.FullRate)+1)) + "\n", // co-payment
+	text := func(l rules.Limit) string {
+		var s string
+		if l.HasShare {
+			s += "share_of_sum_insured_bp: " + strconv.Itoa(int(l.Share)) + "\n"
+		}
+		if l.HasShare && l.HasCeiling {
+			s += "        "
+		}
+		if l.HasCeiling {
+			s += "ceiling_paise: " + strconv.FormatInt(int64(l.Ceiling), 10) + "\n"
+		}
+		return s
 	}
+	limits := []struct {
+		rule string
+		old  string
+		new  rules.Limit
+	}{
+		{"daily-cap-room", "share_of_sum_insured_bp: 200\n        ceiling_paise: 500000\n", both(shares[0], ceilings[0])},
+		{"daily-cap-icu", "share_of_sum_insured_bp: 500\n        ceiling_paise: 1000000\n", both(shares[1], ceilings[1])},
+		{"sub-limit-cataract", "share_of_sum_insured_bp: 2500\n        ceiling_paise: 4000000\n", both(shares[2], ceilings[2])},
+		{"sub-limit-modern-treatment", "share_of_sum_insured_bp: 5000\n", rules.Limit{Share: share(shares[3]), HasShare: true}},
+		{"sub-limit-road-ambulance", "ceiling_paise: 200000\n", rules.Limit{Ceiling: ceiling(ceilings[3]), HasCeiling: true}},
+	}
+	var pairs []string
+	for _, l := range limits {
+		pairs = append(pairs, l.old, text(l.new))
+	}
+	pairs = append(pairs, "rate_bp: 500\n", "rate_bp: "+strconv.Itoa(int(rate))+"\n")
 	for i := 0; i < len(pairs); i += 2 {
 		if n := strings.Count(src, pairs[i]); n != 1 {
 			t.Fatalf("%q occurs %d times in the pack, want 1", pairs[i], n)
@@ -675,6 +715,14 @@ func limitsPack(t *testing.T, src string, ceilings [4]int64, shares [4]uint16, c
 	p, err := rules.ParsePack([]byte(strings.NewReplacer(pairs...).Replace(src)))
 	if err != nil {
 		t.Fatalf("a pack with valid limits failed to parse: %v", err)
+	}
+	for _, l := range limits {
+		if r, ok := p.Rule(l.rule); !ok || r.Limit != l.new {
+			t.Fatalf("%s's limit is %+v, want %+v: a replacement missed its rule", l.rule, r.Limit, l.new)
+		}
+	}
+	if r, ok := p.Rule("co-payment"); !ok || r.Rate != rate {
+		t.Fatalf("co-payment's rate is %d, want %d: a replacement missed its rule", r.Rate, rate)
 	}
 	return p
 }

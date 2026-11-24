@@ -32,6 +32,7 @@ go run ./cmd/dev tools       # once: add oapi-codegen to go.mod as a tool
 go run ./cmd/dev gen         # generate internal/api/apigen from api/openapi.yaml
 go mod tidy
 go run ./cmd/dev check       # vet, lint and tests
+go run ./cmd/dev golden      # the rules engine's golden cases: pass, fail or unchecked
 ```
 
 Commit the generated code and `go.mod`/`go.sum`: CI fails if `go generate` or `go mod tidy` would change them.
@@ -92,7 +93,7 @@ Every port binds to 127.0.0.1 only.
 ## Layout
 
 ```text
-cmd/            api, relay, worker, and dev (the task runner); later evalrunner, datagen, mcpserver
+cmd/            api, relay, worker, dev (the task runner) and evalrunner; later datagen, mcpserver
 internal/
   api/          HTTP handlers; apigen/ is generated from api/openapi.yaml
   rules/        the engine: pure, no I/O; money/ does paise arithmetic

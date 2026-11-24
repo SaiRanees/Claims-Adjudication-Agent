@@ -118,6 +118,16 @@ type Diff struct {
 	Compared bool
 }
 
+// Describe writes the difference on one line, naming the two sides: for
+// the engine against a case file, "case" and "engine".
+func (d Diff) Describe(want, got string) string {
+	s := d.Key + ": " + want + " " + d.Want + ", " + got + " " + d.Got
+	if !d.Compared {
+		s += " (not compared yet)"
+	}
+	return s
+}
+
 // Report is a case's outcome.
 type Report struct {
 	Case   string
@@ -154,9 +164,18 @@ func Run(c Case, reg *rules.Registry) Report {
 
 func diff(c Case, pack *rules.Pack, res rules.Result, implemented func(rules.StepName) bool) []Diff {
 	compared := scope(c, pack, implemented)
-	want := ExpectedRows(c)
-	got := ResultRows(res)
+	diffs := rowDiffs(ExpectedRows(c), ResultRows(res), compared)
+	if res.Ledger != c.Want.Ledger {
+		diffs = append(diffs, Diff{Key: "ledger", Want: fmt.Sprintf("%+v", c.Want.Ledger), Got: fmt.Sprintf("%+v", res.Ledger),
+			Compared: compared(Row{Kind: KindClaimPayable})})
+	}
+	return diffs
+}
 
+// rowDiffs lists the rows of want and got that differ, matched by key:
+// want's rows in order, then got's rows that want lacks. compared says
+// whether a row's figure counts yet.
+func rowDiffs(want, got []Row, compared func(Row) bool) []Diff {
 	gotByKey := map[string]Row{}
 	for _, r := range got {
 		gotByKey[r.Key()] = r
@@ -165,7 +184,6 @@ func diff(c Case, pack *rules.Pack, res rules.Result, implemented func(rules.Ste
 	for _, r := range want {
 		wantByKey[r.Key()] = r
 	}
-
 	var diffs []Diff
 	for _, w := range want { // sorted, so the diffs come out in order
 		g, ok := gotByKey[w.Key()]
@@ -181,11 +199,72 @@ func diff(c Case, pack *rules.Pack, res rules.Result, implemented func(rules.Ste
 			diffs = append(diffs, Diff{Key: g.Key(), Want: "missing", Got: g.String(), Compared: compared(g)})
 		}
 	}
-	if res.Ledger != c.Want.Ledger {
-		diffs = append(diffs, Diff{Key: "ledger", Want: fmt.Sprintf("%+v", c.Want.Ledger), Got: fmt.Sprintf("%+v", res.Ledger),
-			Compared: compared(Row{Kind: KindClaimPayable})})
+	return diffs
+}
+
+// CheckedDiffs compares a case's rows in golden-cases.csv with its case
+// file. A person worked out the checked figures independently, so the two
+// must hold exactly the same rows; any difference fails the case, and
+// neither side is ever edited to make them agree. It returns nil when the
+// case is unchecked or the rows match. Otherwise Want is the checked row and
+// Got the case file's.
+func CheckedDiffs(c Case, checked []Row) []Diff {
+	want := ExpectedRows(c)
+	if len(checked) == 0 || slices.Equal(checked, want) {
+		return nil
+	}
+	diffs := rowDiffs(checked, want, func(Row) bool { return true })
+	if len(diffs) == 0 {
+		// The same keys and figures, so a row is repeated on one side.
+		diffs = []Diff{{Key: "rows", Want: fmt.Sprint(checked), Got: fmt.Sprint(want), Compared: true}}
 	}
 	return diffs
+}
+
+// Verdict is a golden case's standing, as cmd/evalrunner reports it.
+type Verdict string
+
+// The verdicts.
+const (
+	// VerdictPass: a person has checked the case's figures, the checked rows
+	// match the case file, and the engine's result matches both.
+	VerdictPass Verdict = "pass"
+	// VerdictFail: the engine's result differs from the case file, couldn't
+	// be computed, or the checked rows differ from the case file.
+	VerdictFail Verdict = "fail"
+	// VerdictUnchecked: the engine matches the case file, but nobody has
+	// checked its figures yet.
+	VerdictUnchecked Verdict = "unchecked"
+)
+
+// Outcome is a golden case's engine report, with how its checked figures
+// compare.
+type Outcome struct {
+	Report
+	// Checked is true when golden-cases.csv has rows for the case.
+	Checked bool
+	// CheckedDiffs are where those rows differ from the case file.
+	CheckedDiffs []Diff
+}
+
+// Evaluate runs a case through the engine and compares its checked rows,
+// from Checked, with its case file. This is the one definition of a pass,
+// which the golden tests and cmd/evalrunner share.
+func Evaluate(c Case, reg *rules.Registry, checked map[string][]Row) Outcome {
+	rows := checked[c.ID]
+	return Outcome{Report: Run(c, reg), Checked: len(rows) > 0, CheckedDiffs: CheckedDiffs(c, rows)}
+}
+
+// Verdict is pass only for a checked case whose every figure agrees.
+func (o Outcome) Verdict() Verdict {
+	switch {
+	case o.Status != StatusPass || len(o.CheckedDiffs) > 0:
+		return VerdictFail
+	case !o.Checked:
+		return VerdictUnchecked
+	default:
+		return VerdictPass
+	}
 }
 
 // scope returns which rows can be compared yet. A row is compared once the
