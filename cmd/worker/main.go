@@ -1,5 +1,6 @@
-// Command worker runs the Temporal worker for the "claims" task queue. For now it hosts
-// the placeholder ClaimWorkflow and its one activity; extraction, the agent and the rules
+// Command worker runs the Temporal worker for the "claims" task queue. It hosts
+// ClaimWorkflow and the file checks, which read uploads from the object store, open them in
+// PDFium's sandbox and record each verdict in Postgres; extraction, the agent and the rules
 // engine join it in later sessions.
 //
 // It reads its configuration from the environment (platform.LoadWorkerConfig). On SIGINT
@@ -15,8 +16,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.temporal.io/sdk/worker"
 
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/claims"
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/documents"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/platform"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/workflow"
 )
@@ -47,6 +51,28 @@ func run() error {
 	}
 	defer stopTelemetry()
 
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return fmt.Errorf("configuring the database pool: %w", err)
+	}
+	defer pool.Close()
+	if err := pool.Ping(ctx); err != nil {
+		return fmt.Errorf("reaching the database: %w", err)
+	}
+
+	s3 := cfg.S3
+	s3.PublicEndpoint = s3.Endpoint // the worker signs no upload URLs
+	objects := documents.NewObjects(s3)
+	if err := objects.Ping(ctx); err != nil {
+		return err
+	}
+
+	pdfium, err := documents.NewPDFium(documents.DefaultPDFiumConfig)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = pdfium.Close() }()
+
 	tc, err := platform.DialTemporal(ctx, cfg.Temporal, log)
 	if err != nil {
 		return err
@@ -54,7 +80,9 @@ func run() error {
 	defer tc.Close()
 
 	w := worker.New(tc, workflow.TaskQueue, worker.Options{WorkerStopTimeout: stopGrace})
-	workflow.Register(w, &workflow.Activities{})
+	workflow.Register(w, &workflow.Activities{
+		Checker: documents.NewChecker(claims.NewStore(pool), objects, pdfium),
+	})
 	if err := w.Start(); err != nil {
 		return fmt.Errorf("starting the worker: %w", err)
 	}
