@@ -61,7 +61,7 @@ services:
       start_period: 10s
 
   seaweedfs:
-    image: chrislusf/seaweedfs:4.53
+    image: chrislusf/seaweedfs:4.54
     # `weed mini` runs master, volume, filer and the S3 gateway in one process.
     # The entrypoint adds -dir=/data; telemetry is off for local development.
     command: ["mini", "-master.telemetry=false"]
