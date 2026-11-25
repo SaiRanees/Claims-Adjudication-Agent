@@ -78,7 +78,7 @@ func runChildJob(v string) int {
 		_, _ = os.Stderr.WriteString(err.Error() + "\n")
 		return 1
 	}
-	if err := os.WriteFile(out, b, 0o600); err != nil {
+	if err := os.WriteFile(out, b, 0o600); err != nil { //nolint:gosec // the parent test names a file under its t.TempDir
 		_, _ = os.Stderr.WriteString(err.Error() + "\n")
 		return 1
 	}
@@ -95,7 +95,7 @@ func runChild(t *testing.T, job string) []byte {
 	if b, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("child process: %v\n%s", err, b)
 	}
-	b, err := os.ReadFile(out) //nolint:gosec // a path under t.TempDir
+	b, err := os.ReadFile(out)
 	if err != nil {
 		t.Fatal(err)
 	}

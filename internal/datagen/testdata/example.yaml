@@ -1,0 +1,67 @@
+# A small scenario for the generator's own tests: a hospital bill that runs
+# over two pages, a pharmacy bill and a receipt, in two files. Invented.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: 2023-04-01
+
+facts:
+  admission: 2025-09-22
+  discharge: 2025-09-25
+  segments:
+    - {from: 2025-09-22, to: 2025-09-25, kind: room}
+  differential_billing: yes
+  bill_discount_paise: 150000
+  lines:
+    - {id: L01, category: room-rent, service_date: 2025-09-22, quantity: 3, unit_price_paise: 450000, amount_paise: 1350000}
+    - {id: L02, category: nursing, service_date: 2025-09-22, quantity: 3, unit_price_paise: 80000, amount_paise: 240000}
+    - {id: L03, category: professional-fees, service_date: 2025-09-23, quantity: 1, unit_price_paise: 12345600, amount_paise: 12345600}
+    - {id: L04, category: diagnostics, quantity: 2, unit_price_paise: 175050, amount_paise: 350100}
+    - {id: L05, category: other-hospital-charges, service_date: 2025-09-22, quantity: 1, unit_price_paise: 75000, amount_paise: 75000, item_list: list-ii}
+    - {id: L06, category: pharmacy-consumables, service_date: 2025-09-24, quantity: 10, unit_price_paise: 4250, amount_paise: 42500}
+
+insured:
+  name: Meera Pillai
+  gender: female
+  age: 47
+  policy_number: SYN-ASG-2025-000001
+  member_id: SYN-M-000001
+
+hospital:
+  name: Amberpur General Hospital
+  address: 14 Lakeview Road, Ward 3
+  city: Amberpur
+  registration: SYN-HR-0001
+
+clinical:
+  diagnosis: Acute appendicitis
+  procedure: Laparoscopic appendicectomy
+  treating_doctor: Dr. Kavin Raman
+
+claim_form:
+  admission_type: emergency
+  signed_on: 2025-09-29
+  claimed_amount_paise: 14253200
+
+documents:
+  - {id: B1, type: hospital-bill, layout: ledger, number: SYN-IP-000101, date: 2025-09-25, lines_per_page: 3, discount_paise: 150000}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-000101, date: 2025-09-24, lines_per_page: 10}
+  - {id: R1, type: payment-receipt, number: SYN-RC-000101, date: 2025-09-25, against: [B1, P1], mode: UPI}
+
+files:
+  - {name: hospital-bill.pdf, documents: [B1, R1]}
+  - {name: pharmacy-bill.pdf, documents: [P1]}
+
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Surgeon and Anaesthetist Fees}
+  - {line: L04, bill: B1, description: CT Scan Abdomen}
+  - {line: L05, bill: B1, description: ADMISSION KIT, annexure: list-ii/27}
+  - {line: L06, bill: P1, description: Inj. Ceftriaxone 1 g}

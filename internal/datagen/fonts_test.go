@@ -22,7 +22,7 @@ func TestFontHashes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.file, func(t *testing.T) {
-			b, err := os.ReadFile(filepath.Join("fonts", tt.file)) //nolint:gosec // a fixed path in the package
+			b, err := os.ReadFile(filepath.Join("fonts", tt.file))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -34,7 +34,7 @@ func TestFontHashes(t *testing.T) {
 	}
 	// The embedded copies are the files on disk.
 	for name, b := range map[string][]byte{"NotoSans-Regular.ttf": notoRegular, "NotoSans-Bold.ttf": notoBold} {
-		disk, err := os.ReadFile(filepath.Join("fonts", name)) //nolint:gosec // a fixed path in the package
+		disk, err := os.ReadFile(filepath.Join("fonts", name))
 		if err != nil {
 			t.Fatal(err)
 		}
