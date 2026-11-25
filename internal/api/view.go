@@ -94,6 +94,7 @@ func documentView(d claims.Document) apigen.Document {
 		PageCount:   d.PageCount,
 		CreatedAt:   d.CreatedAt.UTC(),
 		UploadedAt:  utc(d.UploadedAt),
+		CheckedAt:   utc(d.CheckedAt),
 	}
 	if d.RejectionReason != nil {
 		reason := apigen.DocumentRejectionReason(*d.RejectionReason)

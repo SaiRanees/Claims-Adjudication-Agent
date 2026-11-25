@@ -117,6 +117,10 @@ type Document struct {
 	RejectionReason *RejectionReason
 	CreatedAt       time.Time
 	UploadedAt      *time.Time
+	CheckedAt       *time.Time
+	// PDFSHA256 is the SHA-256 of the PDF later steps read: the upload itself, or a
+	// photo's PDF. Set only when accepted.
+	PDFSHA256 []byte
 }
 
 // Errors that callers turn into client responses.
@@ -401,11 +405,12 @@ func (s *Store) Documents(ctx context.Context, claimID uuid.UUID) ([]Document, e
 
 // documentColumns are the columns scanDocument reads, in its order.
 const documentColumns = `id, claim_id, status, file_name, content_type, size_bytes, sha256,
-	object_key, page_count, rejection_reason, created_at, uploaded_at`
+	object_key, page_count, rejection_reason, created_at, uploaded_at, checked_at, pdf_sha256`
 
 func scanDocument(row pgx.Row) (Document, error) {
 	var d Document
 	err := row.Scan(&d.ID, &d.ClaimID, &d.Status, &d.FileName, &d.ContentType, &d.SizeBytes,
-		&d.SHA256, &d.ObjectKey, &d.PageCount, &d.RejectionReason, &d.CreatedAt, &d.UploadedAt)
+		&d.SHA256, &d.ObjectKey, &d.PageCount, &d.RejectionReason, &d.CreatedAt, &d.UploadedAt,
+		&d.CheckedAt, &d.PDFSHA256)
 	return d, err
 }

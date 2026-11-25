@@ -147,7 +147,7 @@ func jpegWithOrientation(t testing.TB, w, h int, orientation uint16) []byte {
 		return enc.Bytes()
 	}
 	seg := append([]byte("Exif\x00\x00"), exifTIFF(orientation)...)
-	app1 := binary.BigEndian.AppendUint16([]byte{0xFF, 0xE1}, uint16(len(seg)+2))
+	app1 := binary.BigEndian.AppendUint16([]byte{0xFF, 0xE1}, uint16(len(seg)+2)) //nolint:gosec // a few dozen bytes
 	app1 = append(app1, seg...)
 	out := append([]byte{0xFF, 0xD8}, app1...)
 	return append(out, enc.Bytes()[2:]...)
@@ -178,7 +178,7 @@ func pngImage(t testing.TB, w, h int) []byte {
 // couldn't fill it: only a header read survives it.
 func hugePNG(w, h uint32) []byte {
 	chunk := func(kind string, data []byte) []byte {
-		c := binary.BigEndian.AppendUint32(nil, uint32(len(data)))
+		c := binary.BigEndian.AppendUint32(nil, uint32(len(data))) //nolint:gosec // a fixture chunk is small
 		c = append(c, kind...)
 		c = append(c, data...)
 		return binary.BigEndian.AppendUint32(c, crc32.ChecksumIEEE(append([]byte(kind), data...)))

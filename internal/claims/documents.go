@@ -21,6 +21,7 @@ type DocumentStatus string
 const (
 	DocumentPendingUpload DocumentStatus = "pending_upload"
 	DocumentUploaded      DocumentStatus = "uploaded"
+	DocumentAccepted      DocumentStatus = "accepted"
 	DocumentRejected      DocumentStatus = "rejected"
 )
 
@@ -34,9 +35,13 @@ const (
 	RejectMissingObject    RejectionReason = "missing_object"
 	RejectSizeMismatch     RejectionReason = "size_mismatch"
 	RejectChecksumMismatch RejectionReason = "checksum_mismatch"
+	RejectTypeMismatch     RejectionReason = "type_mismatch"
 	RejectUnreadable       RejectionReason = "unreadable"
 	RejectEncrypted        RejectionReason = "encrypted"
 	RejectTooManyPages     RejectionReason = "too_many_pages"
+	RejectImageTooLarge    RejectionReason = "image_too_large"
+	// RejectCheckFailed: the check ran out of retries on infrastructure errors.
+	RejectCheckFailed RejectionReason = "check_failed"
 )
 
 const (
@@ -168,7 +173,7 @@ func existingRegistration(existing Document, nd NewDocument) (Document, bool, er
 			return Document{}, false, ErrDeclaredDifferently
 		}
 		return existing, false, nil
-	case DocumentUploaded:
+	case DocumentUploaded, DocumentAccepted:
 		return Document{}, false, ErrAlreadyUploaded
 	case DocumentRejected:
 		// The query leaves rejected files out.
