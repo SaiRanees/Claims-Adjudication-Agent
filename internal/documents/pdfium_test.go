@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/klippa-app/go-pdfium/requests"
+
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/documents/fixtures"
 )
 
 // The proof session 2 asks for before anything relies on go-pdfium and
@@ -38,7 +40,7 @@ func testPDFium(t *testing.T) *PDFium {
 
 func TestPDFiumPageCount(t *testing.T) {
 	p := testPDFium(t)
-	ten := textPDF(10)
+	ten := fixtures.TextPDF(10)
 	tests := []struct {
 		name     string
 		data     []byte
@@ -48,8 +50,8 @@ func TestPDFiumPageCount(t *testing.T) {
 	}{
 		{"ten pages", ten, 500, 10, nil},
 		{"over the page cap counts without loading", ten, 9, 10, nil},
-		{"user password", encryptedPDF(t, "synthetic-user"), 500, 0, ErrEncrypted},
-		{"empty user password", encryptedPDF(t, ""), 500, 0, ErrEncrypted},
+		{"user password", fixtures.EncryptedPDF(t, "synthetic-user"), 500, 0, ErrEncrypted},
+		{"empty user password", fixtures.EncryptedPDF(t, ""), 500, 0, ErrEncrypted},
 		{"truncated", ten[:len(ten)/3], 500, 0, ErrUnreadable},
 		{"not a pdf", []byte("%PDF-1.7\nhello"), 500, 0, ErrUnreadable},
 		{"empty", nil, 500, 0, ErrUnreadable},
@@ -91,7 +93,7 @@ func TestPDFiumInflateBomb(t *testing.T) {
 		t.Skip("builds a 1 GiB inflate bomb")
 	}
 	p := testPDFium(t)
-	bomb := bombPDF(t, 1<<30)
+	bomb := fixtures.BombPDF(t, 1<<30)
 	t.Logf("bomb: %d bytes on disk, 1 GiB inflated", len(bomb))
 	start := time.Now()
 	_, err := p.PageCount(t.Context(), bomb, 500)
@@ -99,7 +101,7 @@ func TestPDFiumInflateBomb(t *testing.T) {
 	if !errors.Is(err, ErrUnreadable) {
 		t.Fatalf("err = %v, want ErrUnreadable", err)
 	}
-	if pages, err := p.PageCount(t.Context(), textPDF(2), 500); err != nil || pages != 2 {
+	if pages, err := p.PageCount(t.Context(), fixtures.TextPDF(2), 500); err != nil || pages != 2 {
 		t.Fatalf("after the bomb: pages %d, err %v", pages, err)
 	}
 }
@@ -109,7 +111,7 @@ func TestPDFiumInflateBomb(t *testing.T) {
 func TestPDFiumDeadline(t *testing.T) {
 	// 64 MiB of whitespace fits a 1 GiB sandbox, and takes PDFium seconds
 	// to inflate and scan.
-	slow := bombPDF(t, 64<<20)
+	slow := fixtures.BombPDF(t, 64<<20)
 	full, err := NewPDFium(PDFiumConfig{Workers: 1, MemoryLimitMiB: 1024, Deadline: time.Minute})
 	if err != nil {
 		t.Fatal(err)
@@ -142,7 +144,7 @@ func TestPDFiumDeadline(t *testing.T) {
 		t.Errorf("took %v, deadline %v", took, deadline)
 	}
 	// One worker, killed: the next read needs a fresh one.
-	if pages, err := short.PageCount(t.Context(), textPDF(1), 500); err != nil || pages != 1 {
+	if pages, err := short.PageCount(t.Context(), fixtures.TextPDF(1), 500); err != nil || pages != 1 {
 		t.Fatalf("after the kill: pages %d, err %v", pages, err)
 	}
 }
@@ -155,16 +157,16 @@ func TestImageHeader(t *testing.T) {
 		rotate        int
 		err           error
 	}{
-		{"jpeg without exif", jpegWithOrientation(t, 40, 30, 0), 40, 30, 0, nil},
-		{"jpeg orientation 1", jpegWithOrientation(t, 40, 30, 1), 40, 30, 0, nil},
-		{"jpeg orientation 3", jpegWithOrientation(t, 40, 30, 3), 40, 30, 180, nil},
-		{"jpeg orientation 6", jpegWithOrientation(t, 40, 30, 6), 40, 30, 90, nil},
-		{"jpeg orientation 8", jpegWithOrientation(t, 40, 30, 8), 40, 30, 270, nil},
-		{"jpeg mirrored", jpegWithOrientation(t, 40, 30, 2), 0, 0, 0, ErrBadImage},
-		{"jpeg orientation 9", jpegWithOrientation(t, 40, 30, 9), 0, 0, 0, ErrBadImage},
-		{"png", pngImage(t, 40, 30), 40, 30, 0, nil},
-		{"png over 50 megapixels", hugePNG(10_000, 5_001), 10_000, 5_001, 0, ErrImageTooLarge},
-		{"png at 50 megapixels", hugePNG(10_000, 5_000), 10_000, 5_000, 0, nil},
+		{"jpeg without exif", fixtures.JPEG(t, 40, 30, 0), 40, 30, 0, nil},
+		{"jpeg orientation 1", fixtures.JPEG(t, 40, 30, 1), 40, 30, 0, nil},
+		{"jpeg orientation 3", fixtures.JPEG(t, 40, 30, 3), 40, 30, 180, nil},
+		{"jpeg orientation 6", fixtures.JPEG(t, 40, 30, 6), 40, 30, 90, nil},
+		{"jpeg orientation 8", fixtures.JPEG(t, 40, 30, 8), 40, 30, 270, nil},
+		{"jpeg mirrored", fixtures.JPEG(t, 40, 30, 2), 0, 0, 0, ErrBadImage},
+		{"jpeg orientation 9", fixtures.JPEG(t, 40, 30, 9), 0, 0, 0, ErrBadImage},
+		{"png", fixtures.PNG(t, 40, 30), 40, 30, 0, nil},
+		{"png over 50 megapixels", fixtures.HugePNG(10_000, 5_001), 10_000, 5_001, 0, ErrImageTooLarge},
+		{"png at 50 megapixels", fixtures.HugePNG(10_000, 5_000), 10_000, 5_000, 0, nil},
 		{"not an image", []byte("hello"), 0, 0, 0, ErrBadImage},
 	}
 	for _, tt := range tests {
@@ -188,9 +190,9 @@ func TestPhotoToPDF(t *testing.T) {
 		name string
 		data []byte
 	}{
-		{"jpeg", jpegWithOrientation(t, 400, 300, 0)},
-		{"jpeg orientation 6", jpegWithOrientation(t, 400, 300, 6)},
-		{"png", pngImage(t, 400, 300)},
+		{"jpeg", fixtures.JPEG(t, 400, 300, 0)},
+		{"jpeg orientation 6", fixtures.JPEG(t, 400, 300, 6)},
+		{"png", fixtures.PNG(t, 400, 300)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -271,8 +273,8 @@ func render(t *testing.T, p *PDFium, pdf []byte) image.Image {
 // rest on. It fails if either is anywhere near its deadline.
 func TestCheckTimings(t *testing.T) {
 	p := testPDFium(t)
-	ten := textPDF(10)
-	jpg := jpegWithOrientation(t, 4000, 3000, 6) // a 12 MP phone photo
+	ten := fixtures.TextPDF(10)
+	jpg := fixtures.JPEG(t, 4000, 3000, 6) // a 12 MP phone photo
 	measure := func(name string, limit time.Duration, f func(ctx context.Context) error) {
 		const runs = 5
 		var worst time.Duration

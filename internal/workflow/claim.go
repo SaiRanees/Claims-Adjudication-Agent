@@ -21,7 +21,7 @@ const (
 	// must equal claims.WorkflowType, which the API writes on the outbox row.
 	ClaimWorkflowName = "ClaimWorkflow"
 	// SignalSubmitted is the signal sent when a claim is submitted.
-	SignalSubmitted = "submitted"
+	SignalSubmitted = claims.SignalSubmitted
 	// SignalDocumentUploaded is sent when a file is uploaded and waits for its check.
 	SignalDocumentUploaded = claims.SignalDocumentUploaded
 

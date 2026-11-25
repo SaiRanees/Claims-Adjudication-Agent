@@ -1,4 +1,7 @@
-package documents
+// Package fixtures builds synthetic files for the file-check tests in code, so no binary
+// file is committed. Every PDF here is written by hand: a header, numbered objects, an xref
+// table with real offsets and a trailer. Only tests import it.
+package fixtures
 
 import (
 	"bytes"
@@ -19,10 +22,6 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 )
 
-// Synthetic fixtures for the file checks, built in code so no binary file is
-// committed. Every PDF here is written by hand: a header, numbered objects,
-// an xref table with real offsets and a trailer.
-
 // pdfObjects assembles objects 1..n (object i is objs[i-1]) into a PDF whose
 // catalog is object 1.
 func pdfObjects(objs []string) []byte {
@@ -42,8 +41,8 @@ func pdfObjects(objs []string) []byte {
 	return b.Bytes()
 }
 
-// textPDF has n A4 pages, each with a line of text in Helvetica.
-func textPDF(n int) []byte {
+// TextPDF has n A4 pages, each with a line of text in Helvetica.
+func TextPDF(n int) []byte {
 	// 1 catalog, 2 pages, 3 font, then a page and its content per page.
 	kids := make([]string, n)
 	for i := range n {
@@ -79,9 +78,9 @@ func streamPDF(raw []byte, filter string) []byte {
 	return pdfObjects(objs)
 }
 
-// bombPDF's page content inflates to `inflated` bytes of spaces, from a
+// BombPDF's page content inflates to `inflated` bytes of spaces, from a
 // Flate stream of a few hundred KiB.
-func bombPDF(t testing.TB, inflated int64) []byte {
+func BombPDF(t testing.TB, inflated int64) []byte {
 	t.Helper()
 	var z bytes.Buffer
 	w, err := zlib.NewWriterLevel(&z, flate.BestCompression)
@@ -106,13 +105,13 @@ func (r repeatReader) Read(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// encryptedPDF encrypts textPDF(1) with AES-256, with the given user password
+// EncryptedPDF encrypts TextPDF(1) with AES-256, with the given user password
 // (which may be empty) and an owner password.
-func encryptedPDF(t testing.TB, userPW string) []byte {
+func EncryptedPDF(t testing.TB, userPW string) []byte {
 	t.Helper()
 	conf := model.NewAESConfiguration(userPW, "synthetic-owner", 256)
 	var out bytes.Buffer
-	if err := api.Encrypt(t.Context(), bytes.NewReader(textPDF(1)), &out, conf); err != nil {
+	if err := api.Encrypt(t.Context(), bytes.NewReader(TextPDF(1)), &out, conf); err != nil {
 		t.Fatalf("encrypt: %v", err)
 	}
 	return out.Bytes()
@@ -135,9 +134,9 @@ func photo(w, h int) image.Image {
 	return img
 }
 
-// jpegWithOrientation encodes a w×h JPEG and, unless orientation is 0, adds
+// JPEG encodes a w×h JPEG and, unless orientation is 0, adds
 // an APP1 Exif segment holding it.
-func jpegWithOrientation(t testing.TB, w, h int, orientation uint16) []byte {
+func JPEG(t testing.TB, w, h int, orientation uint16) []byte {
 	t.Helper()
 	var enc bytes.Buffer
 	if err := jpeg.Encode(&enc, photo(w, h), &jpeg.Options{Quality: 80}); err != nil {
@@ -165,7 +164,7 @@ func exifTIFF(orientation uint16) []byte {
 	return binary.BigEndian.AppendUint32(t, 0) // no next IFD
 }
 
-func pngImage(t testing.TB, w, h int) []byte {
+func PNG(t testing.TB, w, h int) []byte {
 	t.Helper()
 	var b bytes.Buffer
 	if err := png.Encode(&b, photo(w, h)); err != nil {
@@ -174,9 +173,9 @@ func pngImage(t testing.TB, w, h int) []byte {
 	return b.Bytes()
 }
 
-// hugePNG is a PNG signature and an IHDR claiming w×h, then a tiny IDAT that
+// HugePNG is a PNG signature and an IHDR claiming w×h, then a tiny IDAT that
 // couldn't fill it: only a header read survives it.
-func hugePNG(w, h uint32) []byte {
+func HugePNG(w, h uint32) []byte {
 	chunk := func(kind string, data []byte) []byte {
 		c := binary.BigEndian.AppendUint32(nil, uint32(len(data))) //nolint:gosec // a fixture chunk is small
 		c = append(c, kind...)

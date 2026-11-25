@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/claims"
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/documents/fixtures"
 )
 
 // fakeRecords holds one document and records the verdict it's given.
@@ -75,9 +76,9 @@ func (f *fakeObjects) Put(_ context.Context, key, contentType string, body io.Re
 
 func TestCheckerVerdicts(t *testing.T) {
 	p := testPDFium(t)
-	pdf := textPDF(3)
-	jpg := jpegWithOrientation(t, 400, 300, 6)
-	pngBytes := pngImage(t, 300, 200)
+	pdf := fixtures.TextPDF(3)
+	jpg := fixtures.JPEG(t, 400, 300, 6)
+	pngBytes := fixtures.PNG(t, 300, 200)
 	tests := []struct {
 		name        string
 		contentType string
@@ -89,16 +90,16 @@ func TestCheckerVerdicts(t *testing.T) {
 		{"pdf", "application/pdf", pdf, pdf, "", 3},
 		{"jpeg orientation 6", "image/jpeg", jpg, jpg, "", 1},
 		{"png", "image/png", pngBytes, pngBytes, "", 1},
-		{"replaced after complete", "application/pdf", pdf, textPDF(4), claims.RejectChecksumMismatch, 0},
+		{"replaced after complete", "application/pdf", pdf, fixtures.TextPDF(4), claims.RejectChecksumMismatch, 0},
 		{"deleted after complete", "application/pdf", pdf, nil, claims.RejectMissingObject, 0},
 		{"a png declared as a pdf", "application/pdf", pngBytes, pngBytes, claims.RejectTypeMismatch, 0},
 		{"a pdf declared as a jpeg", "image/jpeg", pdf, pdf, claims.RejectTypeMismatch, 0},
-		{"user password", "application/pdf", encryptedPDF(t, "synthetic-user"), nil, claims.RejectEncrypted, 0},
-		{"empty user password", "application/pdf", encryptedPDF(t, ""), nil, claims.RejectEncrypted, 0},
+		{"user password", "application/pdf", fixtures.EncryptedPDF(t, "synthetic-user"), nil, claims.RejectEncrypted, 0},
+		{"empty user password", "application/pdf", fixtures.EncryptedPDF(t, ""), nil, claims.RejectEncrypted, 0},
 		{"truncated", "application/pdf", pdf[:len(pdf)/2], nil, claims.RejectUnreadable, 0},
-		{"over 500 pages", "application/pdf", textPDF(501), nil, claims.RejectTooManyPages, 0},
-		{"over 50 megapixels", "image/png", hugePNG(10_000, 5_001), nil, claims.RejectImageTooLarge, 0},
-		{"mirrored photo", "image/jpeg", jpegWithOrientation(t, 40, 30, 5), nil, claims.RejectUnreadable, 0},
+		{"over 500 pages", "application/pdf", fixtures.TextPDF(501), nil, claims.RejectTooManyPages, 0},
+		{"over 50 megapixels", "image/png", fixtures.HugePNG(10_000, 5_001), nil, claims.RejectImageTooLarge, 0},
+		{"mirrored photo", "image/jpeg", fixtures.JPEG(t, 40, 30, 5), nil, claims.RejectUnreadable, 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
