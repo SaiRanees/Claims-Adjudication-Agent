@@ -1,0 +1,53 @@
+# The packet for golden case 19-annexure-list-iii (evals/engine/golden/19-annexure-list-iii.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 19-annexure-list-iii
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2023-04-01"
+facts:
+  admission: "2025-06-23"
+  discharge: "2025-06-25"
+  segments:
+    - {from: "2025-06-23", to: "2025-06-25", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-06-23", quantity: 2, unit_price_paise: 400000, amount_paise: 800000}
+    - {id: L02, category: operation-theatre, service_date: "2025-06-24", quantity: 1, unit_price_paise: 2000000, amount_paise: 2000000}
+    - {id: L03, category: pharmacy-consumables, service_date: "2025-06-24", quantity: 1, unit_price_paise: 150000, amount_paise: 150000, item_list: list-iii}
+    - {id: L04, category: professional-fees, service_date: "2025-06-24", quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+insured:
+  name: Nisha Varkey
+  gender: female
+  age: 58
+  policy_number: SYN-ASG-2025-000119
+  member_id: SYN-M-000519
+hospital:
+  name: Tarangpur City Hospital
+  address: 22 Canal Street
+  city: Tarangpur
+  registration: SYN-HR-0019
+clinical:
+  diagnosis: Viral fever with thrombocytopenia
+  treating_doctor: Dr. Ananya Rao
+claim_form:
+  admission_type: planned
+  signed_on: "2025-06-28"
+  claimed_amount_paise: 5950000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-001901, date: "2025-06-25", layout: ledger, lines_per_page: 12}
+  - {id: R1, type: payment-receipt, number: SYN-RC-001901, date: "2025-06-25", against: [B1], mode: Cash}
+files:
+  - {name: claim-documents.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Ward Charges - General Ward}
+  - {line: L02, bill: B1, description: Operation Theatre Charges}
+  - {line: L03, bill: B1, description: MICROSCOPE COVER, annexure: list-iii/11}
+  - {line: L04, bill: B1, description: Anaesthetist Fees}

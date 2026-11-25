@@ -9,6 +9,7 @@ import (
 
 	"github.com/klippa-app/go-pdfium"
 	pdfiumerrors "github.com/klippa-app/go-pdfium/errors"
+	"github.com/klippa-app/go-pdfium/references"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/webassembly"
 	"github.com/tetratelabs/wazero"
@@ -87,55 +88,117 @@ func (p *PDFium) Close() error { return p.pool.Close() }
 // A file with more than maxPages pages returns its count without loading
 // them.
 func (p *PDFium) PageCount(ctx context.Context, data []byte, maxPages int) (int, error) {
+	var pages int
+	err := p.with(ctx, func(inst pdfium.Pdfium) error {
+		var err error
+		pages, err = read(inst, data, maxPages)
+		return err
+	})
+	if err != nil {
+		return 0, err
+	}
+	return pages, nil
+}
+
+// PageTexts opens data as PageCount does and returns each page's plain
+// text, in page order. The generator's self-check reads its packets back
+// with it.
+func (p *PDFium) PageTexts(ctx context.Context, data []byte) ([]string, error) {
+	var texts []string
+	err := p.with(ctx, func(inst pdfium.Pdfium) error {
+		doc, err := open(inst, data)
+		if err != nil {
+			return err
+		}
+		defer closeDocument(inst, doc)
+		count, err := inst.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: doc})
+		if err != nil {
+			return fmt.Errorf("%w: page count: %w", ErrUnreadable, err)
+		}
+		for i := range count.PageCount {
+			t, err := inst.GetPageText(&requests.GetPageText{
+				Page: requests.Page{ByIndex: &requests.PageByIndex{Document: doc, Index: i}},
+			})
+			if err != nil {
+				return fmt.Errorf("%w: page %d text: %w", ErrUnreadable, i+1, err)
+			}
+			texts = append(texts, t.Text)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return texts, nil
+}
+
+// with runs fn on a worker under the deadline. A bad file gives
+// ErrEncrypted or ErrUnreadable; any other error means the sandbox failed.
+func (p *PDFium) with(ctx context.Context, fn func(pdfium.Pdfium) error) error {
 	ctx, cancel := context.WithTimeout(ctx, p.deadline)
 	defer cancel()
 
 	inst, err := p.pool.GetInstanceWithContext(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("pdfium: take a worker: %w", err)
+		return fmt.Errorf("pdfium: take a worker: %w", err)
 	}
 	// Kill cancels the worker's context, which closes the module mid-call
 	// because the runtime has WithCloseOnContextDone.
 	stop := context.AfterFunc(ctx, func() { _ = inst.Kill() })
 
-	pages, readErr := read(inst, data, maxPages)
+	readErr := fn(inst)
 
 	if !stop() {
 		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-			return 0, fmt.Errorf("%w: deadline", ErrUnreadable)
+			return fmt.Errorf("%w: deadline", ErrUnreadable)
 		}
-		return 0, fmt.Errorf("pdfium: %w", ctx.Err())
+		return fmt.Errorf("pdfium: %w", ctx.Err())
 	}
 	if readErr != nil && !errors.Is(readErr, ErrEncrypted) && !errors.Is(readErr, ErrUnreadable) {
 		// A trap (out of sandbox memory, for one) can leave the module in
 		// any state, so it's thrown away rather than closed.
 		_ = inst.Kill()
-		return 0, fmt.Errorf("%w: %w", ErrUnreadable, readErr)
+		return fmt.Errorf("%w: %w", ErrUnreadable, readErr)
 	}
 	if err := inst.Close(); err != nil && readErr == nil {
-		return 0, fmt.Errorf("pdfium: close worker: %w", err)
+		return fmt.Errorf("pdfium: close worker: %w", err)
 	}
-	return pages, readErr
+	return readErr
 }
 
-func read(inst pdfium.Pdfium, data []byte, maxPages int) (int, error) {
+// open loads data and rejects it if it has a security handler.
+func open(inst pdfium.Pdfium, data []byte) (references.FPDF_DOCUMENT, error) {
 	doc, err := inst.OpenDocument(&requests.OpenDocument{File: &data})
 	switch {
 	case errors.Is(err, pdfiumerrors.ErrPassword):
-		return 0, ErrEncrypted
+		return "", ErrEncrypted
 	case err != nil:
-		return 0, fmt.Errorf("%w: open: %w", ErrUnreadable, err)
+		return "", fmt.Errorf("%w: open: %w", ErrUnreadable, err)
 	}
-	defer func() { _, _ = inst.FPDF_CloseDocument(&requests.FPDF_CloseDocument{Document: doc.Document}) }()
-
 	sec, err := inst.FPDF_GetSecurityHandlerRevision(&requests.FPDF_GetSecurityHandlerRevision{Document: doc.Document})
 	if err != nil {
-		return 0, fmt.Errorf("%w: security handler: %w", ErrUnreadable, err)
+		closeDocument(inst, doc.Document)
+		return "", fmt.Errorf("%w: security handler: %w", ErrUnreadable, err)
 	}
 	if sec.SecurityHandlerRevision != -1 {
-		return 0, ErrEncrypted
+		closeDocument(inst, doc.Document)
+		return "", ErrEncrypted
 	}
-	count, err := inst.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: doc.Document})
+	return doc.Document, nil
+}
+
+func closeDocument(inst pdfium.Pdfium, doc references.FPDF_DOCUMENT) {
+	_, _ = inst.FPDF_CloseDocument(&requests.FPDF_CloseDocument{Document: doc})
+}
+
+func read(inst pdfium.Pdfium, data []byte, maxPages int) (int, error) {
+	doc, err := open(inst, data)
+	if err != nil {
+		return 0, err
+	}
+	defer closeDocument(inst, doc)
+
+	count, err := inst.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: doc})
 	if err != nil {
 		return 0, fmt.Errorf("%w: page count: %w", ErrUnreadable, err)
 	}
@@ -146,7 +209,7 @@ func read(inst pdfium.Pdfium, data []byte, maxPages int) (int, error) {
 		return count.PageCount, nil
 	}
 	for i := range count.PageCount {
-		page, err := inst.FPDF_LoadPage(&requests.FPDF_LoadPage{Document: doc.Document, Index: i})
+		page, err := inst.FPDF_LoadPage(&requests.FPDF_LoadPage{Document: doc, Index: i})
 		if err != nil {
 			return 0, fmt.Errorf("%w: page %d: %w", ErrUnreadable, i+1, err)
 		}

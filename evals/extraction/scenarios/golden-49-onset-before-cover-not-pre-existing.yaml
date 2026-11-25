@@ -1,0 +1,51 @@
+# The packet for golden case 49-onset-before-cover-not-pre-existing (evals/engine/golden/49-onset-before-cover-not-pre-existing.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 49-onset-before-cover-not-pre-existing
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-06-01"
+  period_end: "2026-05-31"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2025-06-01"
+facts:
+  admission: "2025-09-15"
+  discharge: "2025-09-16"
+  segments:
+    - {from: "2025-09-15", to: "2025-09-16", kind: room}
+  differential_billing: "yes"
+  condition:
+    onset: "2025-05-10"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-09-15", quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: professional-fees, service_date: "2025-09-15", quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+insured:
+  name: Meera Pillai
+  gender: female
+  age: 28
+  policy_number: SYN-ASG-2025-000149
+  member_id: SYN-M-000549
+hospital:
+  name: Amberpur General Hospital
+  address: 14 Lakeview Road, Ward 3
+  city: Amberpur
+  registration: SYN-HR-0049
+clinical:
+  diagnosis: Acute bronchitis
+  treating_doctor: Dr. Ananya Rao
+claim_form:
+  admission_type: planned
+  signed_on: "2025-09-19"
+  claimed_amount_paise: 3400000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-004901, date: "2025-09-16", layout: ledger, lines_per_page: 3}
+  - {id: R1, type: payment-receipt, number: SYN-RC-004901, date: "2025-09-16", against: [B1], mode: UPI}
+files:
+  - {name: claim-documents.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L02, bill: B1, description: Anaesthetist Fees}

@@ -1,0 +1,56 @@
+# The packet for golden case 28-cataract-both-eyes (evals/engine/golden/28-cataract-both-eyes.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 28-cataract-both-eyes
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 10000000
+      continuous_since: "2022-04-01"
+facts:
+  admission: "2025-09-22"
+  discharge: "2025-09-22"
+  segments:
+    - {from: "2025-09-22", to: "2025-09-22", kind: room}
+  differential_billing: "no"
+  condition:
+    listed_group: listed-24-months
+  lines:
+    - {id: L01, category: professional-fees, service_date: "2025-09-22", quantity: 1, unit_price_paise: 1600000, amount_paise: 1600000, treatment: {kind: cataract, eye: left}}
+    - {id: L02, category: implants-devices, service_date: "2025-09-22", quantity: 1, unit_price_paise: 1400000, amount_paise: 1400000, treatment: {kind: cataract, eye: left}}
+    - {id: L03, category: professional-fees, service_date: "2025-09-22", quantity: 1, unit_price_paise: 1200000, amount_paise: 1200000, treatment: {kind: cataract, eye: right}}
+    - {id: L04, category: implants-devices, service_date: "2025-09-22", quantity: 1, unit_price_paise: 800000, amount_paise: 800000, treatment: {kind: cataract, eye: right}}
+insured:
+  name: Sanjay Kulkarni
+  gender: male
+  age: 73
+  policy_number: SYN-ASG-2025-000128
+  member_id: SYN-M-000528
+hospital:
+  name: Drishtipur Eye Hospital
+  address: 9 Market Road
+  city: Drishtipur
+  registration: SYN-HR-0028
+clinical:
+  diagnosis: Senile cataract, both eyes
+  procedure: Phacoemulsification with foldable IOL
+  treating_doctor: Dr. Leela Menon
+claim_form:
+  admission_type: planned
+  signed_on: "2025-09-25"
+  claimed_amount_paise: 5000000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-002801, date: "2025-09-22", layout: ledger, lines_per_page: 4}
+  - {id: R1, type: payment-receipt, number: SYN-RC-002801, date: "2025-09-22", against: [B1], mode: NEFT}
+files:
+  - {name: claim-documents.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Cataract Surgery - Surgeon Fees - Left Eye}
+  - {line: L02, bill: B1, description: Foldable IOL - Left Eye}
+  - {line: L03, bill: B1, description: Cataract Surgery - Surgeon Fees - Right Eye}
+  - {line: L04, bill: B1, description: Foldable IOL - Right Eye}

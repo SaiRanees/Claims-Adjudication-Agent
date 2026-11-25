@@ -1,0 +1,52 @@
+# The packet for golden case 32-package-cataract (evals/engine/golden/32-package-cataract.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 32-package-cataract
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 10000000
+      continuous_since: "2022-04-01"
+facts:
+  admission: "2026-01-12"
+  discharge: "2026-01-12"
+  segments:
+    - {from: "2026-01-12", to: "2026-01-12", kind: room}
+  differential_billing: "no"
+  condition:
+    listed_group: listed-24-months
+  lines:
+    - {id: L01, category: other-hospital-charges, service_date: "2026-01-12", quantity: 1, unit_price_paise: 3500000, amount_paise: 3500000, package_rate: true, treatment: {kind: cataract, eye: right}}
+    - {id: L02, category: other-hospital-charges, service_date: "2026-01-12", quantity: 1, unit_price_paise: 50000, amount_paise: 50000, item_list: list-ii}
+insured:
+  name: Deepak Choudhury
+  gender: male
+  age: 53
+  policy_number: SYN-ASG-2025-000132
+  member_id: SYN-M-000532
+hospital:
+  name: Drishtipur Eye Hospital
+  address: 9 Market Road
+  city: Drishtipur
+  registration: SYN-HR-0032
+clinical:
+  diagnosis: Senile cataract
+  procedure: Phacoemulsification with foldable IOL
+  treating_doctor: Dr. Farhan Siddiqui
+claim_form:
+  admission_type: planned
+  signed_on: "2026-01-15"
+  claimed_amount_paise: 3550000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-003201, date: "2026-01-12", layout: columnar, lines_per_page: 4}
+  - {id: R1, type: payment-receipt, number: SYN-RC-003201, date: "2026-01-12", against: [B1], mode: NEFT}
+files:
+  - {name: hospital-bill.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Cataract Surgery Package - Right Eye}
+  - {line: L02, bill: B1, description: ADMISSION KIT, annexure: list-ii/27}

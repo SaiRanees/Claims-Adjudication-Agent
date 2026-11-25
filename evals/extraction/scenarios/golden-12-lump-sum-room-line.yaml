@@ -1,0 +1,52 @@
+# The packet for golden case 12-lump-sum-room-line (evals/engine/golden/12-lump-sum-room-line.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 12-lump-sum-room-line
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2023-04-01"
+facts:
+  admission: "2025-11-17"
+  discharge: "2025-11-21"
+  segments:
+    - {from: "2025-11-17", to: "2025-11-21", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-11-17", quantity: 1, unit_price_paise: 1600000, amount_paise: 1600000}
+    - {id: L02, category: professional-fees, service_date: "2025-11-18", quantity: 1, unit_price_paise: 2000000, amount_paise: 2000000}
+    - {id: L03, category: pharmacy-consumables, service_date: "2025-11-18", quantity: 1, unit_price_paise: 600000, amount_paise: 600000}
+insured:
+  name: Vikram Sodhi
+  gender: male
+  age: 57
+  policy_number: SYN-ASG-2025-000112
+  member_id: SYN-M-000512
+hospital:
+  name: Sundervan Care Centre
+  address: 3 Temple Lane, Sector 4
+  city: Sundervan
+  registration: SYN-HR-0012
+clinical:
+  diagnosis: Acute pyelonephritis
+  treating_doctor: Dr. Sunita Kher
+claim_form:
+  admission_type: emergency
+  signed_on: "2025-11-24"
+  claimed_amount_paise: 4200000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-001201, date: "2025-11-21", layout: compact, lines_per_page: 4}
+  - {id: R1, type: payment-receipt, number: SYN-RC-001201, date: "2025-11-21", against: [B1], mode: NEFT}
+files:
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Deluxe Single}
+  - {line: L02, bill: B1, description: Surgeon Fees}
+  - {line: L03, bill: B1, description: Drugs and Disposables}

@@ -1,0 +1,56 @@
+# The packet for golden case 29-cataract-eye-already-treated (evals/engine/golden/29-cataract-eye-already-treated.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 29-cataract-eye-already-treated
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 10000000
+      continuous_since: "2022-04-01"
+  paid_this_year_paise: 4275000
+  cataract_used_paise:
+    left: 2500000
+    right: 2000000
+facts:
+  admission: "2025-11-10"
+  discharge: "2025-11-10"
+  segments:
+    - {from: "2025-11-10", to: "2025-11-10", kind: room}
+  differential_billing: "no"
+  condition:
+    listed_group: listed-24-months
+  lines:
+    - {id: L01, category: professional-fees, service_date: "2025-11-10", quantity: 1, unit_price_paise: 900000, amount_paise: 900000, treatment: {kind: cataract, eye: right}}
+    - {id: L02, category: pharmacy-consumables, service_date: "2025-11-10", quantity: 1, unit_price_paise: 300000, amount_paise: 300000, treatment: {kind: cataract, eye: right}}
+insured:
+  name: Kavya Raghunath
+  gender: female
+  age: 32
+  policy_number: SYN-ASG-2025-000129
+  member_id: SYN-M-000529
+hospital:
+  name: Drishtipur Eye Hospital
+  address: 9 Market Road
+  city: Drishtipur
+  registration: SYN-HR-0029
+clinical:
+  diagnosis: Posterior capsule opacification
+  procedure: Nd:YAG capsulotomy
+  treating_doctor: Dr. Rohit Bhalla
+claim_form:
+  admission_type: planned
+  signed_on: "2025-11-13"
+  claimed_amount_paise: 1200000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-002901, date: "2025-11-10", layout: columnar, lines_per_page: 3}
+  - {id: R1, type: payment-receipt, number: SYN-RC-002901, date: "2025-11-10", against: [B1], mode: UPI}
+files:
+  - {name: hospital-bill.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Cataract Surgery - Surgeon Fees - Right Eye}
+  - {line: L02, bill: B1, description: Eye Drops and Consumables - Right Eye}

@@ -1,0 +1,56 @@
+# The packet for golden case 16-undated-line (evals/engine/golden/16-undated-line.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 16-undated-line
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 20000000
+      continuous_since: "2023-04-01"
+facts:
+  admission: "2026-02-09"
+  discharge: "2026-02-14"
+  segments:
+    - {from: "2026-02-09", to: "2026-02-11", kind: room}
+    - {from: "2026-02-12", to: "2026-02-14", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-02-09", quantity: 3, unit_price_paise: 600000, amount_paise: 1800000}
+    - {id: L02, category: room-rent, service_date: "2026-02-12", quantity: 2, unit_price_paise: 500000, amount_paise: 1000000}
+    - {id: L03, category: professional-fees, service_date: "2026-02-13", quantity: 1, unit_price_paise: 1000000, amount_paise: 1000000}
+    - {id: L04, category: professional-fees, quantity: 1, unit_price_paise: 1200000, amount_paise: 1200000}
+    - {id: L05, category: diagnostics, service_date: "2026-02-10", quantity: 1, unit_price_paise: 600000, amount_paise: 600000}
+insured:
+  name: Sanjay Kulkarni
+  gender: male
+  age: 37
+  policy_number: SYN-ASG-2025-000116
+  member_id: SYN-M-000516
+hospital:
+  name: Sundervan Care Centre
+  address: 3 Temple Lane, Sector 4
+  city: Sundervan
+  registration: SYN-HR-0016
+clinical:
+  diagnosis: Acute pyelonephritis
+  treating_doctor: Dr. Leela Menon
+claim_form:
+  admission_type: emergency
+  signed_on: "2026-02-17"
+  claimed_amount_paise: 5600000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-001601, date: "2026-02-14", layout: ledger, lines_per_page: 4}
+  - {id: R1, type: payment-receipt, number: SYN-RC-001601, date: "2026-02-14", against: [B1], mode: NEFT}
+files:
+  - {name: claim-documents.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Deluxe Single}
+  - {line: L02, bill: B1, description: Room Rent - Deluxe Single}
+  - {line: L03, bill: B1, description: Consultant Visit Charges}
+  - {line: L04, bill: B1, description: Surgeon Fees}
+  - {line: L05, bill: B1, description: CT Scan Abdomen}

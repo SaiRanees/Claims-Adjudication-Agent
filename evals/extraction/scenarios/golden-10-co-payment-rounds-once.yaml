@@ -1,0 +1,51 @@
+# The packet for golden case 10-co-payment-rounds-once (evals/engine/golden/10-co-payment-rounds-once.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 10-co-payment-rounds-once
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2023-04-01"
+facts:
+  admission: "2026-03-02"
+  discharge: "2026-03-04"
+  segments:
+    - {from: "2026-03-02", to: "2026-03-04", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-03-02", quantity: 2, unit_price_paise: 101010, amount_paise: 202020}
+    - {id: L02, category: pharmacy-consumables, service_date: "2026-03-02", quantity: 1, unit_price_paise: 101010, amount_paise: 101010}
+    - {id: L03, category: diagnostics, service_date: "2026-03-02", quantity: 1, unit_price_paise: 101010, amount_paise: 101010}
+insured:
+  name: Harish Nambiar
+  gender: male
+  age: 43
+  policy_number: SYN-ASG-2025-000110
+  member_id: SYN-M-000510
+hospital:
+  name: Ravikund Multispeciality Hospital
+  address: Plot 7, Station Road
+  city: Ravikund
+  registration: SYN-HR-0010
+clinical:
+  diagnosis: Community-acquired pneumonia
+  treating_doctor: Dr. Leela Menon
+claim_form:
+  admission_type: emergency
+  signed_on: "2026-03-07"
+  claimed_amount_paise: 404040
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-001001, date: "2026-03-04", layout: ledger, lines_per_page: 2}
+  - {id: R1, type: payment-receipt, number: SYN-RC-001001, date: "2026-03-04", against: [B1], mode: Card}
+files:
+  - {name: claim-documents.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Charges - Private Room}
+  - {line: L02, bill: B1, description: Pharmacy and Consumables}
+  - {line: L03, bill: B1, description: Laboratory Investigations}

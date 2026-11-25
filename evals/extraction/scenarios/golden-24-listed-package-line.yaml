@@ -1,0 +1,54 @@
+# The packet for golden case 24-listed-package-line (evals/engine/golden/24-listed-package-line.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 24-listed-package-line
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2023-04-01"
+facts:
+  admission: "2025-12-15"
+  discharge: "2025-12-17"
+  segments:
+    - {from: "2025-12-15", to: "2025-12-17", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-12-15", quantity: 2, unit_price_paise: 300000, amount_paise: 600000}
+    - {id: L02, category: other-hospital-charges, service_date: "2025-12-15", quantity: 1, unit_price_paise: 250000, amount_paise: 250000, item_list: list-ii, package_rate: true}
+    - {id: L03, category: professional-fees, service_date: "2025-12-16", quantity: 1, unit_price_paise: 1500000, amount_paise: 1500000}
+    - {id: L04, category: pharmacy-consumables, service_date: "2025-12-16", quantity: 1, unit_price_paise: 450000, amount_paise: 450000}
+insured:
+  name: Vikram Sodhi
+  gender: male
+  age: 45
+  policy_number: SYN-ASG-2025-000124
+  member_id: SYN-M-000524
+hospital:
+  name: Sundervan Care Centre
+  address: 3 Temple Lane, Sector 4
+  city: Sundervan
+  registration: SYN-HR-0024
+clinical:
+  diagnosis: Acute pyelonephritis
+  treating_doctor: Dr. Sunita Kher
+claim_form:
+  admission_type: emergency
+  signed_on: "2025-12-20"
+  claimed_amount_paise: 2800000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-002401, date: "2025-12-17", layout: compact, lines_per_page: 4}
+  - {id: R1, type: payment-receipt, number: SYN-RC-002401, date: "2025-12-17", against: [B1], mode: NEFT}
+files:
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Deluxe Single}
+  - {line: L02, bill: B1, description: ADMISSION KIT, annexure: list-ii/27}
+  - {line: L03, bill: B1, description: Anaesthetist Fees}
+  - {line: L04, bill: B1, description: Drugs and Disposables}

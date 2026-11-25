@@ -1,0 +1,52 @@
+# The packet for golden case 46-29-february-inception-first-day-after (evals/engine/golden/46-29-february-inception-first-day-after.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 46-29-february-inception-first-day-after
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2026-03-01"
+  period_end: "2027-02-28"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2024-02-29"
+facts:
+  admission: "2026-03-01"
+  discharge: "2026-03-02"
+  segments:
+    - {from: "2026-03-01", to: "2026-03-02", kind: room}
+  differential_billing: "yes"
+  condition:
+    listed_group: listed-24-months
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-03-01", quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: professional-fees, service_date: "2026-03-01", quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+insured:
+  name: Harish Nambiar
+  gender: male
+  age: 55
+  policy_number: SYN-ASG-2026-000146
+  member_id: SYN-M-000546
+hospital:
+  name: Ravikund Multispeciality Hospital
+  address: Plot 7, Station Road
+  city: Ravikund
+  registration: SYN-HR-0046
+clinical:
+  diagnosis: Inguinal hernia
+  procedure: Mesh hernioplasty
+  treating_doctor: Dr. Leela Menon
+claim_form:
+  admission_type: planned
+  signed_on: "2026-03-05"
+  claimed_amount_paise: 3400000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-004601, date: "2026-03-02", layout: ledger, lines_per_page: 2}
+  - {id: R1, type: payment-receipt, number: SYN-RC-004601, date: "2026-03-02", against: [B1], mode: Card}
+files:
+  - {name: claim-documents.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Charges - Private Room}
+  - {line: L02, bill: B1, description: Consultant Visit Charges}

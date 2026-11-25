@@ -1,0 +1,52 @@
+# The packet for golden case 35-listed-24-months-first-day-after (evals/engine/golden/35-listed-24-months-first-day-after.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 35-listed-24-months-first-day-after
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2023-07-15"
+facts:
+  admission: "2025-07-15"
+  discharge: "2025-07-16"
+  segments:
+    - {from: "2025-07-15", to: "2025-07-16", kind: room}
+  differential_billing: "yes"
+  condition:
+    listed_group: listed-24-months
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-07-15", quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: professional-fees, service_date: "2025-07-15", quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+insured:
+  name: Lalitha Venugopal
+  gender: female
+  age: 74
+  policy_number: SYN-ASG-2025-000135
+  member_id: SYN-M-000535
+hospital:
+  name: Tarangpur City Hospital
+  address: 22 Canal Street
+  city: Tarangpur
+  registration: SYN-HR-0035
+clinical:
+  diagnosis: Inguinal hernia
+  procedure: Mesh hernioplasty
+  treating_doctor: Dr. Rohit Bhalla
+claim_form:
+  admission_type: planned
+  signed_on: "2025-07-19"
+  claimed_amount_paise: 3400000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-003501, date: "2025-07-16", layout: columnar, lines_per_page: 12}
+  - {id: R1, type: payment-receipt, number: SYN-RC-003501, date: "2025-07-16", against: [B1], mode: Cash}
+files:
+  - {name: hospital-bill.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Ward Charges - General Ward}
+  - {line: L02, bill: B1, description: Specialist Visit Charges}

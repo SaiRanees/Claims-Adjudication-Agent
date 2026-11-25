@@ -1,0 +1,59 @@
+# The packet for golden case 30-modern-treatment-over-limit (evals/engine/golden/30-modern-treatment-over-limit.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 30-modern-treatment-over-limit
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 20000000
+      continuous_since: "2023-04-01"
+  paid_this_year_paise: 950000
+  modern_treatment_used_paise: 1000000
+facts:
+  admission: "2025-12-01"
+  discharge: "2025-12-04"
+  segments:
+    - {from: "2025-12-01", to: "2025-12-04", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-12-01", quantity: 3, unit_price_paise: 400000, amount_paise: 1200000}
+    - {id: L02, category: professional-fees, service_date: "2025-12-02", quantity: 1, unit_price_paise: 8000000, amount_paise: 8000000, treatment: {kind: modern-treatment}}
+    - {id: L03, category: operation-theatre, service_date: "2025-12-02", quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000, treatment: {kind: modern-treatment}}
+    - {id: L04, category: pharmacy-consumables, service_date: "2025-12-02", quantity: 1, unit_price_paise: 1000000, amount_paise: 1000000, treatment: {kind: modern-treatment}}
+    - {id: L05, category: pharmacy-consumables, service_date: "2025-12-03", quantity: 1, unit_price_paise: 800000, amount_paise: 800000}
+insured:
+  name: Imran Qadri
+  gender: male
+  age: 39
+  policy_number: SYN-ASG-2025-000130
+  member_id: SYN-M-000530
+hospital:
+  name: Ravikund Multispeciality Hospital
+  address: Plot 7, Station Road
+  city: Ravikund
+  registration: SYN-HR-0030
+clinical:
+  diagnosis: Localised carcinoma of the prostate
+  procedure: Robotic radical prostatectomy
+  treating_doctor: Dr. Sunita Kher
+claim_form:
+  admission_type: planned
+  signed_on: "2025-12-07"
+  claimed_amount_paise: 14000000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-003001, date: "2025-12-04", layout: compact, lines_per_page: 2}
+  - {id: R1, type: payment-receipt, number: SYN-RC-003001, date: "2025-12-04", against: [B1], mode: Card}
+files:
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Charges - Private Room}
+  - {line: L02, bill: B1, description: Robotic Surgery - Surgeon Fees}
+  - {line: L03, bill: B1, description: Robotic Surgery - OT Charges}
+  - {line: L04, bill: B1, description: Robotic Surgery - Consumables}
+  - {line: L05, bill: B1, description: Drugs and Disposables}

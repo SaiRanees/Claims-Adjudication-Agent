@@ -1,0 +1,49 @@
+# The packet for golden case 41-first-30-days-day-31 (evals/engine/golden/41-first-30-days-day-31.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 41-first-30-days-day-31
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-05-01"
+  period_end: "2026-04-30"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2025-05-01"
+facts:
+  admission: "2025-05-31"
+  discharge: "2025-06-01"
+  segments:
+    - {from: "2025-05-31", to: "2025-06-01", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-05-31", quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: professional-fees, service_date: "2025-05-31", quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+insured:
+  name: Kavya Raghunath
+  gender: female
+  age: 68
+  policy_number: SYN-ASG-2025-000141
+  member_id: SYN-M-000541
+hospital:
+  name: Amberpur General Hospital
+  address: 14 Lakeview Road, Ward 3
+  city: Amberpur
+  registration: SYN-HR-0041
+clinical:
+  diagnosis: Typhoid fever
+  treating_doctor: Dr. Rohit Bhalla
+claim_form:
+  admission_type: planned
+  signed_on: "2025-06-04"
+  claimed_amount_paise: 3400000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-004101, date: "2025-06-01", layout: columnar, lines_per_page: 3}
+  - {id: R1, type: payment-receipt, number: SYN-RC-004101, date: "2025-06-01", against: [B1], mode: UPI}
+files:
+  - {name: hospital-bill.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L02, bill: B1, description: Consultant Visit Charges}

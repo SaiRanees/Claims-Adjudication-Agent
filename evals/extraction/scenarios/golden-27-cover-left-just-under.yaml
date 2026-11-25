@@ -1,0 +1,56 @@
+# The packet for golden case 27-cover-left-just-under (evals/engine/golden/27-cover-left-just-under.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 27-cover-left-just-under
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 20000000
+      continuous_since: "2023-04-01"
+  cumulative_bonus_paise: 2000000
+  paid_this_year_paise: 17000000
+facts:
+  admission: "2026-03-23"
+  discharge: "2026-03-25"
+  segments:
+    - {from: "2026-03-23", to: "2026-03-25", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-03-23", quantity: 2, unit_price_paise: 300000, amount_paise: 600000}
+    - {id: L02, category: professional-fees, service_date: "2026-03-24", quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+    - {id: L03, category: pharmacy-consumables, service_date: "2026-03-24", quantity: 1, unit_price_paise: 1399999, amount_paise: 1399999}
+insured:
+  name: Aarti Deshmane
+  gender: female
+  age: 66
+  policy_number: SYN-ASG-2025-000127
+  member_id: SYN-M-000527
+hospital:
+  name: Tarangpur City Hospital
+  address: 22 Canal Street
+  city: Tarangpur
+  registration: SYN-HR-0027
+clinical:
+  diagnosis: Viral fever with thrombocytopenia
+  treating_doctor: Dr. Kavin Raman
+claim_form:
+  admission_type: planned
+  signed_on: "2026-03-28"
+  claimed_amount_paise: 4999999
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-002701, date: "2026-03-25", layout: compact, lines_per_page: 12}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-002701, date: "2026-03-25", lines_per_page: 10}
+  - {id: R1, type: payment-receipt, number: SYN-RC-002701, date: "2026-03-25", against: [B1, P1], mode: Cash}
+files:
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: pharmacy-bill.pdf, documents: [P1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Ward Charges - General Ward}
+  - {line: L02, bill: B1, description: Surgeon Fees}
+  - {line: L03, bill: P1, description: Tab. Paracetamol 650 mg}

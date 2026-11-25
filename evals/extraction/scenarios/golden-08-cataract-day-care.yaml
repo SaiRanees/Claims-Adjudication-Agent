@@ -1,0 +1,58 @@
+# The packet for golden case 08-cataract-day-care (evals/engine/golden/08-cataract-day-care.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 08-cataract-day-care
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 10000000
+      continuous_since: "2022-04-01"
+facts:
+  admission: "2025-08-12"
+  discharge: "2025-08-12"
+  segments:
+    - {from: "2025-08-12", to: "2025-08-12", kind: room}
+  differential_billing: "yes"
+  condition:
+    listed_group: listed-24-months
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-08-12", quantity: 1, unit_price_paise: 150000, amount_paise: 150000, treatment: {kind: cataract, eye: right}}
+    - {id: L02, category: professional-fees, service_date: "2025-08-12", quantity: 1, unit_price_paise: 1800000, amount_paise: 1800000, treatment: {kind: cataract, eye: right}}
+    - {id: L03, category: implants-devices, service_date: "2025-08-12", quantity: 1, unit_price_paise: 1200000, amount_paise: 1200000, treatment: {kind: cataract, eye: right}}
+    - {id: L04, category: operation-theatre, service_date: "2025-08-12", quantity: 1, unit_price_paise: 600000, amount_paise: 600000, treatment: {kind: cataract, eye: right}}
+    - {id: L05, category: pharmacy-consumables, service_date: "2025-08-12", quantity: 1, unit_price_paise: 200000, amount_paise: 200000, treatment: {kind: cataract, eye: right}}
+insured:
+  name: Deepak Choudhury
+  gender: male
+  age: 29
+  policy_number: SYN-ASG-2025-000108
+  member_id: SYN-M-000508
+hospital:
+  name: Drishtipur Eye Hospital
+  address: 9 Market Road
+  city: Drishtipur
+  registration: SYN-HR-0008
+clinical:
+  diagnosis: Senile cataract
+  procedure: Phacoemulsification with foldable IOL
+  treating_doctor: Dr. Farhan Siddiqui
+claim_form:
+  admission_type: planned
+  signed_on: "2025-08-15"
+  claimed_amount_paise: 3950000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-000801, date: "2025-08-12", layout: columnar, lines_per_page: 4}
+  - {id: R1, type: payment-receipt, number: SYN-RC-000801, date: "2025-08-12", against: [B1], mode: NEFT}
+files:
+  - {name: hospital-bill.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Day Care Bed Charges - Right Eye}
+  - {line: L02, bill: B1, description: Cataract Surgery - Surgeon Fees - Right Eye}
+  - {line: L03, bill: B1, description: Foldable IOL - Right Eye}
+  - {line: L04, bill: B1, description: OT Charges - Cataract - Right Eye}
+  - {line: L05, bill: B1, description: Eye Drops and Consumables - Right Eye}
