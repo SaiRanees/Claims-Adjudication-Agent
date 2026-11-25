@@ -1,0 +1,55 @@
+# The packet for golden case 23-line-outside-stay (evals/engine/golden/23-line-outside-stay.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 23-line-outside-stay
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2023-04-01"
+facts:
+  admission: "2025-10-20"
+  discharge: "2025-10-23"
+  segments:
+    - {from: "2025-10-20", to: "2025-10-23", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-10-20", quantity: 3, unit_price_paise: 400000, amount_paise: 1200000}
+    - {id: L02, category: professional-fees, service_date: "2025-10-21", quantity: 1, unit_price_paise: 2800000, amount_paise: 2800000}
+    - {id: L03, category: diagnostics, service_date: "2025-10-23", quantity: 1, unit_price_paise: 500000, amount_paise: 500000}
+    - {id: L04, category: pharmacy-consumables, service_date: "2025-10-24", quantity: 1, unit_price_paise: 250000, amount_paise: 250000}
+insured:
+  name: Lalitha Venugopal
+  gender: female
+  age: 38
+  policy_number: SYN-ASG-2025-000123
+  member_id: SYN-M-000523
+hospital:
+  name: Tarangpur City Hospital
+  address: 22 Canal Street
+  city: Tarangpur
+  registration: SYN-HR-0023
+clinical:
+  diagnosis: Viral fever with thrombocytopenia
+  treating_doctor: Dr. Rohit Bhalla
+claim_form:
+  admission_type: planned
+  signed_on: "2025-10-26"
+  claimed_amount_paise: 4750000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-002301, date: "2025-10-23", layout: columnar, lines_per_page: 12}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-002301, date: "2025-10-23", lines_per_page: 10}
+  - {id: R1, type: payment-receipt, number: SYN-RC-002301, date: "2025-10-23", against: [B1, P1], mode: Cash}
+files:
+  - {name: hospital-bill.pdf, documents: [B1, R1]}
+  - {name: pharmacy-bill.pdf, documents: [P1]}
+lines:
+  - {line: L01, bill: B1, description: Ward Charges - General Ward}
+  - {line: L02, bill: B1, description: Physician Consultation}
+  - {line: L03, bill: B1, description: X-Ray Chest PA View}
+  - {line: L04, bill: P1, description: IV Fluid Ringer Lactate 500 ml}

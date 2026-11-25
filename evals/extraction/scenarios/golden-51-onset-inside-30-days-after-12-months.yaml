@@ -1,0 +1,52 @@
+# The packet for golden case 51-onset-inside-30-days-after-12-months (evals/engine/golden/51-onset-inside-30-days-after-12-months.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 51-onset-inside-30-days-after-12-months
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2026-05-01"
+  period_end: "2027-04-30"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2025-05-01"
+facts:
+  admission: "2026-05-01"
+  discharge: "2026-05-02"
+  segments:
+    - {from: "2026-05-01", to: "2026-05-02", kind: room}
+  differential_billing: "yes"
+  condition:
+    onset: "2025-05-20"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-05-01", quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: professional-fees, service_date: "2026-05-01", quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+insured:
+  name: Aarti Deshmane
+  gender: female
+  age: 42
+  policy_number: SYN-ASG-2026-000151
+  member_id: SYN-M-000551
+hospital:
+  name: Tarangpur City Hospital
+  address: 22 Canal Street
+  city: Tarangpur
+  registration: SYN-HR-0051
+clinical:
+  diagnosis: Community-acquired pneumonia
+  treating_doctor: Dr. Kavin Raman
+claim_form:
+  admission_type: planned
+  signed_on: "2026-05-05"
+  claimed_amount_paise: 3400000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-005101, date: "2026-05-02", layout: compact, lines_per_page: 12}
+  - {id: R1, type: payment-receipt, number: SYN-RC-005101, date: "2026-05-02", against: [B1], mode: Cash}
+files:
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Ward Charges - General Ward}
+  - {line: L02, bill: B1, description: Consultant Visit Charges}

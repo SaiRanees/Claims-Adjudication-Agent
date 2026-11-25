@@ -67,11 +67,15 @@ type TruthLine struct {
 	Line string `json:"line"`
 	Page int    `json:"page"`
 	// ServiceDate is nil for an undated line, whose date cell is blank.
-	ServiceDate *PrintedDate   `json:"service_date"`
-	Description string         `json:"description"`
-	Quantity    PrintedInteger `json:"quantity"`
-	UnitPrice   PrintedAmount  `json:"unit_price"`
-	Amount      PrintedAmount  `json:"amount"`
+	ServiceDate *PrintedDate `json:"service_date"`
+	Description string       `json:"description"`
+	// Annexure is the Annexure A item the line matches, such as
+	// "list-ii/27", and MatchedBy how, when not by the printed name.
+	Annexure  string         `json:"annexure,omitempty"`
+	MatchedBy MatchedBy      `json:"matched_by,omitempty"`
+	Quantity  PrintedInteger `json:"quantity"`
+	UnitPrice PrintedAmount  `json:"unit_price"`
+	Amount    PrintedAmount  `json:"amount"`
 }
 
 // TruthTotals are a bill's totals, printed on its last page. Gross is the

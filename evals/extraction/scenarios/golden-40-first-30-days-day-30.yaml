@@ -1,0 +1,49 @@
+# The packet for golden case 40-first-30-days-day-30 (evals/engine/golden/40-first-30-days-day-30.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 40-first-30-days-day-30
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-05-01"
+  period_end: "2026-04-30"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2025-05-01"
+facts:
+  admission: "2025-05-30"
+  discharge: "2025-05-31"
+  segments:
+    - {from: "2025-05-30", to: "2025-05-31", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-05-30", quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: professional-fees, service_date: "2025-05-30", quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+insured:
+  name: Sanjay Kulkarni
+  gender: male
+  age: 61
+  policy_number: SYN-ASG-2025-000140
+  member_id: SYN-M-000540
+hospital:
+  name: Sundervan Care Centre
+  address: 3 Temple Lane, Sector 4
+  city: Sundervan
+  registration: SYN-HR-0040
+clinical:
+  diagnosis: Typhoid fever
+  treating_doctor: Dr. Leela Menon
+claim_form:
+  admission_type: emergency
+  signed_on: "2025-06-03"
+  claimed_amount_paise: 3400000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-004001, date: "2025-05-31", layout: ledger, lines_per_page: 4}
+  - {id: R1, type: payment-receipt, number: SYN-RC-004001, date: "2025-05-31", against: [B1], mode: NEFT}
+files:
+  - {name: claim-documents.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Deluxe Single}
+  - {line: L02, bill: B1, description: Specialist Visit Charges}

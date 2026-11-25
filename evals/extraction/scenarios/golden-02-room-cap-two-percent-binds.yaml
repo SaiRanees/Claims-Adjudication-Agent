@@ -1,0 +1,51 @@
+# The packet for golden case 02-room-cap-two-percent-binds (evals/engine/golden/02-room-cap-two-percent-binds.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 02-room-cap-two-percent-binds
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 10000000
+      continuous_since: "2023-04-01"
+facts:
+  admission: "2025-09-01"
+  discharge: "2025-09-04"
+  segments:
+    - {from: "2025-09-01", to: "2025-09-04", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-09-01", quantity: 3, unit_price_paise: 300000, amount_paise: 900000}
+    - {id: L02, category: professional-fees, service_date: "2025-09-02", quantity: 1, unit_price_paise: 1000000, amount_paise: 1000000}
+    - {id: L03, category: pharmacy-consumables, service_date: "2025-09-02", quantity: 1, unit_price_paise: 500000, amount_paise: 500000}
+insured:
+  name: Arjun Mehrotra
+  gender: male
+  age: 35
+  policy_number: SYN-ASG-2025-000102
+  member_id: SYN-M-000502
+hospital:
+  name: Ravikund Multispeciality Hospital
+  address: Plot 7, Station Road
+  city: Ravikund
+  registration: SYN-HR-0002
+clinical:
+  diagnosis: Community-acquired pneumonia
+  treating_doctor: Dr. Farhan Siddiqui
+claim_form:
+  admission_type: emergency
+  signed_on: "2025-09-07"
+  claimed_amount_paise: 2400000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-000201, date: "2025-09-04", layout: columnar, lines_per_page: 2}
+  - {id: R1, type: payment-receipt, number: SYN-RC-000201, date: "2025-09-04", against: [B1], mode: Card}
+files:
+  - {name: hospital-bill.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Charges - Private Room}
+  - {line: L02, bill: B1, description: Surgeon Fees}
+  - {line: L03, bill: B1, description: Medicines and Consumables}

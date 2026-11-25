@@ -1,0 +1,55 @@
+# The packet for golden case 09-bill-discount (evals/engine/golden/09-bill-discount.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 09-bill-discount
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2023-04-01"
+facts:
+  admission: "2026-02-02"
+  discharge: "2026-02-05"
+  segments:
+    - {from: "2026-02-02", to: "2026-02-05", kind: room}
+  differential_billing: "yes"
+  bill_discount_paise: 100000
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-02-02", quantity: 3, unit_price_paise: 300000, amount_paise: 900000}
+    - {id: L02, category: professional-fees, service_date: "2026-02-03", quantity: 1, unit_price_paise: 1500000, amount_paise: 1500000}
+    - {id: L03, category: pharmacy-consumables, service_date: "2026-02-03", quantity: 1, unit_price_paise: 600000, amount_paise: 600000}
+insured:
+  name: Farida Sheikh
+  gender: female
+  age: 36
+  policy_number: SYN-ASG-2025-000109
+  member_id: SYN-M-000509
+hospital:
+  name: Amberpur General Hospital
+  address: 14 Lakeview Road, Ward 3
+  city: Amberpur
+  registration: SYN-HR-0009
+clinical:
+  diagnosis: Acute gastroenteritis with dehydration
+  treating_doctor: Dr. Kavin Raman
+claim_form:
+  admission_type: planned
+  signed_on: "2026-02-08"
+  claimed_amount_paise: 2900000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-000901, date: "2026-02-05", layout: compact, lines_per_page: 3, discount_paise: 100000}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-000901, date: "2026-02-05", lines_per_page: 10}
+  - {id: R1, type: payment-receipt, number: SYN-RC-000901, date: "2026-02-05", against: [B1, P1], mode: UPI}
+files:
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: pharmacy-bill.pdf, documents: [P1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L02, bill: B1, description: Anaesthetist Fees}
+  - {line: L03, bill: P1, description: Inj. Pantoprazole 40 mg}

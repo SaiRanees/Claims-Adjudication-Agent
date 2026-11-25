@@ -1,0 +1,51 @@
+# The packet for golden case 31-every-line-non-payable (evals/engine/golden/31-every-line-non-payable.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 31-every-line-non-payable
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2023-04-01"
+facts:
+  admission: "2025-11-24"
+  discharge: "2025-11-25"
+  segments:
+    - {from: "2025-11-24", to: "2025-11-25", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-11-24", quantity: 1, unit_price_paise: 300000, amount_paise: 300000, item_list: list-iv}
+    - {id: L02, category: diagnostics, service_date: "2025-11-24", quantity: 1, unit_price_paise: 1200000, amount_paise: 1200000, item_list: list-iv}
+    - {id: L03, category: professional-fees, service_date: "2025-11-24", quantity: 1, unit_price_paise: 250000, amount_paise: 250000, item_list: list-iv}
+insured:
+  name: Nisha Varkey
+  gender: female
+  age: 46
+  policy_number: SYN-ASG-2025-000131
+  member_id: SYN-M-000531
+hospital:
+  name: Tarangpur City Hospital
+  address: 22 Canal Street
+  city: Tarangpur
+  registration: SYN-HR-0031
+clinical:
+  diagnosis: Chest pain under evaluation
+  treating_doctor: Dr. Ananya Rao
+claim_form:
+  admission_type: planned
+  signed_on: "2025-11-28"
+  claimed_amount_paise: 1750000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-003101, date: "2025-11-25", layout: ledger, lines_per_page: 12}
+  - {id: R1, type: payment-receipt, number: SYN-RC-003101, date: "2025-11-25", against: [B1], mode: Cash}
+files:
+  - {name: claim-documents.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Observation Room Charges, annexure: list-iv/2, matched_by: stay}
+  - {line: L02, bill: B1, description: Cardiac Evaluation Panel, annexure: list-iv/2, matched_by: stay}
+  - {line: L03, bill: B1, description: Physician Consultation, annexure: list-iv/2, matched_by: stay}

@@ -1,0 +1,52 @@
+# The packet for golden case 33-room-day-billed-twice (evals/engine/golden/33-room-day-billed-twice.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 33-room-day-billed-twice
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2023-04-01"
+facts:
+  admission: "2025-10-27"
+  discharge: "2025-10-29"
+  segments:
+    - {from: "2025-10-27", to: "2025-10-29", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-10-27", quantity: 2, unit_price_paise: 300000, amount_paise: 600000}
+    - {id: L02, category: room-rent, service_date: "2025-10-28", quantity: 1, unit_price_paise: 300000, amount_paise: 300000}
+    - {id: L03, category: professional-fees, service_date: "2025-10-28", quantity: 1, unit_price_paise: 2000000, amount_paise: 2000000}
+insured:
+  name: Farida Sheikh
+  gender: female
+  age: 60
+  policy_number: SYN-ASG-2025-000133
+  member_id: SYN-M-000533
+hospital:
+  name: Amberpur General Hospital
+  address: 14 Lakeview Road, Ward 3
+  city: Amberpur
+  registration: SYN-HR-0033
+clinical:
+  diagnosis: Acute gastroenteritis with dehydration
+  treating_doctor: Dr. Kavin Raman
+claim_form:
+  admission_type: planned
+  signed_on: "2025-11-01"
+  claimed_amount_paise: 2900000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-003301, date: "2025-10-29", layout: compact, lines_per_page: 3}
+  - {id: R1, type: payment-receipt, number: SYN-RC-003301, date: "2025-10-29", against: [B1], mode: UPI}
+files:
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L02, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L03, bill: B1, description: Physician Consultation}

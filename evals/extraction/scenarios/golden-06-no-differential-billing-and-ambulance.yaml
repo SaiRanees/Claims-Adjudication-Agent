@@ -1,0 +1,54 @@
+# The packet for golden case 06-no-differential-billing-and-ambulance (evals/engine/golden/06-no-differential-billing-and-ambulance.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 06-no-differential-billing-and-ambulance
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2023-04-01"
+facts:
+  admission: "2025-12-01"
+  discharge: "2025-12-03"
+  segments:
+    - {from: "2025-12-01", to: "2025-12-03", kind: room}
+  differential_billing: "no"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-12-01", quantity: 2, unit_price_paise: 700000, amount_paise: 1400000}
+    - {id: L02, category: professional-fees, service_date: "2025-12-02", quantity: 1, unit_price_paise: 2500000, amount_paise: 2500000}
+    - {id: L03, category: road-ambulance, service_date: "2025-12-01", quantity: 1, unit_price_paise: 300000, amount_paise: 300000}
+    - {id: L04, category: pharmacy-consumables, service_date: "2025-12-02", quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+insured:
+  name: Imran Qadri
+  gender: male
+  age: 63
+  policy_number: SYN-ASG-2025-000106
+  member_id: SYN-M-000506
+hospital:
+  name: Ravikund Multispeciality Hospital
+  address: Plot 7, Station Road
+  city: Ravikund
+  registration: SYN-HR-0006
+clinical:
+  diagnosis: Acute inferior wall myocardial infarction
+  treating_doctor: Dr. Sunita Kher
+claim_form:
+  admission_type: emergency
+  signed_on: "2025-12-06"
+  claimed_amount_paise: 4600000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-000601, date: "2025-12-03", layout: compact, lines_per_page: 2}
+  - {id: R1, type: payment-receipt, number: SYN-RC-000601, date: "2025-12-03", against: [B1], mode: Card}
+files:
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Charges - Private Room}
+  - {line: L02, bill: B1, description: Consultant Visit Charges}
+  - {line: L03, bill: B1, description: Ambulance Transfer Charges}
+  - {line: L04, bill: B1, description: Drugs and Disposables}

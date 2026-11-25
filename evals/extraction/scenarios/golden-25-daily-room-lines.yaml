@@ -1,0 +1,55 @@
+# The packet for golden case 25-daily-room-lines (evals/engine/golden/25-daily-room-lines.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 25-daily-room-lines
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2023-04-01"
+facts:
+  admission: "2026-02-16"
+  discharge: "2026-02-20"
+  segments:
+    - {from: "2026-02-16", to: "2026-02-20", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-02-16", quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: room-rent, service_date: "2026-02-17", quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L03, category: room-rent, service_date: "2026-02-18", quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L04, category: room-rent, service_date: "2026-02-19", quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L05, category: professional-fees, service_date: "2026-02-17", quantity: 1, unit_price_paise: 5000000, amount_paise: 5000000}
+insured:
+  name: Meera Pillai
+  gender: female
+  age: 52
+  policy_number: SYN-ASG-2025-000125
+  member_id: SYN-M-000525
+hospital:
+  name: Amberpur General Hospital
+  address: 14 Lakeview Road, Ward 3
+  city: Amberpur
+  registration: SYN-HR-0025
+clinical:
+  diagnosis: Acute gastroenteritis with dehydration
+  treating_doctor: Dr. Ananya Rao
+claim_form:
+  admission_type: planned
+  signed_on: "2026-02-23"
+  claimed_amount_paise: 6600000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-002501, date: "2026-02-20", layout: ledger, lines_per_page: 3}
+  - {id: R1, type: payment-receipt, number: SYN-RC-002501, date: "2026-02-20", against: [B1], mode: UPI}
+files:
+  - {name: claim-documents.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L02, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L03, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L04, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L05, bill: B1, description: Specialist Visit Charges}

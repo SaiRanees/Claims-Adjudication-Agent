@@ -1,0 +1,53 @@
+# The packet for golden case 26-cover-left-just-exceeded (evals/engine/golden/26-cover-left-just-exceeded.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 26-cover-left-just-exceeded
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 20000000
+      continuous_since: "2023-04-01"
+  cumulative_bonus_paise: 2000000
+  paid_this_year_paise: 17000000
+facts:
+  admission: "2026-03-16"
+  discharge: "2026-03-18"
+  segments:
+    - {from: "2026-03-16", to: "2026-03-18", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-03-16", quantity: 2, unit_price_paise: 300000, amount_paise: 600000}
+    - {id: L02, category: professional-fees, service_date: "2026-03-17", quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+    - {id: L03, category: pharmacy-consumables, service_date: "2026-03-17", quantity: 1, unit_price_paise: 1400001, amount_paise: 1400001}
+insured:
+  name: Arjun Mehrotra
+  gender: male
+  age: 59
+  policy_number: SYN-ASG-2025-000126
+  member_id: SYN-M-000526
+hospital:
+  name: Ravikund Multispeciality Hospital
+  address: Plot 7, Station Road
+  city: Ravikund
+  registration: SYN-HR-0026
+clinical:
+  diagnosis: Community-acquired pneumonia
+  treating_doctor: Dr. Farhan Siddiqui
+claim_form:
+  admission_type: emergency
+  signed_on: "2026-03-21"
+  claimed_amount_paise: 5000001
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-002601, date: "2026-03-18", layout: columnar, lines_per_page: 2}
+  - {id: R1, type: payment-receipt, number: SYN-RC-002601, date: "2026-03-18", against: [B1], mode: Card}
+files:
+  - {name: hospital-bill.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Charges - Private Room}
+  - {line: L02, bill: B1, description: Consultant Visit Charges}
+  - {line: L03, bill: B1, description: Medicines and Consumables}

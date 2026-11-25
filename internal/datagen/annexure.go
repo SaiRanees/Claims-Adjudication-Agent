@@ -43,12 +43,14 @@ var annexureItems = []AnnexureItem{
 	// page 22.
 	{"list-iii", 3, "EYE PAD", 22},
 	{"list-iii", 8, "GAUZE", 22},
+	{"list-iii", 11, "MICROSCOPE COVER", 22},
 	{"list-iii", 15, "EYE DRAPE", 22},
 	{"list-iii", 18, "COTTON", 22},
 	{"list-iii", 21, "APRON", 22},
 	// List IV, "Items that are to be subsumed into costs of treatment",
 	// headed on page 22 with every item on page 23.
 	{"list-iv", 1, "ADMISSION/REGISTRATION CHARGES", 23},
+	{"list-iv", 2, "HOSPITALISATION FOR EVALUATION/ DIAGNOSTIC PURPOSE", 23},
 	{"list-iv", 3, "URINE CONTAINER", 23},
 	{"list-iv", 7, "INFUSION PUMP- COST", 23},
 	{"list-iv", 15, "ALCOHOL SWABES", 23},
@@ -57,6 +59,10 @@ var annexureItems = []AnnexureItem{
 	// and 24.
 	{"list-v", 5, "Barber Charges", 23},
 	{"list-v", 17, "Medicine Box", 23},
+	// The wording follows "AHD" with its expansion in brackets: "(Ancillary
+	// And Hospital Disinfection (Eg.,Biomedical Waste Disposal/Management,
+	// Sanitation, Sanitization/Fumigation Charges Etc.)".
+	{"list-v", 23, "AHD", 23},
 	{"list-v", 25, "Examination Gloves", 23},
 	{"list-v", 31, "Stockings", 24},
 }

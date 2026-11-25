@@ -197,10 +197,28 @@ type LineFormat struct {
 	Line        string `yaml:"line"`
 	Bill        string `yaml:"bill"`
 	Description string `yaml:"description"`
-	// Annexure names the Annexure A item a listed line copies, such as
-	// "list-ii/27". Its description is the item's name in the wording.
+	// Annexure names the Annexure A item a listed line matches, such as
+	// "list-ii/27". Its description is the item's name in the wording,
+	// unless MatchedBy says the match came from something else.
 	Annexure string `yaml:"annexure,omitempty"`
+	// MatchedBy is empty when the line prints the item's name. Otherwise
+	// the line prints its own description and matched the item through the
+	// item's explanation in the wording ("explanation", as case 21's
+	// biomedical waste matches AHD), or through the stay's purpose ("stay",
+	// as case 31's evaluation stay matches List IV item 2).
+	MatchedBy MatchedBy `yaml:"matched_by,omitempty"`
 }
+
+// MatchedBy is how a line printed under its own description matched an
+// Annexure A item.
+type MatchedBy string
+
+// The ways a line can match an item other than by its name.
+const (
+	MatchedByName        MatchedBy = ""
+	MatchedByExplanation MatchedBy = "explanation"
+	MatchedByStay        MatchedBy = "stay"
+)
 
 // ParseSpec decodes one spec file strictly, as the rule pack is decoded:
 // unknown fields and a second document are errors. Then it validates it.
@@ -482,8 +500,11 @@ func (s Spec) validateLines(facts rules.Facts, docs map[string]Document) error {
 
 func checkAnnexure(l rules.Line, lf LineFormat) error {
 	if lf.Annexure == "" {
-		if l.ItemList != "" {
+		switch {
+		case l.ItemList != "":
 			return fmt.Errorf("line %s matches %s, so it needs an annexure item", l.ID, l.ItemList)
+		case lf.MatchedBy != MatchedByName:
+			return fmt.Errorf("line %s: matched_by needs an annexure item", l.ID)
 		}
 		return nil
 	}
@@ -493,8 +514,18 @@ func checkAnnexure(l rules.Line, lf LineFormat) error {
 		return fmt.Errorf("line %s: annexure item %q isn't in the generator's table", l.ID, lf.Annexure)
 	case item.List != l.ItemList:
 		return fmt.Errorf("line %s: annexure item %s is on %s, but the facts say %q", l.ID, lf.Annexure, item.List, l.ItemList)
-	case lf.Description != item.Name:
-		return fmt.Errorf("line %s: description %q isn't the wording's %q", l.ID, lf.Description, item.Name)
+	}
+	switch lf.MatchedBy {
+	case MatchedByName:
+		if lf.Description != item.Name {
+			return fmt.Errorf("line %s: description %q isn't the wording's %q", l.ID, lf.Description, item.Name)
+		}
+	case MatchedByExplanation, MatchedByStay:
+		if lf.Description == item.Name {
+			return fmt.Errorf("line %s prints the item's name, so it has no matched_by", l.ID)
+		}
+	default:
+		return fmt.Errorf("line %s: matched_by %q isn't explanation or stay", l.ID, lf.MatchedBy)
 	}
 	return nil
 }

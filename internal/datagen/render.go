@@ -277,6 +277,8 @@ func (r *renderer) row(pg *pager, st Style, lf LineFormat, serial int, y float64
 		Line:        l.ID,
 		Page:        pg.page,
 		Description: lf.Description,
+		Annexure:    lf.Annexure,
+		MatchedBy:   lf.MatchedBy,
 		Quantity:    PrintedInteger{Printed: itoa(l.Quantity), Value: l.Quantity},
 		UnitPrice:   PrintedAmount{Printed: st.Money(int64(l.UnitPrice)), Paise: int64(l.UnitPrice)},
 		Amount:      PrintedAmount{Printed: st.Money(int64(l.Amount)), Paise: int64(l.Amount)},

@@ -72,6 +72,11 @@ func TestParseSpecRejects(t *testing.T) {
 		{"item on the wrong list", "annexure: list-ii/27", "annexure: list-i/11", "is on list-i"},
 		{"description not the wording's", "description: ADMISSION KIT", "description: Admission Kit", "isn't the wording's"},
 		{"unknown item", "annexure: list-ii/27", "annexure: list-ii/99", "isn't in the generator's table"},
+		{"matched by explanation", "description: ADMISSION KIT, annexure: list-ii/27}",
+			"description: ADMISSION KIT, annexure: list-ii/27, matched_by: explanation}", "has no matched_by"},
+		{"matched by something unknown", "description: ADMISSION KIT, annexure: list-ii/27}",
+			"description: Welcome Pack, annexure: list-ii/27, matched_by: guess}", "matched_by \"guess\""},
+		{"matched_by without an item", "description: Nursing Charges}", "description: Nursing Charges, matched_by: stay}", "needs an annexure item"},
 		{"zero lines per page", "lines_per_page: 3", "lines_per_page: 0", "lines_per_page 0"},
 		{"bad file name", "name: pharmacy-bill.pdf", "name: Pharmacy Bill.pdf", "name \"Pharmacy Bill.pdf\""},
 	}

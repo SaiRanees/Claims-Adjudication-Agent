@@ -2,10 +2,15 @@
 // the scenario specs (week 3, sessions 3 and 4):
 //
 //	go run ./cmd/datagen render [-specs dir] [-out dir] [-only id] [-check]
+//	go run ./cmd/datagen golden-specs [-out dir]
 //
 // render writes each packet's PDFs and truth.json into <out>/<scenario>/.
 // With -check it reads every page back with PDFium and runs the
 // self-check. Rendered packets aren't committed; the specs are.
+//
+// golden-specs writes a spec for each golden case in evals/engine that has
+// none, with the case's policy, cover and facts unchanged. It never
+// overwrites a spec: specs are reviewed and committed like golden cases.
 package main
 
 import (
@@ -30,6 +35,8 @@ const (
 const usage = `Usage:
   datagen render [-specs dir] [-out dir] [-only id] [-check]
       Render each scenario's PDFs and truth.json into <out>/<scenario>/
+  datagen golden-specs [-out dir]
+      Write a spec for each golden case that has none; never overwrites
 `
 
 // The default places, relative to the repository's root.
@@ -51,6 +58,8 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	switch args[0] {
 	case "render":
 		err = render(ctx, args[1:], stdout, stderr)
+	case "golden-specs":
+		err = goldenSpecs(args[1:], stdout, stderr)
 	case "help", "-h", "--help":
 		fmt.Fprint(stdout, usage)
 		return exitOK

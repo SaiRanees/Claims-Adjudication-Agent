@@ -1,0 +1,53 @@
+# The packet for golden case 20-annexure-list-iv (evals/engine/golden/20-annexure-list-iv.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 20-annexure-list-iv
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2023-04-01"
+facts:
+  admission: "2025-08-25"
+  discharge: "2025-08-28"
+  segments:
+    - {from: "2025-08-25", to: "2025-08-28", kind: room}
+  differential_billing: "yes"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-08-25", quantity: 3, unit_price_paise: 250000, amount_paise: 750000}
+    - {id: L02, category: other-hospital-charges, service_date: "2025-08-25", quantity: 1, unit_price_paise: 100000, amount_paise: 100000, item_list: list-iv}
+    - {id: L03, category: professional-fees, service_date: "2025-08-26", quantity: 1, unit_price_paise: 1250000, amount_paise: 1250000}
+    - {id: L04, category: diagnostics, service_date: "2025-08-25", quantity: 1, unit_price_paise: 700000, amount_paise: 700000}
+insured:
+  name: Deepak Choudhury
+  gender: male
+  age: 65
+  policy_number: SYN-ASG-2025-000120
+  member_id: SYN-M-000520
+hospital:
+  name: Sundervan Care Centre
+  address: 3 Temple Lane, Sector 4
+  city: Sundervan
+  registration: SYN-HR-0020
+clinical:
+  diagnosis: Acute pyelonephritis
+  treating_doctor: Dr. Farhan Siddiqui
+claim_form:
+  admission_type: emergency
+  signed_on: "2025-08-31"
+  claimed_amount_paise: 2800000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-002001, date: "2025-08-28", layout: columnar, lines_per_page: 4}
+  - {id: R1, type: payment-receipt, number: SYN-RC-002001, date: "2025-08-28", against: [B1], mode: NEFT}
+files:
+  - {name: hospital-bill.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Deluxe Single}
+  - {line: L02, bill: B1, description: ADMISSION/REGISTRATION CHARGES, annexure: list-iv/1}
+  - {line: L03, bill: B1, description: Specialist Visit Charges}
+  - {line: L04, bill: B1, description: Laboratory Investigations}

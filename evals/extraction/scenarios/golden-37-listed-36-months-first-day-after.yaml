@@ -1,0 +1,51 @@
+# The packet for golden case 37-listed-36-months-first-day-after (evals/engine/golden/37-listed-36-months-first-day-after.yaml).
+# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and
+# committed. policy, cover and facts are the case's, unchanged, which a test
+# checks; everything else is how the packet presents them, and is invented.
+
+golden_case: 37-listed-36-months-first-day-after
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2022-09-10"
+facts:
+  admission: "2025-09-10"
+  discharge: "2025-09-11"
+  segments:
+    - {from: "2025-09-10", to: "2025-09-11", kind: room}
+  differential_billing: "yes"
+  condition:
+    listed_group: listed-36-months
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-09-10", quantity: 1, unit_price_paise: 400000, amount_paise: 400000}
+    - {id: L02, category: professional-fees, service_date: "2025-09-10", quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+insured:
+  name: Meera Pillai
+  gender: female
+  age: 40
+  policy_number: SYN-ASG-2025-000137
+  member_id: SYN-M-000537
+hospital:
+  name: Amberpur General Hospital
+  address: 14 Lakeview Road, Ward 3
+  city: Amberpur
+  registration: SYN-HR-0037
+clinical:
+  diagnosis: Age-related osteoarthritis of the knee
+  treating_doctor: Dr. Ananya Rao
+claim_form:
+  admission_type: planned
+  signed_on: "2025-09-14"
+  claimed_amount_paise: 3400000
+documents:
+  - {id: B1, type: hospital-bill, number: SYN-IP-003701, date: "2025-09-11", layout: ledger, lines_per_page: 3}
+  - {id: R1, type: payment-receipt, number: SYN-RC-003701, date: "2025-09-11", against: [B1], mode: UPI}
+files:
+  - {name: claim-documents.pdf, documents: [B1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L02, bill: B1, description: Surgeon Fees}
