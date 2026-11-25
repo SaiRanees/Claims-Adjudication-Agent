@@ -7,3 +7,4 @@ rulepacks/**/*.yaml text eol=lf
 *.png binary
 *.jpg binary
 *.xlsx binary
+*.ttf binary
