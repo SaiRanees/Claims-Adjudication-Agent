@@ -257,7 +257,7 @@ func chain(t *testing.T, pool *pgxpool.Pool, claimID uuid.UUID) []string {
 
 func setStatus(t *testing.T, pool *pgxpool.Pool, claimID uuid.UUID, status claims.Status) {
 	t.Helper()
-	// Submit arrives in session 2; until then the test moves the claim itself, as claims_app.
+	// Moves the claim straight to a status, as claims_app, without the files submit needs.
 	if _, err := pool.Exec(context.Background(),
 		`UPDATE claims SET status = $2, submitted_at = coalesce(submitted_at, now()) WHERE id = $1`,
 		claimID, string(status)); err != nil {

@@ -71,7 +71,7 @@ func TestTemporalDeliveryRunsTheClaimWorkflow(t *testing.T) {
 		t.Fatalf("delivering the start a second time: %v", err)
 	}
 
-	// The submitted signal ends the placeholder workflow.
+	// The submitted signal ends the workflow, which has no files to check.
 	submitted := addSignal(t, tx, claim, workflow.SignalSubmitted)
 	if !deliverNext(t, r) || !readRow(t, tx, submitted).published {
 		t.Fatal("the submitted signal wasn't delivered")

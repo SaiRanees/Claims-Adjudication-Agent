@@ -170,9 +170,19 @@ func TestLoadRelayConfig(t *testing.T) {
 
 func TestLoadWorkerConfig(t *testing.T) {
 	full := map[string]string{
-		"TEMPORAL_ADDRESS":   "temporal:7233",
-		"TEMPORAL_NAMESPACE": "claims",
-		"LOG_LEVEL":          "warn",
+		"DATABASE_URL":          "postgres://claims_app@db:5432/claims",
+		"TEMPORAL_ADDRESS":      "temporal:7233",
+		"TEMPORAL_NAMESPACE":    "claims",
+		"S3_ENDPOINT":           "http://seaweedfs:8333",
+		"S3_REGION":             "us-east-1",
+		"S3_BUCKET":             "claim-documents",
+		"AWS_ACCESS_KEY_ID":     "test-key",
+		"AWS_SECRET_ACCESS_KEY": "test-secret",
+		"LOG_LEVEL":             "warn",
+	}
+	s3 := platform.S3Config{
+		Endpoint: "http://seaweedfs:8333", Region: "us-east-1", Bucket: "claim-documents",
+		AccessKeyID: "test-key", SecretAccessKey: "test-secret",
 	}
 	tests := []struct {
 		name     string
@@ -184,24 +194,29 @@ func TestLoadWorkerConfig(t *testing.T) {
 			name: "reads every variable",
 			vars: full,
 			want: platform.WorkerConfig{
-				Temporal:  platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
-				LogLevel:  slog.LevelWarn,
-				Telemetry: platform.TelemetryConfig{ServiceName: "worker"},
+				DatabaseURL: "postgres://claims_app@db:5432/claims",
+				Temporal:    platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
+				S3:          s3,
+				LogLevel:    slog.LevelWarn,
+				Telemetry:   platform.TelemetryConfig{ServiceName: "worker"},
 			},
 		},
 		{
-			name: "needs no database",
+			name: "needs no public S3 endpoint and defaults the log level",
 			vars: unsetVar(full, "LOG_LEVEL"),
 			want: platform.WorkerConfig{
-				Temporal:  platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
-				LogLevel:  slog.LevelInfo,
-				Telemetry: platform.TelemetryConfig{ServiceName: "worker"},
+				DatabaseURL: "postgres://claims_app@db:5432/claims",
+				Temporal:    platform.TemporalConfig{Address: "temporal:7233", Namespace: "claims"},
+				S3:          s3,
+				LogLevel:    slog.LevelInfo,
+				Telemetry:   platform.TelemetryConfig{ServiceName: "worker"},
 			},
 		},
 		{
-			name:     "names every missing variable",
-			vars:     nil,
-			errNames: []string{"TEMPORAL_ADDRESS", "TEMPORAL_NAMESPACE"},
+			name: "names every missing variable",
+			vars: nil,
+			errNames: []string{"DATABASE_URL", "TEMPORAL_ADDRESS", "TEMPORAL_NAMESPACE", "S3_ENDPOINT",
+				"S3_REGION", "S3_BUCKET", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"},
 		},
 		{
 			name:     "rejects an unknown log level",

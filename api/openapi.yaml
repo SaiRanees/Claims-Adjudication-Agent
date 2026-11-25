@@ -215,9 +215,12 @@ paths:
       tags: [claims]
       summary: Lock the documents and start adjudication
       description: |
-        Moves a `draft` claim to `submitted`, or resubmits an `awaiting_documents` claim once
-        the missing documents are uploaded. The workflow hears about it through the outbox.
-        Submitting an already submitted claim returns its current state. Role: submitter.
+        Moves a `draft` claim to `submitted`. It needs at least one `accepted` document and
+        none still `uploaded`, so no check is pending; otherwise it's a 409. Documents still
+        `pending_upload` stay out of the packet. The workflow hears about it through the
+        outbox. Submitting an already submitted claim returns its current state.
+        Rate-limited per caller, sharing the limit with registering uploads. Role: the
+        submitter who created the claim.
       parameters:
         - $ref: "#/components/parameters/ClaimId"
       responses:
@@ -235,6 +238,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
         default:
           $ref: "#/components/responses/Error"
 
@@ -766,7 +771,10 @@ components:
 
     DocumentStatus:
       type: string
-      enum: [pending_upload, uploaded, rejected]
+      description: |
+        `pending_upload` until complete finds the object, `uploaded` until the worker has
+        checked its bytes, then `accepted` or `rejected`. It only moves forward.
+      enum: [pending_upload, uploaded, accepted, rejected]
 
     DocumentContentType:
       type: string
@@ -822,19 +830,32 @@ components:
           minimum: 1
         rejectionReason:
           type: string
+          description: |
+            Complete gives `missing_object`, `size_mismatch` or `checksum_mismatch`. The
+            worker's check gives `checksum_mismatch` (the object changed after complete),
+            `type_mismatch`, `unreadable`, `encrypted` (any password, even an empty one),
+            `too_many_pages` (over 500), `image_too_large` (over 50 megapixels), or
+            `check_failed` when it couldn't finish; upload the file again.
           enum:
             - missing_object
             - size_mismatch
             - checksum_mismatch
+            - type_mismatch
             - unreadable
             - encrypted
             - too_many_pages
+            - image_too_large
+            - check_failed
         createdAt:
           type: string
           format: date-time
         uploadedAt:
           type: string
           format: date-time
+        checkedAt:
+          type: string
+          format: date-time
+          description: When the worker accepted or rejected the file.
 
     DocumentUpload:
       type: object

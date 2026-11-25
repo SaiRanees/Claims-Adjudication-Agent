@@ -23,6 +23,7 @@ type Claims interface {
 	Create(ctx context.Context, req claims.CreateRequest) (claims.CreateResult, error)
 	Get(ctx context.Context, id uuid.UUID) (claims.Claim, error)
 	Documents(ctx context.Context, claimID uuid.UUID) ([]claims.Document, error)
+	Submit(ctx context.Context, principal string, claimID uuid.UUID) (claims.Claim, error)
 }
 
 // Documents is what the handlers need for uploads: documents.Service.
@@ -40,7 +41,7 @@ var ErrNotImplemented = errors.New("not implemented yet")
 type Server struct {
 	claims    Claims
 	documents Documents
-	// limiter caps each caller's rate of registering files.
+	// limiter caps each caller's rate of registering files and submitting claims.
 	limiter  *RateLimiter
 	log      *slog.Logger
 	draining atomic.Bool
@@ -49,7 +50,7 @@ type Server struct {
 var _ apigen.StrictServerInterface = (*Server)(nil)
 
 // NewServer returns a Server that keeps claims in c and runs uploads through d, with each
-// caller's registrations limited by limiter.
+// caller's registrations and submissions limited by limiter.
 func NewServer(c Claims, d Documents, limiter *RateLimiter, log *slog.Logger) *Server {
 	return &Server{claims: c, documents: d, limiter: limiter, log: log}
 }
@@ -189,15 +190,8 @@ func (s *Server) CreateDocumentUpload(ctx context.Context, req apigen.CreateDocu
 				problem(ctx, http.StatusForbidden, typeForbidden, "role_not_allowed", "Only submitters can upload documents.")),
 		}, nil
 	}
-	if allowed, wait := s.limiter.Allow(caller.Subject); !allowed {
-		seconds := retryAfter(wait)
-		return apigen.CreateDocumentUpload429ApplicationProblemPlusJSONResponse{
-			TooManyRequestsApplicationProblemPlusJSONResponse: apigen.TooManyRequestsApplicationProblemPlusJSONResponse{
-				Body: problem(ctx, http.StatusTooManyRequests, typeTooManyRequests, "rate_limited",
-					"Too many requests. Retry after the number of seconds in Retry-After."),
-				Headers: apigen.TooManyRequestsResponseHeaders{RetryAfter: &seconds},
-			},
-		}, nil
+	if limited, ok := s.rateLimited(ctx, caller.Subject); !ok {
+		return apigen.CreateDocumentUpload429ApplicationProblemPlusJSONResponse{TooManyRequestsApplicationProblemPlusJSONResponse: limited}, nil
 	}
 	body := req.Body
 	var sum [32]byte
@@ -298,9 +292,62 @@ func (s *Server) StreamClaimEvents(context.Context, apigen.StreamClaimEventsRequ
 	return nil, ErrNotImplemented
 }
 
-// SubmitClaim is not built yet.
-func (s *Server) SubmitClaim(context.Context, apigen.SubmitClaimRequestObject) (apigen.SubmitClaimResponseObject, error) {
-	return nil, ErrNotImplemented
+// SubmitClaim submits a draft claim once its files are checked, and returns it; a claim
+// already submitted comes back as it is. Role: the submitter who created the claim, within
+// the per-caller rate limit it shares with registering files.
+func (s *Server) SubmitClaim(ctx context.Context, req apigen.SubmitClaimRequestObject) (apigen.SubmitClaimResponseObject, error) {
+	caller, ok := principalFrom(ctx)
+	if !ok {
+		return nil, errors.New("no caller on an authenticated operation")
+	}
+	if caller.Role != platform.RoleSubmitter {
+		return apigen.SubmitClaim403ApplicationProblemPlusJSONResponse{
+			ForbiddenApplicationProblemPlusJSONResponse: apigen.ForbiddenApplicationProblemPlusJSONResponse(
+				problem(ctx, http.StatusForbidden, typeForbidden, "role_not_allowed", "Only submitters can submit claims.")),
+		}, nil
+	}
+	if limited, ok := s.rateLimited(ctx, caller.Subject); !ok {
+		return apigen.SubmitClaim429ApplicationProblemPlusJSONResponse{TooManyRequestsApplicationProblemPlusJSONResponse: limited}, nil
+	}
+	conflict := func(code, detail string) apigen.SubmitClaim409ApplicationProblemPlusJSONResponse {
+		return apigen.SubmitClaim409ApplicationProblemPlusJSONResponse{
+			ConflictApplicationProblemPlusJSONResponse: apigen.ConflictApplicationProblemPlusJSONResponse(
+				problem(ctx, http.StatusConflict, typeConflict, code, detail)),
+		}
+	}
+	c, err := s.claims.Submit(ctx, caller.Subject, req.ClaimID)
+	switch {
+	case errors.Is(err, claims.ErrNotFound):
+		return apigen.SubmitClaim404ApplicationProblemPlusJSONResponse{
+			NotFoundApplicationProblemPlusJSONResponse: apigen.NotFoundApplicationProblemPlusJSONResponse(notFoundProblem(ctx)),
+		}, nil
+	case errors.Is(err, claims.ErrChecksPending):
+		return conflict("document_checks_pending",
+			"A document is uploaded and still being checked. Submit once every document is accepted or rejected."), nil
+	case errors.Is(err, claims.ErrNoAcceptedDocuments):
+		return conflict("no_accepted_documents", "The claim has no accepted document to submit."), nil
+	case err != nil:
+		return nil, fmt.Errorf("submitting claim %s: %w", req.ClaimID, err)
+	}
+	docs, err := s.claims.Documents(ctx, c.ID)
+	if err != nil {
+		return nil, fmt.Errorf("listing claim %s's documents: %w", c.ID, err)
+	}
+	return apigen.SubmitClaim202JSONResponse(claimView(c, docs)), nil
+}
+
+// rateLimited takes one of the caller's tokens, or returns the 429 to send.
+func (s *Server) rateLimited(ctx context.Context, subject string) (apigen.TooManyRequestsApplicationProblemPlusJSONResponse, bool) {
+	allowed, wait := s.limiter.Allow(subject)
+	if allowed {
+		return apigen.TooManyRequestsApplicationProblemPlusJSONResponse{}, true
+	}
+	seconds := retryAfter(wait)
+	return apigen.TooManyRequestsApplicationProblemPlusJSONResponse{
+		Body: problem(ctx, http.StatusTooManyRequests, typeTooManyRequests, "rate_limited",
+			"Too many requests. Retry after the number of seconds in Retry-After."),
+		Headers: apigen.TooManyRequestsResponseHeaders{RetryAfter: &seconds},
+	}, false
 }
 
 // ListReviewTasks is not built yet.

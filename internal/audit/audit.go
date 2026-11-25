@@ -34,6 +34,8 @@ const (
 	ActionDocumentRegistered = "document.registered"
 	ActionDocumentUploaded   = "document.uploaded"
 	ActionDocumentRejected   = "document.rejected"
+	ActionDocumentAccepted   = "document.accepted"
+	ActionClaimSubmitted     = "claim.submitted"
 )
 
 // Actor is who caused an event: a user's subject, a service's name or a model call's ID.

@@ -26,7 +26,7 @@ DOC2=ffffffff-0000-7000-8000-0000000000d2
 # +w(...) lists the only columns it may UPDATE. Change this with the GRANTs in a migration.
 EXPECTED_GRANTS='audit_events=ra
 claims=ra+w(decided_at,status,submitted_at)
-documents=ra+w(page_count,rejection_reason,status,uploaded_at)
+documents=ra+w(checked_at,page_count,pdf_sha256,rejection_reason,status,uploaded_at)
 idempotency_keys=rad
 members=r
 model_calls=ra+w(attempts,cache_read_tokens,cache_write_tokens,cost_usd_micros,error_code,finished_at,input_tokens,latency_ms,output_tokens,response_object_key,status)
@@ -79,6 +79,10 @@ document() { # document ID FILE_CONTENT
 	printf "INSERT INTO documents (id, claim_id, file_name, content_type, size_bytes, sha256, object_key)
 		VALUES ('%s', '%s', 'bill.pdf', 'application/pdf', 1024, sha256('%s'), 'claims/%s/%s')" \
 		"$1" "$CLAIM" "$2" "$CLAIM" "$1"
+}
+
+uploaded() { # uploaded ID: complete found the object as declared
+	printf "UPDATE documents SET status = 'uploaded', uploaded_at = now() WHERE id = '%s'" "$1"
 }
 
 outbox() { # outbox PAYLOAD
@@ -190,6 +194,27 @@ must_pass "a rejected upload can be retried" "$APP_URL" \
 	 $(document "$DOC2" file-a)"
 must_fail "an uploaded document needs its upload time" "$APP_URL" 23514 \
 	"$(new_claim); $(document "$DOC1" file-a); UPDATE documents SET status = 'uploaded' WHERE id = '$DOC1'"
+must_pass "a checked document is accepted with its page count and PDF hash" "$APP_URL" \
+	"$(new_claim); $(document "$DOC1" file-a); $(uploaded "$DOC1");
+	 UPDATE documents SET status = 'accepted', checked_at = now(), page_count = 3,
+	        pdf_sha256 = sha256('pdf') WHERE id = '$DOC1'"
+must_fail "an accepted document needs its PDF hash" "$APP_URL" 23514 \
+	"$(new_claim); $(document "$DOC1" file-a); $(uploaded "$DOC1");
+	 UPDATE documents SET status = 'accepted', checked_at = now(), page_count = 3 WHERE id = '$DOC1'"
+must_fail "an accepted document needs its check time" "$APP_URL" 23514 \
+	"$(new_claim); $(document "$DOC1" file-a); $(uploaded "$DOC1");
+	 UPDATE documents SET status = 'accepted', page_count = 3, pdf_sha256 = sha256('pdf') WHERE id = '$DOC1'"
+must_fail "a file rejected by the worker needs its check time" "$APP_URL" 23514 \
+	"$(new_claim); $(document "$DOC1" file-a); $(uploaded "$DOC1");
+	 UPDATE documents SET status = 'rejected', rejection_reason = 'encrypted' WHERE id = '$DOC1'"
+must_fail "a document can't be accepted before it is uploaded" "$APP_URL" 23514 \
+	"$(new_claim); $(document "$DOC1" file-a);
+	 UPDATE documents SET status = 'accepted', uploaded_at = now(), checked_at = now(),
+	        page_count = 3, pdf_sha256 = sha256('pdf') WHERE id = '$DOC1'"
+must_fail "a rejected document stays rejected" "$APP_URL" 23514 \
+	"$(new_claim); $(document "$DOC1" file-a);
+	 UPDATE documents SET status = 'rejected', rejection_reason = 'missing_object' WHERE id = '$DOC1';
+	 UPDATE documents SET status = 'uploaded', rejection_reason = NULL, uploaded_at = now() WHERE id = '$DOC1'"
 must_pass "claims_app can queue a workflow message" "$APP_URL" \
 	"$(new_claim); $(outbox "jsonb_build_object('claimId', '$CLAIM')")"
 must_fail "outbox payloads carry IDs, not documents" "$APP_URL" 23514 \

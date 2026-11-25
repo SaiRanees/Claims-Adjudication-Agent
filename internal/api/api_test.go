@@ -61,6 +61,7 @@ type fakeClaims struct {
 	replay    *claims.CreateResult
 	claim     claims.Claim
 	getErr    error
+	submitErr error
 	docs      []claims.Document
 }
 
@@ -93,6 +94,16 @@ func (f *fakeClaims) Get(_ context.Context, id uuid.UUID) (claims.Claim, error) 
 		return claims.Claim{}, f.getErr
 	}
 	if id != f.claim.ID {
+		return claims.Claim{}, claims.ErrNotFound
+	}
+	return f.claim, nil
+}
+
+func (f *fakeClaims) Submit(_ context.Context, principal string, id uuid.UUID) (claims.Claim, error) {
+	if f.submitErr != nil {
+		return claims.Claim{}, f.submitErr
+	}
+	if id != f.claim.ID || principal != f.claim.CreatedBy {
 		return claims.Claim{}, claims.ErrNotFound
 	}
 	return f.claim, nil

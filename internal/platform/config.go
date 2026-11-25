@@ -52,9 +52,14 @@ type RelayConfig struct {
 }
 
 // WorkerConfig is the worker's configuration, read from the environment as compose.yaml
-// sets it for the worker container. The placeholder workflow needs no database yet.
+// sets it for the worker container.
 type WorkerConfig struct {
-	Temporal TemporalConfig
+	// DatabaseURL connects as claims_app, which records each file's verdict.
+	DatabaseURL string
+	Temporal    TemporalConfig
+	// S3 is where uploads wait and accepted copies go. The worker signs no URLs, so it
+	// doesn't need PublicEndpoint.
+	S3 S3Config
 	// LogLevel is debug, info, warn or error. Default info.
 	LogLevel  slog.Level
 	Telemetry TelemetryConfig
@@ -86,14 +91,7 @@ func LoadAPIConfig(getenv func(string) string) (APIConfig, error) {
 		DatabaseURL: env.required("DATABASE_URL"),
 		JWTSecret:   []byte(env.required("AUTH_JWT_SECRET")),
 		HTTPAddr:    getenv("HTTP_ADDR"),
-		S3: S3Config{
-			Endpoint:        env.required("S3_ENDPOINT"),
-			PublicEndpoint:  env.required("S3_PUBLIC_ENDPOINT"),
-			Region:          env.required("S3_REGION"),
-			Bucket:          env.required("S3_BUCKET"),
-			AccessKeyID:     env.required("AWS_ACCESS_KEY_ID"),
-			SecretAccessKey: env.required("AWS_SECRET_ACCESS_KEY"),
-		},
+		S3:          env.s3(true),
 	}
 	if err := env.err(); err != nil {
 		return APIConfig{}, err
@@ -134,7 +132,11 @@ func LoadRelayConfig(getenv func(string) string) (RelayConfig, error) {
 // LoadWorkerConfig reads the worker's configuration as LoadAPIConfig reads the API's.
 func LoadWorkerConfig(getenv func(string) string) (WorkerConfig, error) {
 	env := environment{getenv: getenv}
-	cfg := WorkerConfig{Temporal: env.temporal()}
+	cfg := WorkerConfig{
+		DatabaseURL: env.required("DATABASE_URL"),
+		Temporal:    env.temporal(),
+		S3:          env.s3(false),
+	}
 	if err := env.err(); err != nil {
 		return WorkerConfig{}, err
 	}
@@ -160,6 +162,21 @@ func (e *environment) required(name string) string {
 		e.missing = append(e.missing, name)
 	}
 	return v
+}
+
+// s3 reads the object store's settings; S3_PUBLIC_ENDPOINT only when public is set.
+func (e *environment) s3(public bool) S3Config {
+	cfg := S3Config{
+		Endpoint:        e.required("S3_ENDPOINT"),
+		Region:          e.required("S3_REGION"),
+		Bucket:          e.required("S3_BUCKET"),
+		AccessKeyID:     e.required("AWS_ACCESS_KEY_ID"),
+		SecretAccessKey: e.required("AWS_SECRET_ACCESS_KEY"),
+	}
+	if public {
+		cfg.PublicEndpoint = e.required("S3_PUBLIC_ENDPOINT")
+	}
+	return cfg
 }
 
 func (e *environment) temporal() TemporalConfig {
