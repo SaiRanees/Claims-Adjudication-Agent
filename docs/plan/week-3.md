@@ -8,6 +8,8 @@ Session 1 is done, 24 November. Every audit event from `claim.created` on is cha
 
 Session 2 is done, 25 November. go-pdfium v1.21.5 (WebAssembly, on wazero v1.12.0) and pdfcpu v0.16.4 passed every proof before anything relied on them: nothing on the host opens through the sandbox, a 1 GiB inflate bomb is `unreadable` in about 3 s against the 256 MiB limit, a 200 ms deadline stops a 5 s parse, and pdfcpu turns a JPEG and a PNG into PDFs. A 10-page PDF checks in 15 to 50 ms and a 12 MP photo in 13 to 50 ms, so the worker runs two PDFium workers with 30 s deadlines. pdfcpu runs with a stateless configuration, since its default creates a directory under the user's config dir. The workflow checks each uploaded file, and submit needs one accepted file and none pending; the acceptance test sees every verdict, and a hundred complete-against-submit runs never both commit. Sai terminated the dev workflows started on the placeholder on 25 November.
 
+Session 3 is done, 25 November. gopdf v0.38.6 passed its proof first: with static Noto Sans (from pinned upstream commits, hashes in `internal/datagen/fonts/SOURCES.md`) it renders `₹1,23,456.00`, `Rs. 123,456/-` and a long description, two processes give identical bytes with no `/CreationDate`, `/ID` or `/Encrypt`, and PDFium reads every string back. gopdf always zlib-compresses the embedded font subset, whatever `SetNoCompression` says, so content streams are uncompressed but the font isn't; session 4's pinned packet hashes on both CI jobs are what catch a change in `compress/flate`. It brings two indirect modules, `phpdave11/gofpdi` and `pkg/errors`. The 52 golden specs are in `evals/extraction/scenarios`, and all 52 packets render byte-identically in two processes, pass the self-check, and give every checked row of `golden-cases.csv` when the engine runs on their `truth.json`. PDFium prints each bill row as one line of text, so the self-check requires a line's date, description, quantity, unit price and amount on one line of its page, not merely somewhere on it.
+
 ## Decide first
 
 - [x] **Split M2 across two weeks.** Week 3 builds the pieces and scores a first run on the dev half. Week 4 adds discharge-summary facts, degraded scans and two-pass agreement, moves preparation, classification and extraction into the workflow, asks for missing documents, and sets the baseline that is M2's gate. Week 3 has eight sessions rather than seven, because the generator didn't fit in one sitting. If the week runs long, rate limits and the OT-notes and implant-invoice templates move to week 4 first; never a self-check, the split or the replay gate.
@@ -137,24 +139,24 @@ And `go run ./cmd/dev check` passes.
 
 ## Session 3: the generator, part 1: specs, bills and truth
 
-- [ ] Prove the library before any template. gopdf with the embedded Noto Sans renders `₹1,23,456.00`, `Rs. 123,456/-` and a long description; rendering twice, in two separate processes, gives identical bytes; and PDFium reads every one of those strings back from the page. If gopdf fails any of these, choose again now, while nothing depends on it.
-- [ ] Static Noto Sans Regular and Bold TTFs, not the variable font, with `OFL.txt`, in the generator's package, embedded with `go:embed` and marked `binary` in `.gitattributes`.
-- [ ] A scenario spec in YAML, decoded strictly like the rule pack, holds everything a packet shows.
+- [x] Prove the library before any template. gopdf with the embedded Noto Sans renders `₹1,23,456.00`, `Rs. 123,456/-` and a long description; rendering twice, in two separate processes, gives identical bytes; and PDFium reads every one of those strings back from the page. If gopdf fails any of these, choose again now, while nothing depends on it.
+- [x] Static Noto Sans Regular and Bold TTFs, not the variable font, with `OFL.txt`, in the generator's package, embedded with `go:embed` and marked `binary` in `.gitattributes`.
+- [x] A scenario spec in YAML, decoded strictly like the rule pack, holds everything a packet shows.
   - A `facts` block in the golden-case format's shape, which week 2 made for this, and a `cover` block. The generator never changes either.
   - The insured, the policy and the hospital, all invented; the condition; and the claim form's values.
-  - For each line, beside its facts: the description as printed, which bill it's on, and any treatment tie. A line matched to an Annexure A list uses an item name copied from that list in the wording, taken from a short table in the generator's data that cites the list and page. The full transcription stays in M3, and the published rule pack doesn't change.
+  - For each line, beside its facts: the description as printed, which bill it's on, and any treatment tie. A line matched to an Annexure A list uses an item name copied from that list in the wording, taken from a short table in the generator's data that cites the list and page. The full transcription stays in M3, and the published rule pack doesn't change. Golden cases 21 and 31 match without the item's name (21 through the item's explanation, 31 through the stay's purpose), so, as Sai decided on 25 November, a line may print its own description only with an explicit `matched_by: explanation` or `matched_by: stay`, which truth records with the item.
   - Which documents to include, the bill layout, and how many lines fit on a page.
-- [ ] `cmd/datagen render` writes each packet's PDFs and a `truth.json` that carries the generator's version:
+- [x] `cmd/datagen render` writes each packet's PDFs and a `truth.json` that carries the generator's version:
   - per file: each page's type, and the parts with their page ranges;
   - per bill: each line's page, its printed strings and parsed values, and the totals;
   - the documents included, so the packet checklist can be scored;
   - the claim-level facts for week 4's discharge-summary job, and the engine's facts and cover for M3.
-- [ ] This session's documents: three hospital-bill layouts, a pharmacy bill and a payment receipt.
+- [x] This session's documents: three hospital-bill layouts, a pharmacy bill and a payment receipt.
   - The layouts differ in column order, date style (`22/09/2025` or `22-Sep-2025`), digit grouping (`1,23,456.00` or `123,456.00`) and currency mark (₹, `Rs.` or none).
   - Long bills run over pages with repeated headers and "Page x of y", and the totals sit on the last page. A row never splits across pages.
   - Quantities are whole numbers, as the engine requires.
-- [ ] The generator checks itself. A test reads every rendered page's text with PDFium, and every printed string in `truth.json` (amounts, unit prices, quantities, dates, descriptions and totals) must appear on the page the truth names. Checking amounts alone would miss a wrong date or description.
-- [ ] The 52 golden cases render as packets, each with its case file's `facts` and `cover` unchanged. A test runs the engine on every golden packet's truth and must get the case's checked payable from `golden-cases.csv`, so the generator can't drift from the checked figures.
+- [x] The generator checks itself. A test reads every rendered page's text with PDFium, and every printed string in `truth.json` (amounts, unit prices, quantities, dates, descriptions and totals) must appear on the page the truth names. Checking amounts alone would miss a wrong date or description.
+- [x] The 52 golden cases render as packets, each with its case file's `facts` and `cover` unchanged. A test runs the engine on every golden packet's truth and must get the case's checked payable from `golden-cases.csv`, so the generator can't drift from the checked figures.
 
 Done when the 52 golden packets render byte-identically in two processes, the self-check and the engine test pass, and `go run ./cmd/dev check` passes.
 
@@ -271,6 +273,7 @@ A review of the draft against the repo, and of its library claims against each l
 | A line's page is numbered within the PDF sent | Session 7 | Removes a mapping the model could get wrong |
 | The self-check covers every printed string | Session 3 | Amounts alone wouldn't catch a wrong date or description |
 | The dev tool passes the key from `.env`, and the spend limit is a workspace's | Decide first | `go run` doesn't read `.env`, and Console spend limits are set per workspace |
+| A listed line may print its own description, with `matched_by` (25 November, in session 3) | Session 3 | Golden cases 21 and 31 match Annexure A items without printing the item's name |
 
 ## Sources
 
