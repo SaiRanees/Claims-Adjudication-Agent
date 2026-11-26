@@ -1,0 +1,105 @@
+# Seeded scenario seeded-surgery-implant-05: surgery with an implant.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-06-01"
+  period_end: "2026-05-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2018-06-01"
+facts:
+  admission: "2025-10-22"
+  discharge: "2025-10-26"
+  segments:
+    - {from: "2025-10-22", to: "2025-10-26", kind: room}
+  differential_billing: "yes"
+  condition:
+    listed_group: listed-36-months
+    onset: "2025-08-03"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-10-22", quantity: 4, unit_price_paise: 450000, amount_paise: 1800000}
+    - {id: L02, category: nursing, service_date: "2025-10-22", quantity: 4, unit_price_paise: 50000, amount_paise: 200000}
+    - {id: L03, category: patient-diet, service_date: "2025-10-22", quantity: 4, unit_price_paise: 35000, amount_paise: 140000}
+    - {id: L04, category: professional-fees, service_date: "2025-10-23", quantity: 1, unit_price_paise: 7000000, amount_paise: 7000000}
+    - {id: L05, category: professional-fees, service_date: "2025-10-23", quantity: 1, unit_price_paise: 1950000, amount_paise: 1950000}
+    - {id: L06, category: operation-theatre, service_date: "2025-10-23", quantity: 1, unit_price_paise: 2800000, amount_paise: 2800000}
+    - {id: L07, category: implants-devices, service_date: "2025-10-23", quantity: 1, unit_price_paise: 10130000, amount_paise: 10130000}
+    - {id: L08, category: professional-fees, service_date: "2025-10-23", quantity: 3, unit_price_paise: 100000, amount_paise: 300000}
+    - {id: L09, category: diagnostics, service_date: "2025-10-22", quantity: 1, unit_price_paise: 65000, amount_paise: 65000}
+    - {id: L10, category: diagnostics, service_date: "2025-10-22", quantity: 1, unit_price_paise: 45000, amount_paise: 45000}
+    - {id: L11, category: diagnostics, service_date: "2025-10-22", quantity: 1, unit_price_paise: 95000, amount_paise: 95000}
+    - {id: L12, category: diagnostics, service_date: "2025-10-22", quantity: 1, unit_price_paise: 30000, amount_paise: 30000}
+    - {id: L13, category: other-hospital-charges, service_date: "2025-10-22", quantity: 1, unit_price_paise: 75000, amount_paise: 75000, item_list: list-ii}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-10-23", quantity: 2, unit_price_paise: 4200, amount_paise: 8400}
+    - {id: L15, category: pharmacy-consumables, service_date: "2025-10-23", quantity: 2, unit_price_paise: 21500, amount_paise: 43000}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-10-23", quantity: 3, unit_price_paise: 48500, amount_paise: 145500}
+    - {id: L17, category: pharmacy-consumables, service_date: "2025-10-24", quantity: 4, unit_price_paise: 1600, amount_paise: 6400}
+    - {id: L18, category: pharmacy-consumables, service_date: "2025-10-24", quantity: 2, unit_price_paise: 9800, amount_paise: 19600}
+    - {id: L19, category: pharmacy-consumables, service_date: "2025-10-25", quantity: 4, unit_price_paise: 5200, amount_paise: 20800}
+insured:
+  name: Hema Iyengar
+  gender: female
+  age: 64
+  policy_number: SYN-ASG-2025-200013
+  member_id: SYN-M-600013
+  date_of_birth: "1961-07-20"
+hospital:
+  name: Ravikund Multispeciality Hospital
+  address: Plot 7, Station Road
+  city: Ravikund
+  registration: SYN-HR-2013
+clinical:
+  diagnosis: Avascular necrosis of the left hip
+  procedure: Total hip replacement, left
+  treating_doctor: Dr. Leela Menon
+  history: Pain in the left hip for two years, now limping and unable to sit cross-legged. MRI showed collapse of the femoral head.
+  course: Underwent total hip replacement under spinal anaesthesia. Mobilised with a walker on the second day. The wound is healthy.
+  advice: Do not cross the legs or sit on low chairs for six weeks. Walker for four weeks. Review in the orthopaedic clinic after two weeks.
+  surgery:
+    date: "2025-10-23"
+    surgeon: Dr. Leela Menon
+    anaesthetist: Dr. Anjali Dutta
+    anaesthesia: Spinal
+    findings: A collapsed femoral head with early arthritis of the socket. An uncemented prosthesis was fixed.
+claim_form:
+  admission_type: planned
+  signed_on: "2025-10-29"
+  claimed_amount_paise: 24873700
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200013, date: "2025-10-29"}
+  - {id: ID, type: photo-id, number: SYN-ID-TRRJ-1358, date: "2020-09-27"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200013, date: "2025-10-26"}
+  - {id: OT, type: ot-notes, number: SYN-OT-200013, date: "2025-10-23"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-201301, date: "2025-10-26", layout: columnar, lines_per_page: 7}
+  - {id: IV, type: implant-invoice, number: SYN-IV-200013, date: "2025-10-23", vendor: {name: Chandmora Cardio Supplies, address: '11 Ring Road, Chandmora', registration: SYN-VR-2013}, implants: [{line: L07, serial: SYN-SN-X5HGT8}]}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-201301, date: "2025-10-26", lines_per_page: 16}
+  - {id: R1, type: payment-receipt, number: SYN-RC-201301, date: "2025-10-26", against: [B1, P1], mode: Cash}
+files:
+  - {name: claim-form.pdf, documents: [CF, ID]}
+  - {name: hospital-records.pdf, documents: [DS, OT]}
+  - {name: bills.pdf, documents: [B1, IV, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Charges - Private Room}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Patient Diet Charges}
+  - {line: L04, bill: B1, description: Surgeon Fees}
+  - {line: L05, bill: B1, description: Anaesthetist Fees}
+  - {line: L06, bill: B1, description: Operation Theatre Charges}
+  - {line: L07, bill: B1, description: Hip Prosthesis - Uncemented}
+  - {line: L08, bill: B1, description: Consultant Visit Charges}
+  - {line: L09, bill: B1, description: X-Ray of the Injured Part}
+  - {line: L10, bill: B1, description: Complete Blood Count}
+  - {line: L11, bill: B1, description: Coagulation Profile}
+  - {line: L12, bill: B1, description: ECG}
+  - {line: L13, bill: B1, description: ADMISSION KIT, annexure: list-ii/27}
+  - {line: L14, bill: P1, description: IV Fluid Ringer Lactate 500 ml}
+  - {line: L15, bill: P1, description: Syp. Lactulose 200 ml}
+  - {line: L16, bill: P1, description: Inj. Piperacillin-Tazobactam 4.5 g}
+  - {line: L17, bill: P1, description: Inj. Dexamethasone 8 mg}
+  - {line: L18, bill: P1, description: Inj. Heparin 5000 IU}
+  - {line: L19, bill: P1, description: Inj. Pantoprazole 40 mg}

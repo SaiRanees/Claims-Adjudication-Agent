@@ -1,0 +1,135 @@
+# Seeded scenario seeded-long-pharmacy-05: a long, pharmacy-heavy stay.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-10-01"
+  period_end: "2026-09-30"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2020-10-01"
+  cumulative_bonus_paise: 5000000
+facts:
+  admission: "2026-07-08"
+  discharge: "2026-07-21"
+  segments:
+    - {from: "2026-07-08", to: "2026-07-21", kind: room}
+  differential_billing: "yes"
+  condition:
+    onset: "2026-06-27"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-07-08", quantity: 13, unit_price_paise: 550000, amount_paise: 7150000}
+    - {id: L02, category: nursing, service_date: "2026-07-08", quantity: 13, unit_price_paise: 90000, amount_paise: 1170000}
+    - {id: L03, category: professional-fees, service_date: "2026-07-08", quantity: 13, unit_price_paise: 150000, amount_paise: 1950000}
+    - {id: L04, category: diagnostics, service_date: "2026-07-18", quantity: 1, unit_price_paise: 140000, amount_paise: 140000}
+    - {id: L05, category: diagnostics, service_date: "2026-07-17", quantity: 1, unit_price_paise: 250000, amount_paise: 250000}
+    - {id: L06, category: diagnostics, service_date: "2026-07-16", quantity: 2, unit_price_paise: 45000, amount_paise: 90000}
+    - {id: L07, category: diagnostics, service_date: "2026-07-08", quantity: 1, unit_price_paise: 85000, amount_paise: 85000}
+    - {id: L08, category: diagnostics, service_date: "2026-07-12", quantity: 1, unit_price_paise: 30000, amount_paise: 30000}
+    - {id: L09, category: diagnostics, service_date: "2026-07-12", quantity: 1, unit_price_paise: 25000, amount_paise: 25000}
+    - {id: L10, category: other-hospital-charges, service_date: "2026-07-11", quantity: 1, unit_price_paise: 120000, amount_paise: 120000}
+    - {id: L11, category: other-hospital-charges, service_date: "2026-07-08", quantity: 1, unit_price_paise: 30000, amount_paise: 30000, item_list: list-iv}
+    - {id: L12, category: pharmacy-consumables, service_date: "2026-07-08", quantity: 3, unit_price_paise: 24500, amount_paise: 73500}
+    - {id: L13, category: pharmacy-consumables, service_date: "2026-07-08", quantity: 1, unit_price_paise: 520000, amount_paise: 520000}
+    - {id: L14, category: pharmacy-consumables, service_date: "2026-07-08", quantity: 2, unit_price_paise: 1100, amount_paise: 2200}
+    - {id: L15, category: pharmacy-consumables, service_date: "2026-07-09", quantity: 8, unit_price_paise: 850, amount_paise: 6800}
+    - {id: L16, category: pharmacy-consumables, service_date: "2026-07-09", quantity: 3, unit_price_paise: 1100, amount_paise: 3300}
+    - {id: L17, category: pharmacy-consumables, service_date: "2026-07-09", quantity: 2, unit_price_paise: 48500, amount_paise: 97000}
+    - {id: L18, category: pharmacy-consumables, service_date: "2026-07-10", quantity: 2, unit_price_paise: 59000, amount_paise: 118000}
+    - {id: L19, category: pharmacy-consumables, service_date: "2026-07-11", quantity: 7, unit_price_paise: 950, amount_paise: 6650}
+    - {id: L20, category: pharmacy-consumables, service_date: "2026-07-11", quantity: 2, unit_price_paise: 59000, amount_paise: 118000}
+    - {id: L21, category: pharmacy-consumables, service_date: "2026-07-11", quantity: 1, unit_price_paise: 520000, amount_paise: 520000}
+    - {id: L22, category: pharmacy-consumables, service_date: "2026-07-11", quantity: 3, unit_price_paise: 6200, amount_paise: 18600}
+    - {id: L23, category: pharmacy-consumables, service_date: "2026-07-12", quantity: 2, unit_price_paise: 59000, amount_paise: 118000}
+    - {id: L24, category: pharmacy-consumables, service_date: "2026-07-12", quantity: 4, unit_price_paise: 24500, amount_paise: 98000}
+    - {id: L25, category: pharmacy-consumables, service_date: "2026-07-12", quantity: 5, unit_price_paise: 2900, amount_paise: 14500}
+    - {id: L26, category: pharmacy-consumables, service_date: "2026-07-13", quantity: 12, unit_price_paise: 950, amount_paise: 11400}
+    - {id: L27, category: pharmacy-consumables, service_date: "2026-07-13", quantity: 3, unit_price_paise: 2900, amount_paise: 8700}
+    - {id: L28, category: pharmacy-consumables, service_date: "2026-07-16", quantity: 3, unit_price_paise: 24500, amount_paise: 73500}
+    - {id: L29, category: pharmacy-consumables, service_date: "2026-07-16", quantity: 2, unit_price_paise: 1100, amount_paise: 2200}
+    - {id: L30, category: pharmacy-consumables, service_date: "2026-07-16", quantity: 3, unit_price_paise: 48500, amount_paise: 145500}
+    - {id: L31, category: pharmacy-consumables, service_date: "2026-07-17", quantity: 2, unit_price_paise: 850, amount_paise: 1700}
+    - {id: L32, category: pharmacy-consumables, service_date: "2026-07-18", quantity: 9, unit_price_paise: 850, amount_paise: 7650}
+    - {id: L33, category: pharmacy-consumables, service_date: "2026-07-19", quantity: 5, unit_price_paise: 2900, amount_paise: 14500}
+    - {id: L34, category: pharmacy-consumables, service_date: "2026-07-19", quantity: 3, unit_price_paise: 48500, amount_paise: 145500}
+    - {id: L35, category: pharmacy-consumables, service_date: "2026-07-20", quantity: 12, unit_price_paise: 950, amount_paise: 11400}
+    - {id: L36, category: pharmacy-consumables, service_date: "2026-07-20", quantity: 3, unit_price_paise: 6200, amount_paise: 18600}
+    - {id: L37, category: pharmacy-consumables, service_date: "2026-07-21", quantity: 3, unit_price_paise: 1250, amount_paise: 3750}
+    - {id: L38, category: pharmacy-consumables, service_date: "2026-07-21", quantity: 6, unit_price_paise: 900, amount_paise: 5400}
+    - {id: L39, category: pharmacy-consumables, service_date: "2026-07-21", quantity: 9, unit_price_paise: 650, amount_paise: 5850}
+insured:
+  name: Lata Dsouza
+  gender: female
+  age: 32
+  policy_number: SYN-ASG-2025-200045
+  member_id: SYN-M-600045
+  date_of_birth: "1994-05-27"
+hospital:
+  name: Ravikund Multispeciality Hospital
+  address: Plot 7, Station Road
+  city: Ravikund
+  registration: SYN-HR-2045
+clinical:
+  diagnosis: Infective endocarditis
+  treating_doctor: Dr. Tanvir Ahmed
+  history: Fever for three weeks with tiredness and breathlessness. A new heart murmur was heard at a clinic.
+  course: Blood cultures grew streptococci and the echo showed a growth on the mitral valve. Treated with intravenous antibiotics; fever settled.
+  advice: Continue intravenous antibiotics at the day care unit for two more weeks. Dental check before any procedure.
+claim_form:
+  admission_type: emergency
+  signed_on: "2026-07-30"
+  claimed_amount_paise: 13210200
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200045, date: "2026-07-30"}
+  - {id: ID, type: photo-id, number: SYN-ID-VJH7-1138, date: "2022-01-25"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200045, date: "2026-07-21"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-204501, date: "2026-07-21", layout: ledger, lines_per_page: 6}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-204501, date: "2026-07-21", lines_per_page: 12}
+  - {id: P2, type: pharmacy-bill, number: SYN-PH-204502, date: "2026-07-21", lines_per_page: 11}
+  - {id: R1, type: payment-receipt, number: SYN-RC-204501, date: "2026-07-21", against: [B1, P1, P2], mode: Card}
+files:
+  - {name: claim-packet.pdf, documents: [CF, ID, DS, B1, P1, P2, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Consultant Visit Charges}
+  - {line: L04, bill: B1, description: Blood Culture and Sensitivity}
+  - {line: L05, bill: B1, description: 2D Echocardiography}
+  - {line: L06, bill: B1, description: Complete Blood Count}
+  - {line: L07, bill: B1, description: Renal Function Test}
+  - {line: L08, bill: B1, description: ECG}
+  - {line: L09, bill: B1, description: Urine Routine Examination}
+  - {line: L10, bill: B1, description: Bedside Procedure Charges}
+  - {line: L11, bill: B1, description: ADMISSION/REGISTRATION CHARGES, annexure: list-iv/1}
+  - {line: L12, bill: P1, description: Inj. Levetiracetam 500 mg}
+  - {line: L13, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L14, bill: P1, description: Inj. Furosemide 20 mg}
+  - {line: L15, bill: P1, description: Salbutamol Respules 2.5 mg}
+  - {line: L16, bill: P1, description: Inj. Furosemide 20 mg}
+  - {line: L17, bill: P1, description: Inj. Piperacillin-Tazobactam 4.5 g}
+  - {line: L18, bill: P1, description: Inj. Vancomycin 1 g}
+  - {line: L19, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L20, bill: P1, description: Inj. Vancomycin 1 g}
+  - {line: L21, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L22, bill: P1, description: Inj. Amikacin 500 mg}
+  - {line: L23, bill: P1, description: Inj. Vancomycin 1 g}
+  - {line: L24, bill: P1, description: Inj. Levetiracetam 500 mg}
+  - {line: L25, bill: P1, description: Inj. Metronidazole 500 mg}
+  - {line: L26, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L27, bill: P1, description: Inj. Metronidazole 500 mg}
+  - {line: L28, bill: P1, description: Inj. Levetiracetam 500 mg}
+  - {line: L29, bill: P1, description: Inj. Furosemide 20 mg}
+  - {line: L30, bill: P1, description: Inj. Piperacillin-Tazobactam 4.5 g}
+  - {line: L31, bill: P1, description: Salbutamol Respules 2.5 mg}
+  - {line: L32, bill: P1, description: Salbutamol Respules 2.5 mg}
+  - {line: L33, bill: P1, description: Inj. Metronidazole 500 mg}
+  - {line: L34, bill: P1, description: Inj. Piperacillin-Tazobactam 4.5 g}
+  - {line: L35, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L36, bill: P1, description: Inj. Amikacin 500 mg}
+  - {line: L37, bill: P2, description: Inj. Tramadol 50 mg}
+  - {line: L38, bill: P2, description: Inj. Diclofenac 75 mg}
+  - {line: L39, bill: P2, description: Tab. Rifampicin 450 mg}

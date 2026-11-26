@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/rules"
 )
 
 // PageReader reads each page's text from a PDF. documents.PDFium is one.
@@ -17,8 +19,9 @@ type PageReader interface {
 // truth names (amounts, unit prices, quantities, dates, descriptions,
 // totals, numbers and names) must appear on the page it names. A line's
 // strings must all sit on one line of that page's text, so a value can't be
-// satisfied by the same string elsewhere on the page. Every page must carry
-// the footer.
+// satisfied by the same string elsewhere on the page, and so must a row of
+// another document's fields, such as an implant invoice's item. Every page
+// must carry the footer.
 func SelfCheck(ctx context.Context, rd PageReader, p Packet) error {
 	if err := CheckTruth(p); err != nil {
 		return err
@@ -79,7 +82,52 @@ func SelfCheck(ctx context.Context, rd PageReader, p Packet) error {
 		find(r.File, r.Page, r.Document+" date", r.Date.Printed)
 		find(r.File, r.Page, r.Document+" amount", r.Amount.Printed)
 	}
+	for _, d := range p.Truth.Other {
+		pages := d.LastPage - d.FirstPage + 1
+		for pg := d.FirstPage; pg <= d.LastPage; pg++ {
+			find(d.File, pg, d.Document+" number", d.Number)
+			find(d.File, pg, d.Document+" date", d.Date.Printed)
+			find(d.File, pg, d.Document+" patient", d.Patient)
+			if pages > 1 {
+				find(d.File, pg, d.Document+" page marker", fmt.Sprintf("Page %d of %d", pg-d.FirstPage+1, pages))
+			}
+		}
+		rows := map[string][]TruthField{}
+		for _, f := range d.Fields {
+			find(d.File, f.Page, d.Document+" "+f.Name, f.Printed)
+			if f.Row != "" {
+				rows[f.Row] = append(rows[f.Row], f)
+			}
+		}
+		for _, row := range sortedKeys(rows) {
+			if err := findFields(texts[d.File], rows[row]); err != nil {
+				errs = append(errs, fmt.Errorf("%s %s row %s: %w", d.File, d.Document, row, err))
+			}
+		}
+	}
 	return errors.Join(errs...)
+}
+
+// findFields looks for one text line holding all of a row's fields, which
+// are on one page.
+func findFields(pages []string, row []TruthField) error {
+	page := row[0].Page
+	want := make([]string, 0, len(row))
+	for _, f := range row {
+		if f.Page != page {
+			return fmt.Errorf("its fields are on pages %d and %d", page, f.Page)
+		}
+		want = append(want, f.Printed)
+	}
+	if page < 1 || page > len(pages) {
+		return fmt.Errorf("page %d doesn't exist", page)
+	}
+	for _, line := range splitLines(pages[page-1]) {
+		if containsAll(line, want) {
+			return nil
+		}
+	}
+	return fmt.Errorf("no line of page %d holds all of %q", page, want)
 }
 
 // findRow looks for one text line on the line's page holding all its
@@ -116,8 +164,9 @@ func containsAll(s string, subs []string) bool {
 // CheckTruth checks the truth against itself and the spec's facts, without
 // reading a page: the files and their hashes match the rendering, each
 // file's pages and parts tile it, every facts line is printed exactly once
-// with its facts' values, each bill's totals add up, and the discounts add
-// up to the facts' bill discount.
+// with its facts' values, each bill's totals add up, the discounts add up
+// to the facts' bill discount, and the other documents lie within their
+// files and print their lines' values.
 func CheckTruth(p Packet) error {
 	tr := p.Truth
 	var errs []error
@@ -202,5 +251,44 @@ func CheckTruth(p Packet) error {
 	if len(byID) != len(facts.Lines) {
 		errs = append(errs, fmt.Errorf("the bills print %d lines, the facts have %d", len(byID), len(facts.Lines)))
 	}
+	errs = append(errs, checkOther(tr, facts)...)
 	return errors.Join(errs...)
+}
+
+// checkOther checks the other documents' truth: each lies within its file,
+// its fields lie within it, and a field that prints a facts line's
+// quantity, unit price or amount prints that line's value.
+func checkOther(tr Truth, facts rules.Facts) []error {
+	var errs []error
+	pages := map[string]int{}
+	for _, tf := range tr.Files {
+		pages[tf.Name] = len(tf.Pages)
+	}
+	lines := map[string]rules.Line{}
+	for _, l := range facts.Lines {
+		lines[l.ID] = l
+	}
+	for _, d := range tr.Other {
+		if d.FirstPage < 1 || d.LastPage < d.FirstPage || d.LastPage > pages[d.File] {
+			errs = append(errs, fmt.Errorf("%s: pages %d to %d aren't in %s", d.Document, d.FirstPage, d.LastPage, d.File))
+		}
+		for _, f := range d.Fields {
+			if f.Page < d.FirstPage || f.Page > d.LastPage {
+				errs = append(errs, fmt.Errorf("%s %s: page %d is outside the document", d.Document, f.Name, f.Page))
+			}
+			if f.Line == "" {
+				continue
+			}
+			l, ok := lines[f.Line]
+			if !ok {
+				errs = append(errs, fmt.Errorf("%s %s: line %s isn't a facts line", d.Document, f.Name, f.Line))
+				continue
+			}
+			want, checked := map[string]int64{"quantity": l.Quantity, "unit_price": int64(l.UnitPrice), "amount": int64(l.Amount)}[f.Name]
+			if checked && f.Value != itoa(want) {
+				errs = append(errs, fmt.Errorf("%s %s of line %s is %s, but its facts say %d", d.Document, f.Name, f.Line, f.Value, want))
+			}
+		}
+	}
+	return errs
 }

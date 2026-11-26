@@ -1,0 +1,106 @@
+# Seeded scenario seeded-accident-ambulance-02: an accident brought in by ambulance.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-03-01"
+  period_end: "2026-02-28"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2021-03-01"
+facts:
+  admission: "2025-04-12"
+  discharge: "2025-04-14"
+  segments:
+    - {from: "2025-04-12", to: "2025-04-14", kind: room}
+  differential_billing: "yes"
+  condition:
+    accident: true
+    onset: "2025-04-12"
+  lines:
+    - {id: L01, category: road-ambulance, service_date: "2025-04-12", quantity: 1, unit_price_paise: 220000, amount_paise: 220000}
+    - {id: L02, category: other-hospital-charges, service_date: "2025-04-12", quantity: 1, unit_price_paise: 100000, amount_paise: 100000}
+    - {id: L03, category: room-rent, service_date: "2025-04-12", quantity: 2, unit_price_paise: 350000, amount_paise: 700000}
+    - {id: L04, category: nursing, service_date: "2025-04-12", quantity: 2, unit_price_paise: 80000, amount_paise: 160000}
+    - {id: L05, category: patient-diet, service_date: "2025-04-12", quantity: 2, unit_price_paise: 30000, amount_paise: 60000}
+    - {id: L06, category: professional-fees, service_date: "2025-04-13", quantity: 1, unit_price_paise: 1800000, amount_paise: 1800000}
+    - {id: L07, category: professional-fees, service_date: "2025-04-13", quantity: 1, unit_price_paise: 450000, amount_paise: 450000}
+    - {id: L08, category: operation-theatre, service_date: "2025-04-13", quantity: 1, unit_price_paise: 800000, amount_paise: 800000}
+    - {id: L09, category: professional-fees, service_date: "2025-04-12", quantity: 2, unit_price_paise: 80000, amount_paise: 160000}
+    - {id: L10, category: diagnostics, service_date: "2025-04-12", quantity: 1, unit_price_paise: 65000, amount_paise: 65000}
+    - {id: L11, category: diagnostics, service_date: "2025-04-12", quantity: 1, unit_price_paise: 45000, amount_paise: 45000}
+    - {id: L12, category: other-hospital-charges, service_date: "2025-04-12", quantity: 1, unit_price_paise: 50000, amount_paise: 50000, item_list: list-ii}
+    - {id: L13, category: pharmacy-consumables, service_date: "2025-04-12", quantity: 2, unit_price_paise: 59000, amount_paise: 118000}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-04-12", quantity: 5, unit_price_paise: 950, amount_paise: 4750}
+    - {id: L15, category: pharmacy-consumables, service_date: "2025-04-12", quantity: 2, unit_price_paise: 5200, amount_paise: 10400}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-04-13", quantity: 3, unit_price_paise: 36500, amount_paise: 109500}
+    - {id: L17, category: pharmacy-consumables, service_date: "2025-04-13", quantity: 1, unit_price_paise: 48500, amount_paise: 48500}
+    - {id: L18, category: pharmacy-consumables, service_date: "2025-04-13", quantity: 1, unit_price_paise: 6850, amount_paise: 6850}
+    - {id: L19, category: pharmacy-consumables, service_date: "2025-04-13", quantity: 1, unit_price_paise: 9800, amount_paise: 9800}
+    - {id: L20, category: pharmacy-consumables, service_date: "2025-04-13", quantity: 1, unit_price_paise: 38500, amount_paise: 38500}
+insured:
+  name: Farhan Lobo
+  gender: male
+  age: 51
+  policy_number: SYN-ASG-2025-200034
+  member_id: SYN-M-600034
+  date_of_birth: "1974-01-27"
+hospital:
+  name: Pallavigram City Hospital
+  address: 8 Court Lane
+  city: Pallavigram
+  registration: SYN-HR-2034
+clinical:
+  diagnosis: Fracture of the left distal radius
+  procedure: Closed reduction and plaster cast
+  treating_doctor: Dr. Sarita Gokhale
+  history: Slipped and fell on an outstretched left hand on a wet road. Swelling and deformity of the wrist. Brought by ambulance.
+  course: The fracture was reduced under general anaesthesia and a plaster cast applied. The position on X-ray is good.
+  advice: Keep the arm raised. Move the fingers often. Keep the cast dry. Review in the orthopaedic clinic after one week with an X-ray.
+  surgery:
+    date: "2025-04-13"
+    surgeon: Dr. Sarita Gokhale
+    anaesthetist: Dr. Ravi Shenoy
+    anaesthesia: General
+    findings: A displaced fracture of the lower end of the radius, reduced closed to a good position and held in a cast.
+claim_form:
+  admission_type: emergency
+  signed_on: "2025-04-19"
+  claimed_amount_paise: 4956300
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200034, date: "2025-04-19"}
+  - {id: ID, type: photo-id, number: SYN-ID-LWVS-1466, date: "2022-11-15"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200034, date: "2025-04-14"}
+  - {id: OT, type: ot-notes, number: SYN-OT-200034, date: "2025-04-13"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-203401, date: "2025-04-14", layout: columnar, lines_per_page: 6}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-203401, date: "2025-04-14", lines_per_page: 11}
+  - {id: R1, type: payment-receipt, number: SYN-RC-203401, date: "2025-04-14", against: [B1, P1], mode: Cheque}
+files:
+  - {name: claim-form.pdf, documents: [CF, ID]}
+  - {name: hospital-records.pdf, documents: [DS, OT]}
+  - {name: bills.pdf, documents: [B1, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Road Ambulance Charges}
+  - {line: L02, bill: B1, description: Emergency Room Charges}
+  - {line: L03, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L04, bill: B1, description: Nursing Charges}
+  - {line: L05, bill: B1, description: Patient Diet Charges}
+  - {line: L06, bill: B1, description: Surgeon Fees}
+  - {line: L07, bill: B1, description: Anaesthetist Fees}
+  - {line: L08, bill: B1, description: Operation Theatre Charges}
+  - {line: L09, bill: B1, description: Consultant Visit Charges}
+  - {line: L10, bill: B1, description: X-Ray of the Injured Part}
+  - {line: L11, bill: B1, description: Complete Blood Count}
+  - {line: L12, bill: B1, description: DISCHARGE PROCEDURE CHARGES, annexure: list-ii/30}
+  - {line: L13, bill: P1, description: Inj. Vancomycin 1 g}
+  - {line: L14, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L15, bill: P1, description: Inj. Pantoprazole 40 mg}
+  - {line: L16, bill: P1, description: Inj. Cefoperazone-Sulbactam 1.5 g}
+  - {line: L17, bill: P1, description: Inj. Piperacillin-Tazobactam 4.5 g}
+  - {line: L18, bill: P1, description: Inj. Ceftriaxone 1 g}
+  - {line: L19, bill: P1, description: Inj. Heparin 5000 IU}
+  - {line: L20, bill: P1, description: Inj. Enoxaparin 40 mg}

@@ -1,0 +1,113 @@
+# Seeded scenario seeded-accident-ambulance-08: an accident brought in by ambulance.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-09-01"
+  period_end: "2026-08-31"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2019-09-01"
+facts:
+  admission: "2025-11-30"
+  discharge: "2025-12-03"
+  segments:
+    - {from: "2025-11-30", to: "2025-12-03", kind: room}
+  differential_billing: "yes"
+  condition:
+    accident: true
+    onset: "2025-11-30"
+  lines:
+    - {id: L01, category: road-ambulance, service_date: "2025-11-30", quantity: 1, unit_price_paise: 180000, amount_paise: 180000}
+    - {id: L02, category: other-hospital-charges, service_date: "2025-11-30", quantity: 1, unit_price_paise: 150000, amount_paise: 150000}
+    - {id: L03, category: room-rent, service_date: "2025-11-30", quantity: 3, unit_price_paise: 300000, amount_paise: 900000}
+    - {id: L04, category: nursing, service_date: "2025-11-30", quantity: 3, unit_price_paise: 50000, amount_paise: 150000}
+    - {id: L05, category: patient-diet, service_date: "2025-11-30", quantity: 3, unit_price_paise: 35000, amount_paise: 105000}
+    - {id: L06, category: professional-fees, service_date: "2025-11-30", quantity: 1, unit_price_paise: 3400000, amount_paise: 3400000}
+    - {id: L07, category: professional-fees, service_date: "2025-11-30", quantity: 1, unit_price_paise: 900000, amount_paise: 900000}
+    - {id: L08, category: operation-theatre, service_date: "2025-11-30", quantity: 1, unit_price_paise: 1600000, amount_paise: 1600000}
+    - {id: L09, category: implants-devices, service_date: "2025-11-30", quantity: 1, unit_price_paise: 690000, amount_paise: 690000}
+    - {id: L10, category: professional-fees, service_date: "2025-11-30", quantity: 3, unit_price_paise: 120000, amount_paise: 360000}
+    - {id: L11, category: diagnostics, service_date: "2025-11-30", quantity: 1, unit_price_paise: 65000, amount_paise: 65000}
+    - {id: L12, category: diagnostics, service_date: "2025-11-30", quantity: 1, unit_price_paise: 45000, amount_paise: 45000}
+    - {id: L13, category: diagnostics, service_date: "2025-11-30", quantity: 1, unit_price_paise: 95000, amount_paise: 95000}
+    - {id: L14, category: other-hospital-charges, service_date: "2025-12-01", quantity: 1, unit_price_paise: 150000, amount_paise: 150000}
+    - {id: L15, category: other-hospital-charges, service_date: "2025-11-30", quantity: 1, unit_price_paise: 50000, amount_paise: 50000, item_list: list-ii}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-11-30", quantity: 2, unit_price_paise: 59000, amount_paise: 118000}
+    - {id: L17, category: pharmacy-consumables, service_date: "2025-12-01", quantity: 4, unit_price_paise: 120, amount_paise: 480}
+    - {id: L18, category: pharmacy-consumables, service_date: "2025-12-01", quantity: 4, unit_price_paise: 3900, amount_paise: 15600}
+    - {id: L19, category: pharmacy-consumables, service_date: "2025-12-01", quantity: 4, unit_price_paise: 35000, amount_paise: 140000}
+    - {id: L20, category: pharmacy-consumables, service_date: "2025-12-01", quantity: 2, unit_price_paise: 4200, amount_paise: 8400}
+    - {id: L21, category: pharmacy-consumables, service_date: "2025-12-01", quantity: 3, unit_price_paise: 38500, amount_paise: 115500}
+    - {id: L22, category: pharmacy-consumables, service_date: "2025-12-02", quantity: 3, unit_price_paise: 1100, amount_paise: 3300}
+    - {id: L23, category: pharmacy-consumables, service_date: "2025-12-02", quantity: 1, unit_price_paise: 48500, amount_paise: 48500}
+insured:
+  name: Irfan Acharya
+  gender: male
+  age: 67
+  policy_number: SYN-ASG-2025-200040
+  member_id: SYN-M-600040
+  date_of_birth: "1958-10-02"
+hospital:
+  name: Nayakhet Multispeciality Hospital
+  address: 21 Mandi Road
+  city: Nayakhet
+  registration: SYN-HR-2040
+clinical:
+  diagnosis: Fracture of the right patella
+  procedure: Tension band wiring, right patella
+  treating_doctor: Dr. Sarita Gokhale
+  history: Fell on the right knee getting off a moving bus. Swelling of the knee and unable to straighten the leg. Brought by ambulance.
+  course: The kneecap was fixed with wires under spinal anaesthesia. Knee kept straight in a brace. Mobilised with a walker.
+  advice: Knee brace for four weeks. Walker for three weeks. Review in the orthopaedic clinic after two weeks.
+  surgery:
+    date: "2025-11-30"
+    surgeon: Dr. Sarita Gokhale
+    anaesthetist: Dr. Anjali Dutta
+    anaesthesia: Spinal
+    findings: A transverse fracture of the kneecap with a 6 mm gap, reduced and fixed with two wires and a tension band.
+claim_form:
+  admission_type: emergency
+  signed_on: "2025-12-07"
+  claimed_amount_paise: 9289780
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200040, date: "2025-12-07"}
+  - {id: ID, type: photo-id, number: SYN-ID-5TYB-8860, date: "2020-08-20"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200040, date: "2025-12-03"}
+  - {id: OT, type: ot-notes, number: SYN-OT-200040, date: "2025-11-30"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-204001, date: "2025-12-03", layout: columnar, lines_per_page: 8}
+  - {id: IV, type: implant-invoice, number: SYN-IV-200040, date: "2025-11-29", vendor: {name: Nayakhet Ortho Devices, address: '40 Industrial Area, Nayakhet', registration: SYN-VR-2040}, implants: [{line: L09, serial: SYN-SN-39ST7Y}]}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-204001, date: "2025-12-03", lines_per_page: 12}
+  - {id: R1, type: payment-receipt, number: SYN-RC-204001, date: "2025-12-03", against: [B1, P1], mode: Card}
+files:
+  - {name: claim-form.pdf, documents: [CF, ID]}
+  - {name: hospital-records.pdf, documents: [DS, OT]}
+  - {name: bills.pdf, documents: [B1, IV, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Road Ambulance Charges}
+  - {line: L02, bill: B1, description: Emergency Room Charges}
+  - {line: L03, bill: B1, description: Room Rent - Semi Private}
+  - {line: L04, bill: B1, description: Nursing Charges}
+  - {line: L05, bill: B1, description: Patient Diet Charges}
+  - {line: L06, bill: B1, description: Surgeon Fees}
+  - {line: L07, bill: B1, description: Anaesthetist Fees}
+  - {line: L08, bill: B1, description: Operation Theatre Charges}
+  - {line: L09, bill: B1, description: Tension Band Wire Set}
+  - {line: L10, bill: B1, description: Consultant Visit Charges}
+  - {line: L11, bill: B1, description: X-Ray of the Injured Part}
+  - {line: L12, bill: B1, description: Complete Blood Count}
+  - {line: L13, bill: B1, description: Coagulation Profile}
+  - {line: L14, bill: B1, description: Bedside Procedure Charges}
+  - {line: L15, bill: B1, description: DISCHARGE PROCEDURE CHARGES, annexure: list-ii/30}
+  - {line: L16, bill: P1, description: Inj. Vancomycin 1 g}
+  - {line: L17, bill: P1, description: Tab. Isoniazid 300 mg}
+  - {line: L18, bill: P1, description: IV Fluid Dextrose Saline 500 ml}
+  - {line: L19, bill: P1, description: Inj. Artesunate 60 mg}
+  - {line: L20, bill: P1, description: IV Fluid Ringer Lactate 500 ml}
+  - {line: L21, bill: P1, description: Inj. Enoxaparin 40 mg}
+  - {line: L22, bill: P1, description: Inj. Furosemide 20 mg}
+  - {line: L23, bill: P1, description: Inj. Piperacillin-Tazobactam 4.5 g}

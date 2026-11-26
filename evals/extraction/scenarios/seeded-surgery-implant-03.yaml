@@ -1,0 +1,105 @@
+# Seeded scenario seeded-surgery-implant-03: surgery with an implant.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-08-01"
+  period_end: "2026-07-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2020-08-01"
+facts:
+  admission: "2025-12-09"
+  discharge: "2025-12-11"
+  segments:
+    - {from: "2025-12-09", to: "2025-12-11", kind: room}
+  differential_billing: "yes"
+  condition:
+    onset: "2025-06-30"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-12-09", quantity: 2, unit_price_paise: 450000, amount_paise: 900000}
+    - {id: L02, category: nursing, service_date: "2025-12-09", quantity: 2, unit_price_paise: 60000, amount_paise: 120000}
+    - {id: L03, category: professional-fees, service_date: "2025-12-10", quantity: 1, unit_price_paise: 4300000, amount_paise: 4300000}
+    - {id: L04, category: operation-theatre, service_date: "2025-12-10", quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+    - {id: L05, category: implants-devices, service_date: "2025-12-10", quantity: 1, unit_price_paise: 2990000, amount_paise: 2990000}
+    - {id: L06, category: professional-fees, service_date: "2025-12-10", quantity: 1, unit_price_paise: 100000, amount_paise: 100000}
+    - {id: L07, category: diagnostics, service_date: "2025-12-09", quantity: 1, unit_price_paise: 30000, amount_paise: 30000}
+    - {id: L08, category: diagnostics, service_date: "2025-12-09", quantity: 1, unit_price_paise: 150000, amount_paise: 150000}
+    - {id: L09, category: diagnostics, service_date: "2025-12-09", quantity: 1, unit_price_paise: 250000, amount_paise: 250000}
+    - {id: L10, category: diagnostics, service_date: "2025-12-09", quantity: 1, unit_price_paise: 1200000, amount_paise: 1200000}
+    - {id: L11, category: diagnostics, service_date: "2025-12-09", quantity: 1, unit_price_paise: 85000, amount_paise: 85000}
+    - {id: L12, category: other-hospital-charges, service_date: "2025-12-10", quantity: 1, unit_price_paise: 80000, amount_paise: 80000}
+    - {id: L13, category: other-hospital-charges, service_date: "2025-12-09", quantity: 1, unit_price_paise: 30000, amount_paise: 30000, item_list: list-iv}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-12-09", quantity: 3, unit_price_paise: 145000, amount_paise: 435000}
+    - {id: L15, category: pharmacy-consumables, service_date: "2025-12-09", quantity: 3, unit_price_paise: 9800, amount_paise: 29400}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-12-09", quantity: 12, unit_price_paise: 650, amount_paise: 7800}
+    - {id: L17, category: pharmacy-consumables, service_date: "2025-12-10", quantity: 1, unit_price_paise: 1600, amount_paise: 1600}
+insured:
+  name: Gauri Hegde
+  gender: female
+  age: 62
+  policy_number: SYN-ASG-2025-200011
+  member_id: SYN-M-600011
+  date_of_birth: "1963-06-23"
+hospital:
+  name: Sitarkund Care Hospital
+  address: 17 Lake Road, Sector 2
+  city: Sitarkund
+  registration: SYN-HR-2011
+clinical:
+  diagnosis: Coronary artery disease, single vessel
+  procedure: Coronary angioplasty with stenting
+  treating_doctor: Dr. Nikhil Bansal
+  history: Chest pain on exertion for three months, relieved by rest. A treadmill test showed changes of reduced blood flow.
+  course: Angiography showed a 90% block in the left anterior descending artery, opened with a stent. No complications. Chest pain free since.
+  advice: Tab. Aspirin and Tab. Clopidogrel daily without a break for one year, and the other medicines as listed. Cardiac rehabilitation. Review after two weeks.
+  surgery:
+    date: "2025-12-10"
+    surgeon: Dr. Nikhil Bansal
+    anaesthetist: Dr. Ravi Shenoy
+    anaesthesia: Local
+    findings: A 90% block in the proximal left anterior descending artery. One drug eluting stent placed, with good flow after.
+claim_form:
+  admission_type: planned
+  signed_on: "2025-12-17"
+  claimed_amount_paise: 13708800
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200011, date: "2025-12-17"}
+  - {id: ID, type: photo-id, number: SYN-ID-G2XC-7550, date: "2021-12-12"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200011, date: "2025-12-11"}
+  - {id: OT, type: ot-notes, number: SYN-OT-200011, date: "2025-12-10"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-201101, date: "2025-12-11", layout: compact, lines_per_page: 7}
+  - {id: IV, type: implant-invoice, number: SYN-IV-200011, date: "2025-12-08", vendor: {name: Chandmora Cardio Supplies, address: '11 Ring Road, Chandmora', registration: SYN-VR-2011}, implants: [{line: L05, serial: SYN-SN-AAJFD6}]}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-201101, date: "2025-12-11", lines_per_page: 10}
+  - {id: R1, type: payment-receipt, number: SYN-RC-201101, date: "2025-12-11", against: [B1, P1], mode: UPI}
+files:
+  - {name: claim-form.pdf, documents: [CF]}
+  - {name: photo-id.pdf, documents: [ID]}
+  - {name: discharge-summary.pdf, documents: [DS]}
+  - {name: ot-notes.pdf, documents: [OT]}
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: implant-invoice.pdf, documents: [IV]}
+  - {name: pharmacy-bill.pdf, documents: [P1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Surgeon Fees}
+  - {line: L04, bill: B1, description: Cath Lab Charges}
+  - {line: L05, bill: B1, description: Drug Eluting Coronary Stent}
+  - {line: L06, bill: B1, description: Consultant Visit Charges}
+  - {line: L07, bill: B1, description: ECG}
+  - {line: L08, bill: B1, description: Troponin I}
+  - {line: L09, bill: B1, description: 2D Echocardiography}
+  - {line: L10, bill: B1, description: Coronary Angiography}
+  - {line: L11, bill: B1, description: Renal Function Test}
+  - {line: L12, bill: B1, description: Bedside Procedure Charges}
+  - {line: L13, bill: B1, description: ADMISSION/REGISTRATION CHARGES, annexure: list-iv/1}
+  - {line: L14, bill: P1, description: Inj. Meropenem 1 g}
+  - {line: L15, bill: P1, description: Inj. Heparin 5000 IU}
+  - {line: L16, bill: P1, description: Tab. Pantoprazole 40 mg}
+  - {line: L17, bill: P1, description: Inj. Dexamethasone 8 mg}

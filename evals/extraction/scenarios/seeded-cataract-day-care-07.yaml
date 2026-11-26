@@ -1,0 +1,82 @@
+# Seeded scenario seeded-cataract-day-care-07: cataract surgery as day care.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-08-01"
+  period_end: "2026-07-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2019-08-01"
+facts:
+  admission: "2025-09-23"
+  discharge: "2025-09-23"
+  segments:
+    - {from: "2025-09-23", to: "2025-09-23", kind: room}
+  differential_billing: "yes"
+  condition:
+    listed_group: listed-24-months
+    onset: "2024-06-03"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-09-23", quantity: 1, unit_price_paise: 250000, amount_paise: 250000, treatment: {kind: cataract, eye: right}}
+    - {id: L02, category: diagnostics, service_date: "2025-09-23", quantity: 1, unit_price_paise: 150000, amount_paise: 150000, treatment: {kind: cataract, eye: right}}
+    - {id: L03, category: professional-fees, service_date: "2025-09-23", quantity: 1, unit_price_paise: 1500000, amount_paise: 1500000, treatment: {kind: cataract, eye: right}}
+    - {id: L04, category: operation-theatre, service_date: "2025-09-23", quantity: 1, unit_price_paise: 500000, amount_paise: 500000, treatment: {kind: cataract, eye: right}}
+    - {id: L05, category: implants-devices, service_date: "2025-09-23", quantity: 1, unit_price_paise: 2200000, amount_paise: 2200000, treatment: {kind: cataract, eye: right}}
+    - {id: L06, category: pharmacy-consumables, service_date: "2025-09-23", quantity: 1, unit_price_paise: 200000, amount_paise: 200000, treatment: {kind: cataract, eye: right}}
+insured:
+  name: Madhavi Nair
+  gender: female
+  age: 61
+  policy_number: SYN-ASG-2025-200023
+  member_id: SYN-M-600023
+  date_of_birth: "1964-09-09"
+hospital:
+  name: Drishtipur Eye Hospital
+  address: 9 Market Road
+  city: Drishtipur
+  registration: SYN-HR-2023
+clinical:
+  diagnosis: Nuclear sclerotic cataract, right eye
+  procedure: Phacoemulsification with foldable IOL, right eye
+  treating_doctor: Dr. Nikhil Bansal
+  history: Gradually blurring vision in the eye for a year, with glare at night. Unable to read or recognise faces at a distance.
+  course: Underwent phacoemulsification with a foldable lens implant under topical anaesthesia as a day care procedure. The eye was quiet and vision improved on the first check.
+  advice: Eye drops as charted for four weeks. Wear the protective glasses outdoors. Do not rub the eye or wash the head for a week. Review the next day and after one week.
+  surgery:
+    date: "2025-09-23"
+    surgeon: Dr. Nikhil Bansal
+    anaesthetist: Dr. Anjali Dutta
+    anaesthesia: Topical
+    findings: A dense cataract of the right eye. The lens was removed by phacoemulsification through a 2.8 mm incision and a foldable lens placed in the bag.
+claim_form:
+  admission_type: planned
+  signed_on: "2025-09-28"
+  claimed_amount_paise: 4800000
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200023, date: "2025-09-28"}
+  - {id: ID, type: photo-id, number: SYN-ID-H5LE-4480, date: "2018-08-20"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200023, date: "2025-09-23"}
+  - {id: OT, type: ot-notes, number: SYN-OT-200023, date: "2025-09-23"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-202301, date: "2025-09-23", layout: compact, lines_per_page: 6}
+  - {id: IV, type: implant-invoice, number: SYN-IV-200023, date: "2025-09-21", vendor: {name: Drishti Lens Distributors, address: '2 Market Road, Drishtipur', registration: SYN-VR-2023}, implants: [{line: L05, serial: SYN-SN-9NC562}]}
+  - {id: R1, type: payment-receipt, number: SYN-RC-202301, date: "2025-09-23", against: [B1], mode: NEFT}
+files:
+  - {name: claim-form.pdf, documents: [CF]}
+  - {name: photo-id.pdf, documents: [ID]}
+  - {name: discharge-summary.pdf, documents: [DS]}
+  - {name: ot-notes.pdf, documents: [OT]}
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: implant-invoice.pdf, documents: [IV]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Day Care Bed Charges - Right Eye}
+  - {line: L02, bill: B1, description: Biometry and A-Scan - Right Eye}
+  - {line: L03, bill: B1, description: Cataract Surgery - Surgeon Fees - Right Eye}
+  - {line: L04, bill: B1, description: OT Charges - Cataract - Right Eye}
+  - {line: L05, bill: B1, description: Foldable IOL - Right Eye}
+  - {line: L06, bill: B1, description: Eye Drops and Consumables - Right Eye}

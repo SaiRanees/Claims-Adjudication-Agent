@@ -1,0 +1,106 @@
+# Seeded scenario seeded-accident-ambulance-01: an accident brought in by ambulance.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-10-01"
+  period_end: "2026-09-30"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2018-10-01"
+  cumulative_bonus_paise: 3000000
+facts:
+  admission: "2026-07-17"
+  discharge: "2026-07-23"
+  segments:
+    - {from: "2026-07-17", to: "2026-07-23", kind: room}
+  differential_billing: "yes"
+  condition:
+    accident: true
+    onset: "2026-07-17"
+  lines:
+    - {id: L01, category: road-ambulance, service_date: "2026-07-17", quantity: 1, unit_price_paise: 180000, amount_paise: 180000}
+    - {id: L02, category: other-hospital-charges, service_date: "2026-07-17", quantity: 1, unit_price_paise: 100000, amount_paise: 100000}
+    - {id: L03, category: room-rent, service_date: "2026-07-17", quantity: 6, unit_price_paise: 300000, amount_paise: 1800000}
+    - {id: L04, category: nursing, service_date: "2026-07-17", quantity: 6, unit_price_paise: 90000, amount_paise: 540000}
+    - {id: L05, category: patient-diet, service_date: "2026-07-17", quantity: 6, unit_price_paise: 30000, amount_paise: 180000}
+    - {id: L06, category: professional-fees, service_date: "2026-07-18", quantity: 1, unit_price_paise: 4700000, amount_paise: 4700000}
+    - {id: L07, category: professional-fees, service_date: "2026-07-18", quantity: 1, unit_price_paise: 1350000, amount_paise: 1350000}
+    - {id: L08, category: operation-theatre, service_date: "2026-07-18", quantity: 1, unit_price_paise: 2200000, amount_paise: 2200000}
+    - {id: L09, category: implants-devices, service_date: "2026-07-18", quantity: 1, unit_price_paise: 2780000, amount_paise: 2780000}
+    - {id: L10, category: professional-fees, service_date: "2026-07-17", quantity: 6, unit_price_paise: 80000, amount_paise: 480000}
+    - {id: L11, category: diagnostics, service_date: "2026-07-17", quantity: 1, unit_price_paise: 65000, amount_paise: 65000}
+    - {id: L12, category: diagnostics, service_date: "2026-07-17", quantity: 1, unit_price_paise: 45000, amount_paise: 45000}
+    - {id: L13, category: diagnostics, service_date: "2026-07-17", quantity: 1, unit_price_paise: 95000, amount_paise: 95000}
+    - {id: L14, category: diagnostics, service_date: "2026-07-17", quantity: 1, unit_price_paise: 30000, amount_paise: 30000}
+    - {id: L15, category: other-hospital-charges, service_date: "2026-07-17", quantity: 1, unit_price_paise: 50000, amount_paise: 50000, item_list: list-ii}
+    - {id: L16, category: pharmacy-consumables, service_date: "2026-07-18", quantity: 4, unit_price_paise: 6200, amount_paise: 24800}
+    - {id: L17, category: pharmacy-consumables, service_date: "2026-07-19", quantity: 1, unit_price_paise: 9500, amount_paise: 9500}
+    - {id: L18, category: pharmacy-consumables, service_date: "2026-07-20", quantity: 10, unit_price_paise: 1100, amount_paise: 11000}
+    - {id: L19, category: pharmacy-consumables, service_date: "2026-07-20", quantity: 7, unit_price_paise: 150, amount_paise: 1050}
+    - {id: L20, category: pharmacy-consumables, service_date: "2026-07-22", quantity: 4, unit_price_paise: 5200, amount_paise: 20800}
+insured:
+  name: Farzana Lobo
+  gender: female
+  age: 40
+  policy_number: SYN-ASG-2025-200033
+  member_id: SYN-M-600033
+  date_of_birth: "1986-01-09"
+hospital:
+  name: Chandmora Medical Centre
+  address: Plot 4, Ring Road
+  city: Chandmora
+  registration: SYN-HR-2033
+clinical:
+  diagnosis: Fracture shaft of the right femur
+  procedure: Intramedullary interlocking nailing, right femur
+  treating_doctor: Dr. Vivek Rathore
+  history: Fell from a two-wheeler after a collision on the road. Pain and deformity of the right thigh; unable to stand. Brought by ambulance.
+  course: The fracture was fixed with an interlocking nail under spinal anaesthesia. Mobilised with a walker without bearing weight on the leg.
+  advice: No weight on the right leg for six weeks. Walker at all times. Review in the orthopaedic clinic after two weeks with an X-ray.
+  surgery:
+    date: "2026-07-18"
+    surgeon: Dr. Vivek Rathore
+    anaesthetist: Dr. Manoj Pillai
+    anaesthesia: Spinal
+    findings: A transverse fracture of the middle third of the femur, reduced closed and fixed with an interlocking nail.
+claim_form:
+  admission_type: emergency
+  signed_on: "2026-07-28"
+  claimed_amount_paise: 14662150
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200033, date: "2026-07-28"}
+  - {id: ID, type: photo-id, number: SYN-ID-6AVP-1092, date: "2020-09-19"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200033, date: "2026-07-23"}
+  - {id: OT, type: ot-notes, number: SYN-OT-200033, date: "2026-07-18"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-203301, date: "2026-07-23", layout: ledger, lines_per_page: 8}
+  - {id: IV, type: implant-invoice, number: SYN-IV-200033, date: "2026-07-18", vendor: {name: Nayakhet Ortho Devices, address: '40 Industrial Area, Nayakhet', registration: SYN-VR-2033}, implants: [{line: L09, serial: SYN-SN-3BFGME}]}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-203301, date: "2026-07-23", lines_per_page: 14}
+  - {id: R1, type: payment-receipt, number: SYN-RC-203301, date: "2026-07-23", against: [B1, P1], mode: Cash}
+files:
+  - {name: claim-packet.pdf, documents: [CF, ID, DS, OT, B1, IV, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Road Ambulance Charges}
+  - {line: L02, bill: B1, description: Emergency Room Charges}
+  - {line: L03, bill: B1, description: Room Rent - Semi Private}
+  - {line: L04, bill: B1, description: Nursing Charges}
+  - {line: L05, bill: B1, description: Patient Diet Charges}
+  - {line: L06, bill: B1, description: Surgeon Fees}
+  - {line: L07, bill: B1, description: Anaesthetist Fees}
+  - {line: L08, bill: B1, description: Operation Theatre Charges}
+  - {line: L09, bill: B1, description: Intramedullary Interlocking Nail}
+  - {line: L10, bill: B1, description: Consultant Visit Charges}
+  - {line: L11, bill: B1, description: X-Ray of the Injured Part}
+  - {line: L12, bill: B1, description: Complete Blood Count}
+  - {line: L13, bill: B1, description: Coagulation Profile}
+  - {line: L14, bill: B1, description: ECG}
+  - {line: L15, bill: B1, description: DISCHARGE PROCEDURE CHARGES, annexure: list-ii/30}
+  - {line: L16, bill: P1, description: Inj. Amikacin 500 mg}
+  - {line: L17, bill: P1, description: Syp. Potassium Chloride 200 ml}
+  - {line: L18, bill: P1, description: Tab. Cefixime 200 mg}
+  - {line: L19, bill: P1, description: Tab. Aspirin 75 mg}
+  - {line: L20, bill: P1, description: Inj. Pantoprazole 40 mg}

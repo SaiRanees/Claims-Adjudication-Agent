@@ -1,0 +1,87 @@
+# Seeded scenario seeded-medical-03: a medical admission.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2019-04-01"
+facts:
+  admission: "2025-11-17"
+  discharge: "2025-11-21"
+  segments:
+    - {from: "2025-11-17", to: "2025-11-21", kind: room}
+  differential_billing: "no"
+  condition:
+    onset: "2025-11-14"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-11-17", quantity: 4, unit_price_paise: 300000, amount_paise: 1200000}
+    - {id: L02, category: nursing, service_date: "2025-11-17", quantity: 4, unit_price_paise: 90000, amount_paise: 360000}
+    - {id: L03, category: professional-fees, service_date: "2025-11-17", quantity: 4, unit_price_paise: 80000, amount_paise: 320000}
+    - {id: L04, category: diagnostics, service_date: "2025-11-20", quantity: 3, unit_price_paise: 45000, amount_paise: 135000}
+    - {id: L05, category: diagnostics, service_date: "2025-11-20", quantity: 1, unit_price_paise: 70000, amount_paise: 70000}
+    - {id: L06, category: diagnostics, service_date: "2025-11-17", quantity: 1, unit_price_paise: 85000, amount_paise: 85000}
+    - {id: L07, category: diagnostics, service_date: "2025-11-17", quantity: 1, unit_price_paise: 25000, amount_paise: 25000}
+    - {id: L08, category: other-hospital-charges, service_date: "2025-11-18", quantity: 1, unit_price_paise: 150000, amount_paise: 150000}
+    - {id: L09, category: other-hospital-charges, service_date: "2025-11-17", quantity: 4, unit_price_paise: 50000, amount_paise: 200000}
+    - {id: L10, category: pharmacy-consumables, service_date: "2025-11-17", quantity: 6, unit_price_paise: 1100, amount_paise: 6600}
+    - {id: L11, category: pharmacy-consumables, service_date: "2025-11-18", quantity: 1, unit_price_paise: 6200, amount_paise: 6200}
+    - {id: L12, category: pharmacy-consumables, service_date: "2025-11-19", quantity: 2, unit_price_paise: 5200, amount_paise: 10400}
+    - {id: L13, category: pharmacy-consumables, service_date: "2025-11-19", quantity: 1, unit_price_paise: 35000, amount_paise: 35000}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-11-19", quantity: 2, unit_price_paise: 145000, amount_paise: 290000}
+    - {id: L15, category: pharmacy-consumables, service_date: "2025-11-20", quantity: 1, unit_price_paise: 520000, amount_paise: 520000}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-11-20", quantity: 27, unit_price_paise: 180, amount_paise: 4860}
+insured:
+  name: Bhavana Bhosale
+  gender: female
+  age: 62
+  policy_number: SYN-ASG-2025-200003
+  member_id: SYN-M-600003
+  date_of_birth: "1963-09-08"
+hospital:
+  name: Sitarkund Care Hospital
+  address: 17 Lake Road, Sector 2
+  city: Sitarkund
+  registration: SYN-HR-2003
+clinical:
+  diagnosis: Acute gastroenteritis with severe dehydration
+  treating_doctor: Dr. Arvind Saxena
+  history: Loose stools more than ten times a day with vomiting for two days, unable to keep fluids down. Dizzy on standing.
+  course: Rehydrated with intravenous fluids and given antiemetics. Electrolytes corrected by the second day, and oral intake resumed.
+  advice: Oral rehydration solution after each loose stool. Light diet for three days. Return if the stools become bloody or the vomiting returns.
+claim_form:
+  admission_type: emergency
+  signed_on: "2025-11-25"
+  claimed_amount_paise: 3418060
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200003, date: "2025-11-25"}
+  - {id: ID, type: photo-id, number: SYN-ID-T7RP-8301, date: "2023-01-28"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200003, date: "2025-11-21"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-200301, date: "2025-11-21", layout: ledger, lines_per_page: 5}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-200301, date: "2025-11-21", lines_per_page: 10}
+  - {id: R1, type: payment-receipt, number: SYN-RC-200301, date: "2025-11-21", against: [B1, P1], mode: UPI}
+files:
+  - {name: claim-packet.pdf, documents: [CF, ID, DS, B1, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Charges - Private Room}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Consultant Visit Charges}
+  - {line: L04, bill: B1, description: Complete Blood Count}
+  - {line: L05, bill: B1, description: Serum Electrolytes}
+  - {line: L06, bill: B1, description: Renal Function Test}
+  - {line: L07, bill: B1, description: Urine Routine Examination}
+  - {line: L08, bill: B1, description: Bedside Procedure Charges}
+  - {line: L09, bill: B1, description: Physiotherapy Charges}
+  - {line: L10, bill: P1, description: Inj. Furosemide 20 mg}
+  - {line: L11, bill: P1, description: Inj. Amikacin 500 mg}
+  - {line: L12, bill: P1, description: Inj. Pantoprazole 40 mg}
+  - {line: L13, bill: P1, description: Inj. Artesunate 60 mg}
+  - {line: L14, bill: P1, description: Inj. Meropenem 1 g}
+  - {line: L15, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L16, bill: P1, description: Tab. Metformin 500 mg}

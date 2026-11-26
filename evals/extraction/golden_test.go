@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -21,9 +22,10 @@ import (
 	"github.com/SaiRanees/Claims-Adjudication-Agent/rulepacks"
 )
 
-// The tests in week 3, session 3's "Done when": the 52 golden packets hold
-// their cases' facts unchanged, the engine gets each case's checked figures
-// from its packet's truth, every packet passes the self-check, and two
+// The tests in week 3, sessions 3 and 4's "Done when": the 52 golden
+// packets hold their cases' facts unchanged, the engine gets each case's
+// checked figures from its packet's truth, the 48 seeded packets'
+// truth adjudicates cleanly, all 100 packets pass the self-check, and two
 // processes render identical bytes.
 
 // childEnv, set to a file path, makes the test binary render every packet,
@@ -191,13 +193,118 @@ func checkedPayable(t *testing.T, rows []engine.Row) int64 {
 	return 0
 }
 
-func TestGoldenPacketsSelfCheck(t *testing.T) {
+// TestScenarioSet checks the set's shape: the 52 golden specs and eight
+// seeded specs for each claim type, numbered 01 to 08.
+func TestScenarioSet(t *testing.T) {
+	specs, err := Specs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var want []string
+	for _, ct := range ClaimTypes {
+		for n := 1; n <= 8; n++ {
+			want = append(want, fmt.Sprintf("seeded-%s-%02d", ct, n))
+		}
+	}
+	var golden int
+	var seeded []string
+	for _, s := range specs {
+		switch {
+		case s.GoldenCase != "":
+			golden++
+		case strings.HasPrefix(s.ID, "seeded-"):
+			seeded = append(seeded, s.ID)
+		default:
+			t.Errorf("%s is neither golden nor seeded", s.ID)
+		}
+	}
+	slices.Sort(want)
+	if golden != 52 || !slices.Equal(seeded, want) || len(specs) != 100 {
+		t.Errorf("%d golden and seeded %v, want 52 golden and %v", golden, seeded, want)
+	}
+}
+
+func seededSpecs(t *testing.T) []datagen.Spec {
+	t.Helper()
+	specs, err := Specs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return slices.DeleteFunc(specs, func(s datagen.Spec) bool { return s.GoldenCase != "" })
+}
+
+// TestSeededPacketsAdjudicate is the seeded packets' engine test. They
+// have no checked figures, so the engine must read back from truth.json
+// exactly the facts the spec holds, adjudicate them with only the flags
+// SeededFlags allows, and the claim form must claim the bills' net total.
+func TestSeededPacketsAdjudicate(t *testing.T) {
+	reg, err := rulepacks.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range seededSpecs(t) {
+		t.Run(s.ID, func(t *testing.T) {
+			p, err := datagen.Render(s)
+			if err != nil {
+				t.Fatal(err)
+			}
+			raw, err := datagen.TruthJSON(p.Truth)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var truth datagen.Truth
+			dec := json.NewDecoder(bytes.NewReader(raw))
+			dec.DisallowUnknownFields()
+			if err := dec.Decode(&truth); err != nil {
+				t.Fatal(err)
+			}
+			e := truth.Engine
+			period, cover, facts, err := datagen.EngineInput(e.Policy, e.Cover, e.Facts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			wantPeriod, wantCover, wantFacts, err := s.Engine()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(period, wantPeriod) || !reflect.DeepEqual(cover, wantCover) || !reflect.DeepEqual(facts, wantFacts) {
+				t.Error("truth.json's policy, cover or facts differ from the spec's")
+			}
+			if err := CheckSeeded(reg, period, cover, facts); err != nil {
+				t.Error(err)
+			}
+			var nets int64
+			for _, b := range truth.Bills {
+				nets += b.Totals.Net.Paise
+			}
+			claimed := ""
+			for _, d := range truth.Other {
+				for _, f := range d.Fields {
+					if d.Type == datagen.DocClaimForm && f.Name == "claimed_amount" {
+						claimed = f.Value
+					}
+				}
+			}
+			if claimed != strconv.FormatInt(nets, 10) {
+				t.Errorf("the claim form claims %q paise, the bills' net total is %d", claimed, nets)
+			}
+		})
+	}
+}
+
+// TestPacketsSelfCheck runs the self-check on every packet, golden and
+// seeded.
+func TestPacketsSelfCheck(t *testing.T) {
 	pdfium, err := documents.NewPDFium(documents.DefaultPDFiumConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = pdfium.Close() })
-	for _, s := range goldenSpecs(t) {
+	specs, err := Specs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range specs {
 		t.Run(s.ID, func(t *testing.T) {
 			p, err := datagen.Render(s)
 			if err != nil {
@@ -236,7 +343,7 @@ func TestPacketsRenderIdenticallyInTwoProcesses(t *testing.T) {
 		}
 		t.Fatal("two processes rendered different packets")
 	}
-	if n := strings.Count(string(here), "/truth.json "); n < 52 {
-		t.Errorf("rendered %d packets, want at least 52", n)
+	if n := strings.Count(string(here), "/truth.json "); n != 100 {
+		t.Errorf("rendered %d packets, want 100", n)
 	}
 }

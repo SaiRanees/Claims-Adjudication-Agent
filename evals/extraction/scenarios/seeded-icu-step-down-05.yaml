@@ -1,0 +1,111 @@
+# Seeded scenario seeded-icu-step-down-05: an ICU stay with a step-down to the ward.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-02-01"
+  period_end: "2026-01-31"
+cover:
+  tranches:
+    - sum_insured_paise: 30000000
+      continuous_since: "2019-02-01"
+facts:
+  admission: "2025-11-02"
+  discharge: "2025-11-08"
+  segments:
+    - {from: "2025-11-02", to: "2025-11-05", kind: icu}
+    - {from: "2025-11-06", to: "2025-11-08", kind: room}
+  differential_billing: "yes"
+  condition:
+    onset: "2025-10-31"
+  lines:
+    - {id: L01, category: icu-charges, service_date: "2025-11-02", quantity: 4, unit_price_paise: 900000, amount_paise: 3600000}
+    - {id: L02, category: icu-charges, service_date: "2025-11-02", quantity: 4, unit_price_paise: 250000, amount_paise: 1000000}
+    - {id: L03, category: other-hospital-charges, service_date: "2025-11-02", quantity: 4, unit_price_paise: 200000, amount_paise: 800000}
+    - {id: L04, category: room-rent, service_date: "2025-11-06", quantity: 2, unit_price_paise: 450000, amount_paise: 900000}
+    - {id: L05, category: nursing, service_date: "2025-11-06", quantity: 2, unit_price_paise: 50000, amount_paise: 100000}
+    - {id: L06, category: patient-diet, service_date: "2025-11-06", quantity: 2, unit_price_paise: 25000, amount_paise: 50000}
+    - {id: L07, category: professional-fees, service_date: "2025-11-02", quantity: 6, unit_price_paise: 120000, amount_paise: 720000}
+    - {id: L08, category: diagnostics, service_date: "2025-11-05", quantity: 1, unit_price_paise: 160000, amount_paise: 160000}
+    - {id: L09, category: diagnostics, service_date: "2025-11-02", quantity: 1, unit_price_paise: 650000, amount_paise: 650000}
+    - {id: L10, category: diagnostics, service_date: "2025-11-03", quantity: 3, unit_price_paise: 45000, amount_paise: 135000}
+    - {id: L11, category: diagnostics, service_date: "2025-11-02", quantity: 1, unit_price_paise: 90000, amount_paise: 90000}
+    - {id: L12, category: diagnostics, service_date: "2025-11-02", quantity: 1, unit_price_paise: 70000, amount_paise: 70000}
+    - {id: L13, category: other-hospital-charges, service_date: "2025-11-07", quantity: 1, unit_price_paise: 80000, amount_paise: 80000}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-11-03", quantity: 2, unit_price_paise: 9800, amount_paise: 19600}
+    - {id: L15, category: pharmacy-consumables, service_date: "2025-11-03", quantity: 6, unit_price_paise: 2900, amount_paise: 17400}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-11-03", quantity: 5, unit_price_paise: 150, amount_paise: 750}
+    - {id: L17, category: pharmacy-consumables, service_date: "2025-11-04", quantity: 3, unit_price_paise: 59000, amount_paise: 177000}
+    - {id: L18, category: pharmacy-consumables, service_date: "2025-11-05", quantity: 1, unit_price_paise: 1600, amount_paise: 1600}
+    - {id: L19, category: pharmacy-consumables, service_date: "2025-11-05", quantity: 12, unit_price_paise: 950, amount_paise: 11400}
+    - {id: L20, category: pharmacy-consumables, service_date: "2025-11-06", quantity: 1, unit_price_paise: 520000, amount_paise: 520000}
+    - {id: L21, category: pharmacy-consumables, service_date: "2025-11-06", quantity: 2, unit_price_paise: 9500, amount_paise: 19000}
+    - {id: L22, category: pharmacy-consumables, service_date: "2025-11-07", quantity: 8, unit_price_paise: 650, amount_paise: 5200}
+    - {id: L23, category: pharmacy-consumables, service_date: "2025-11-07", quantity: 2, unit_price_paise: 6850, amount_paise: 13700}
+    - {id: L24, category: pharmacy-consumables, service_date: "2025-11-07", quantity: 1, unit_price_paise: 38500, amount_paise: 38500}
+    - {id: L25, category: pharmacy-consumables, service_date: "2025-11-07", quantity: 5, unit_price_paise: 1850, amount_paise: 9250}
+insured:
+  name: Chitra Jadhav
+  gender: female
+  age: 34
+  policy_number: SYN-ASG-2025-200029
+  member_id: SYN-M-600029
+  date_of_birth: "1991-10-02"
+hospital:
+  name: Ravikund Multispeciality Hospital
+  address: Plot 7, Station Road
+  city: Ravikund
+  registration: SYN-HR-2029
+clinical:
+  diagnosis: Severe acute pancreatitis
+  treating_doctor: Dr. Tanvir Ahmed
+  history: Severe upper abdominal pain going to the back, with vomiting, for a day. Lipase five times normal.
+  course: Managed in the ICU with fluids, pain relief and bowel rest. Pain settled and feeds were started by the fourth day. Moved to the ward.
+  advice: Low-fat diet. No alcohol. Review in the gastroenterology clinic after two weeks with a repeat ultrasound.
+claim_form:
+  admission_type: emergency
+  signed_on: "2025-11-11"
+  claimed_amount_paise: 9188400
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200029, date: "2025-11-11"}
+  - {id: ID, type: photo-id, number: SYN-ID-V8X5-2695, date: "2023-03-28"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200029, date: "2025-11-08"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-202901, date: "2025-11-08", layout: compact, lines_per_page: 7}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-202901, date: "2025-11-08", lines_per_page: 12}
+  - {id: R1, type: payment-receipt, number: SYN-RC-202901, date: "2025-11-08", against: [B1, P1], mode: Cash}
+files:
+  - {name: claim-form.pdf, documents: [CF]}
+  - {name: photo-id.pdf, documents: [ID]}
+  - {name: discharge-summary.pdf, documents: [DS]}
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: pharmacy-bill.pdf, documents: [P1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: ICU Bed Charges}
+  - {line: L02, bill: B1, description: Intensivist Charges}
+  - {line: L03, bill: B1, description: Equipment Charges}
+  - {line: L04, bill: B1, description: Room Rent - Semi Private}
+  - {line: L05, bill: B1, description: Nursing Charges}
+  - {line: L06, bill: B1, description: Patient Diet Charges}
+  - {line: L07, bill: B1, description: Consultant Visit Charges}
+  - {line: L08, bill: B1, description: Serum Amylase and Lipase}
+  - {line: L09, bill: B1, description: CT Abdomen with Contrast}
+  - {line: L10, bill: B1, description: Complete Blood Count}
+  - {line: L11, bill: B1, description: Liver Function Test}
+  - {line: L12, bill: B1, description: Serum Electrolytes}
+  - {line: L13, bill: B1, description: Bedside Procedure Charges}
+  - {line: L14, bill: P1, description: Inj. Heparin 5000 IU}
+  - {line: L15, bill: P1, description: Inj. Metronidazole 500 mg}
+  - {line: L16, bill: P1, description: Tab. Aspirin 75 mg}
+  - {line: L17, bill: P1, description: Inj. Vancomycin 1 g}
+  - {line: L18, bill: P1, description: Inj. Dexamethasone 8 mg}
+  - {line: L19, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L20, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L21, bill: P1, description: Syp. Potassium Chloride 200 ml}
+  - {line: L22, bill: P1, description: Tab. Pantoprazole 40 mg}
+  - {line: L23, bill: P1, description: Inj. Ceftriaxone 1 g}
+  - {line: L24, bill: P1, description: Inj. Enoxaparin 40 mg}
+  - {line: L25, bill: P1, description: Inj. Ondansetron 4 mg}

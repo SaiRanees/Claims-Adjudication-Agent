@@ -1,0 +1,106 @@
+# Seeded scenario seeded-accident-ambulance-06: an accident brought in by ambulance.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-11-01"
+  period_end: "2026-10-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2020-11-01"
+facts:
+  admission: "2026-03-26"
+  discharge: "2026-03-28"
+  segments:
+    - {from: "2026-03-26", to: "2026-03-28", kind: room}
+  differential_billing: "yes"
+  condition:
+    accident: true
+    onset: "2026-03-26"
+  lines:
+    - {id: L01, category: road-ambulance, service_date: "2026-03-26", quantity: 1, unit_price_paise: 300000, amount_paise: 300000}
+    - {id: L02, category: other-hospital-charges, service_date: "2026-03-26", quantity: 1, unit_price_paise: 100000, amount_paise: 100000}
+    - {id: L03, category: room-rent, service_date: "2026-03-26", quantity: 2, unit_price_paise: 550000, amount_paise: 1100000}
+    - {id: L04, category: nursing, service_date: "2026-03-26", quantity: 2, unit_price_paise: 60000, amount_paise: 120000}
+    - {id: L05, category: professional-fees, service_date: "2026-03-27", quantity: 1, unit_price_paise: 3800000, amount_paise: 3800000}
+    - {id: L06, category: professional-fees, service_date: "2026-03-27", quantity: 1, unit_price_paise: 1050000, amount_paise: 1050000}
+    - {id: L07, category: operation-theatre, service_date: "2026-03-27", quantity: 1, unit_price_paise: 1800000, amount_paise: 1800000}
+    - {id: L08, category: implants-devices, service_date: "2026-03-27", quantity: 1, unit_price_paise: 1880000, amount_paise: 1880000}
+    - {id: L09, category: professional-fees, service_date: "2026-03-26", quantity: 2, unit_price_paise: 120000, amount_paise: 240000}
+    - {id: L10, category: diagnostics, service_date: "2026-03-26", quantity: 1, unit_price_paise: 65000, amount_paise: 65000}
+    - {id: L11, category: diagnostics, service_date: "2026-03-26", quantity: 1, unit_price_paise: 45000, amount_paise: 45000}
+    - {id: L12, category: diagnostics, service_date: "2026-03-26", quantity: 1, unit_price_paise: 30000, amount_paise: 30000}
+    - {id: L13, category: pharmacy-consumables, service_date: "2026-03-26", quantity: 3, unit_price_paise: 48500, amount_paise: 145500}
+    - {id: L14, category: pharmacy-consumables, service_date: "2026-03-27", quantity: 2, unit_price_paise: 21500, amount_paise: 43000}
+    - {id: L15, category: pharmacy-consumables, service_date: "2026-03-27", quantity: 3, unit_price_paise: 145000, amount_paise: 435000}
+    - {id: L16, category: pharmacy-consumables, service_date: "2026-03-27", quantity: 4, unit_price_paise: 950, amount_paise: 3800}
+    - {id: L17, category: pharmacy-consumables, service_date: "2026-03-27", quantity: 2, unit_price_paise: 36500, amount_paise: 73000}
+insured:
+  name: Hemant Nair
+  gender: male
+  age: 44
+  policy_number: SYN-ASG-2025-200038
+  member_id: SYN-M-600038
+  date_of_birth: "1982-02-17"
+hospital:
+  name: Tarangpur City Hospital
+  address: 22 Canal Street
+  city: Tarangpur
+  registration: SYN-HR-2038
+clinical:
+  diagnosis: Fracture of the left clavicle
+  procedure: Open reduction and plate fixation, left clavicle
+  treating_doctor: Dr. Farhan Siddiqui
+  history: Fell from a bicycle onto the left shoulder after hitting a pothole. Pain and a bump over the collar bone. Brought by ambulance.
+  course: The fracture was fixed with a plate under general anaesthesia. Shoulder movements started gently. The wound is healthy.
+  advice: Arm sling for three weeks. No lifting with the left arm for six weeks. Review in the orthopaedic clinic after two weeks.
+  surgery:
+    date: "2026-03-27"
+    surgeon: Dr. Farhan Siddiqui
+    anaesthetist: Dr. Sunita Kher
+    anaesthesia: General
+    findings: A displaced fracture of the middle third of the clavicle, fixed with a locking plate.
+claim_form:
+  admission_type: emergency
+  signed_on: "2026-03-31"
+  claimed_amount_paise: 11230300
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200038, date: "2026-03-31"}
+  - {id: ID, type: photo-id, number: SYN-ID-W2HJ-8275, date: "2019-06-04"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200038, date: "2026-03-28"}
+  - {id: OT, type: ot-notes, number: SYN-OT-200038, date: "2026-03-27"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-203801, date: "2026-03-28", layout: compact, lines_per_page: 6}
+  - {id: IV, type: implant-invoice, number: SYN-IV-200038, date: "2026-03-26", vendor: {name: Chandmora Cardio Supplies, address: '11 Ring Road, Chandmora', registration: SYN-VR-2038}, implants: [{line: L08, serial: SYN-SN-QDXR7N}]}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-203801, date: "2026-03-28", lines_per_page: 15}
+  - {id: R1, type: payment-receipt, number: SYN-RC-203801, date: "2026-03-28", against: [B1, P1], mode: UPI}
+files:
+  - {name: claim-form.pdf, documents: [CF]}
+  - {name: photo-id.pdf, documents: [ID]}
+  - {name: discharge-summary.pdf, documents: [DS]}
+  - {name: ot-notes.pdf, documents: [OT]}
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: implant-invoice.pdf, documents: [IV]}
+  - {name: pharmacy-bill.pdf, documents: [P1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Road Ambulance Charges}
+  - {line: L02, bill: B1, description: Emergency Room Charges}
+  - {line: L03, bill: B1, description: Room Charges - Private Room}
+  - {line: L04, bill: B1, description: Nursing Charges}
+  - {line: L05, bill: B1, description: Surgeon Fees}
+  - {line: L06, bill: B1, description: Anaesthetist Fees}
+  - {line: L07, bill: B1, description: Operation Theatre Charges}
+  - {line: L08, bill: B1, description: Clavicle Locking Plate}
+  - {line: L09, bill: B1, description: Consultant Visit Charges}
+  - {line: L10, bill: B1, description: X-Ray of the Injured Part}
+  - {line: L11, bill: B1, description: Complete Blood Count}
+  - {line: L12, bill: B1, description: ECG}
+  - {line: L13, bill: P1, description: Inj. Piperacillin-Tazobactam 4.5 g}
+  - {line: L14, bill: P1, description: Syp. Lactulose 200 ml}
+  - {line: L15, bill: P1, description: Inj. Meropenem 1 g}
+  - {line: L16, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L17, bill: P1, description: Inj. Cefoperazone-Sulbactam 1.5 g}

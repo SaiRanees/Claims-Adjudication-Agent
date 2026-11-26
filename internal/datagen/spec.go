@@ -116,6 +116,10 @@ type Insured struct {
 	Age          int    `yaml:"age"`
 	PolicyNumber string `yaml:"policy_number"`
 	MemberID     string `yaml:"member_id"`
+	// DateOfBirth is printed on the photo ID and the claim form. A spec
+	// with a photo ID needs it, and Age must be the age it gives at the
+	// admission.
+	DateOfBirth string `yaml:"date_of_birth,omitempty"`
 }
 
 // Hospital is the treating hospital. Invented.
@@ -131,6 +135,23 @@ type Clinical struct {
 	Diagnosis      string `yaml:"diagnosis"`
 	Procedure      string `yaml:"procedure,omitempty"`
 	TreatingDoctor string `yaml:"treating_doctor"`
+	// History, Course and Advice are the discharge summary's paragraphs. A
+	// spec with a discharge summary needs Course and Advice.
+	History string `yaml:"history,omitempty"`
+	Course  string `yaml:"course,omitempty"`
+	Advice  string `yaml:"advice,omitempty"`
+	// Surgery is what the OT notes record. A spec with OT notes needs it
+	// and a procedure.
+	Surgery *Surgery `yaml:"surgery,omitempty"`
+}
+
+// Surgery is one operation, as the OT notes record it.
+type Surgery struct {
+	Date         string `yaml:"date"`
+	Surgeon      string `yaml:"surgeon"`
+	Anaesthetist string `yaml:"anaesthetist"`
+	Anaesthesia  string `yaml:"anaesthesia"`
+	Findings     string `yaml:"findings"`
 }
 
 // ClaimForm is the claim form's values.
@@ -141,15 +162,28 @@ type ClaimForm struct {
 }
 
 // DocumentType is a logical document's type. The values follow the packet
-// checklist; this session draws bills and receipts.
+// checklist.
 type DocumentType string
 
 // The document types the generator draws.
 const (
-	DocHospitalBill   DocumentType = "hospital-bill"
-	DocPharmacyBill   DocumentType = "pharmacy-bill"
-	DocPaymentReceipt DocumentType = "payment-receipt"
+	DocHospitalBill     DocumentType = "hospital-bill"
+	DocPharmacyBill     DocumentType = "pharmacy-bill"
+	DocPaymentReceipt   DocumentType = "payment-receipt"
+	DocClaimForm        DocumentType = "claim-form"
+	DocPhotoID          DocumentType = "photo-id"
+	DocDischargeSummary DocumentType = "discharge-summary"
+	DocOTNotes          DocumentType = "ot-notes"
+	DocImplantInvoice   DocumentType = "implant-invoice"
 )
+
+// DocumentTypes lists the types the generator draws.
+func DocumentTypes() []DocumentType {
+	return []DocumentType{
+		DocHospitalBill, DocPharmacyBill, DocPaymentReceipt, DocClaimForm,
+		DocPhotoID, DocDischargeSummary, DocOTNotes, DocImplantInvoice,
+	}
+}
 
 // Document is one logical document in the packet.
 type Document struct {
@@ -168,6 +202,24 @@ type Document struct {
 	Against []string `yaml:"against,omitempty"`
 	// Mode is how a receipt was paid.
 	Mode string `yaml:"mode,omitempty"`
+	// Vendor issued an implant invoice.
+	Vendor *Vendor `yaml:"vendor,omitempty"`
+	// Implants are an implant invoice's items: each an implants-devices
+	// line of a hospital bill, invoiced at the bill's quantity and price.
+	Implants []Implant `yaml:"implants,omitempty"`
+}
+
+// Vendor is an implant's supplier. Invented.
+type Vendor struct {
+	Name         string `yaml:"name"`
+	Address      string `yaml:"address"`
+	Registration string `yaml:"registration"`
+}
+
+// Implant is one item of an implant invoice. The OT notes print it too.
+type Implant struct {
+	Line   string `yaml:"line"`
+	Serial string `yaml:"serial"`
 }
 
 // IsBill reports whether the document lists lines.
@@ -340,7 +392,10 @@ func (s Spec) Validate() error {
 	if err := s.validateFiles(docs); err != nil {
 		return err
 	}
-	return s.validateLines(facts, docs)
+	if err := s.validateLines(facts, docs); err != nil {
+		return err
+	}
+	return s.validateRecords(facts)
 }
 
 func (s Spec) validatePeople() error {
@@ -399,8 +454,15 @@ func (s Spec) validateDocuments() (map[string]Document, error) {
 			if len(d.Against) == 0 || d.Mode == "" {
 				return nil, fmt.Errorf("%s: a receipt needs against and mode", where)
 			}
+		case DocClaimForm, DocPhotoID, DocDischargeSummary, DocOTNotes, DocImplantInvoice:
+			if d.Layout != "" || len(d.Against) > 0 || d.Mode != "" {
+				return nil, fmt.Errorf("%s: a %s has no layout, against or mode", where, d.Type)
+			}
 		default:
-			return nil, fmt.Errorf("%s: type %q isn't hospital-bill, pharmacy-bill or payment-receipt", where, d.Type)
+			return nil, fmt.Errorf("%s: type %q isn't one of %v", where, d.Type, DocumentTypes())
+		}
+		if d.Type != DocImplantInvoice && (d.Vendor != nil || len(d.Implants) > 0) {
+			return nil, fmt.Errorf("%s: only an implant invoice has a vendor or implants", where)
 		}
 		if d.IsBill() {
 			if d.LinesPerPage < 1 || d.LinesPerPage > maxLinesPerPage {
@@ -414,6 +476,15 @@ func (s Spec) validateDocuments() (map[string]Document, error) {
 			return nil, fmt.Errorf("%s: only a bill has lines_per_page or a discount", where)
 		}
 		docs[d.ID] = d
+	}
+	count := map[DocumentType]int{}
+	for _, d := range s.Documents {
+		count[d.Type]++
+	}
+	for _, t := range singleDocuments {
+		if count[t] > 1 {
+			return nil, fmt.Errorf("a packet holds at most one %s, not %d", t, count[t])
+		}
 	}
 	if discounts != s.Facts.BillDiscount {
 		return nil, fmt.Errorf("the bills' discounts add up to %d paise, but facts.bill_discount_paise is %d", discounts, s.Facts.BillDiscount)
@@ -494,6 +565,132 @@ func (s Spec) validateLines(facts rules.Facts, docs map[string]Document) error {
 		if d.IsBill() && billed[d.ID] == 0 {
 			return fmt.Errorf("bill %s has no lines", d.ID)
 		}
+	}
+	return nil
+}
+
+// The shapes of the photo ID's number and an implant's serial. Both start
+// SYN-, so neither copies the format of a real ID or serial.
+var (
+	photoIDPattern = regexp.MustCompile(`^SYN-ID-[A-Z0-9]{4}-[0-9]{4}$`)
+	serialPattern  = regexp.MustCompile(`^SYN-SN-[A-Z0-9]{6}$`)
+)
+
+// singleDocuments are the types a packet holds at most one of.
+var singleDocuments = []DocumentType{DocClaimForm, DocPhotoID, DocDischargeSummary, DocOTNotes}
+
+// validateRecords checks the documents that aren't bills or receipts: each
+// has what it prints, and an implant invoice's items are hospital-bill
+// implant lines, each invoiced once.
+func (s Spec) validateRecords(facts rules.Facts) error {
+	count := map[DocumentType]int{}
+	for _, d := range s.Documents {
+		count[d.Type]++
+	}
+	if err := s.validateBirth(facts.Admission, count[DocPhotoID] > 0); err != nil {
+		return err
+	}
+	if err := s.validateSurgery(facts, count[DocOTNotes] > 0); err != nil {
+		return err
+	}
+	if count[DocDischargeSummary] > 0 && (s.Clinical.Course == "" || s.Clinical.Advice == "") {
+		return errors.New("a discharge summary needs clinical.course and clinical.advice")
+	}
+	lines := map[string]rules.Line{}
+	for _, l := range facts.Lines {
+		lines[l.ID] = l
+	}
+	bills := map[string]DocumentType{}
+	for _, d := range s.Documents {
+		bills[d.ID] = d.Type
+	}
+	onBill := map[string]string{}
+	for _, lf := range s.Lines {
+		onBill[lf.Line] = lf.Bill
+	}
+	invoiced := map[string]bool{}
+	for _, d := range s.Documents {
+		switch d.Type {
+		case DocClaimForm:
+			if d.Date != s.ClaimForm.SignedOn {
+				return fmt.Errorf("claim form %s is dated %s, but claim_form.signed_on is %s", d.ID, d.Date, s.ClaimForm.SignedOn)
+			}
+		case DocPhotoID:
+			if !photoIDPattern.MatchString(d.Number) {
+				return fmt.Errorf("photo ID %s: number %q isn't SYN-ID-XXXX-9999", d.ID, d.Number)
+			}
+		case DocImplantInvoice:
+			v := d.Vendor
+			if v == nil || v.Name == "" || v.Address == "" || v.Registration == "" || len(d.Implants) == 0 {
+				return fmt.Errorf("implant invoice %s needs a vendor's name, address and registration, and implants", d.ID)
+			}
+			for _, im := range d.Implants {
+				l, ok := lines[im.Line]
+				switch {
+				case !ok || l.Category != rules.CategoryImplantsDevices:
+					return fmt.Errorf("implant invoice %s: line %q isn't an implants-devices line", d.ID, im.Line)
+				case bills[onBill[im.Line]] != DocHospitalBill:
+					return fmt.Errorf("implant invoice %s: line %s isn't on a hospital bill", d.ID, im.Line)
+				case invoiced[im.Line]:
+					return fmt.Errorf("implant invoice %s: line %s is invoiced twice", d.ID, im.Line)
+				case !serialPattern.MatchString(im.Serial):
+					return fmt.Errorf("implant invoice %s: serial %q isn't SYN-SN-XXXXXX", d.ID, im.Serial)
+				}
+				invoiced[im.Line] = true
+			}
+		case DocHospitalBill, DocPharmacyBill, DocPaymentReceipt, DocDischargeSummary, DocOTNotes:
+		}
+	}
+	return nil
+}
+
+// validateBirth checks the date of birth against the age, which the
+// documents print as the age at the admission.
+func (s Spec) validateBirth(admission rules.Date, needed bool) error {
+	if s.Insured.DateOfBirth == "" {
+		if needed {
+			return errors.New("a photo ID needs insured.date_of_birth")
+		}
+		return nil
+	}
+	dob, err := rules.ParseDate(s.Insured.DateOfBirth)
+	if err != nil {
+		return fmt.Errorf("insured.date_of_birth: %w", err)
+	}
+	if age := ageOn(dob, admission); age != s.Insured.Age {
+		return fmt.Errorf("insured.date_of_birth %s gives age %d at the admission, but insured.age is %d", dob, age, s.Insured.Age)
+	}
+	return nil
+}
+
+// ageOn is the age in whole years on day d of someone born on dob.
+func ageOn(dob, d rules.Date) int {
+	age := d.Year() - dob.Year()
+	if d.Month() < dob.Month() || (d.Month() == dob.Month() && d.Day() < dob.Day()) {
+		age--
+	}
+	return age
+}
+
+// validateSurgery checks what OT notes print: the operation, on a day of
+// the stay.
+func (s Spec) validateSurgery(facts rules.Facts, needed bool) error {
+	sg := s.Clinical.Surgery
+	if sg == nil {
+		if needed {
+			return errors.New("OT notes need clinical.surgery")
+		}
+		return nil
+	}
+	if s.Clinical.Procedure == "" || sg.Surgeon == "" || sg.Anaesthetist == "" || sg.Anaesthesia == "" || sg.Findings == "" {
+		return errors.New("clinical.surgery needs clinical.procedure, a surgeon, an anaesthetist, the anaesthesia and the findings")
+	}
+	d, err := rules.ParseDate(sg.Date)
+	if err != nil {
+		return fmt.Errorf("clinical.surgery.date: %w", err)
+	}
+	if d.Before(facts.Admission) || d.After(facts.Discharge) {
+		return fmt.Errorf("clinical.surgery.date %s is outside the stay", d)
 	}
 	return nil
 }

@@ -3,7 +3,10 @@ package datagen
 // Version is the generator's version. Truth carries it, and any change that
 // could move a packet's bytes or its truth needs a new one, as a rule pack
 // change needs a new version.
-const Version = "1"
+//
+// Version 2 (session 4) adds the claim form, photo ID, discharge summary,
+// OT notes and implant invoice, and other_documents to the truth.
+const Version = "2"
 
 // Truth is what a rendered packet holds, for scoring extraction against it.
 // Every printed string is exactly what the page shows, beside the value it
@@ -15,11 +18,45 @@ type Truth struct {
 	Files            []TruthFile `json:"files"`
 	// Documents lists the types of the documents included, sorted, for the
 	// packet checklist.
-	Documents []DocumentType   `json:"documents"`
-	Bills     []TruthBill      `json:"bills"`
-	Receipts  []TruthReceipt   `json:"receipts"`
-	Claim     TruthClaim       `json:"claim"`
-	Engine    TruthEngineInput `json:"engine"`
+	Documents []DocumentType `json:"documents"`
+	Bills     []TruthBill    `json:"bills"`
+	Receipts  []TruthReceipt `json:"receipts"`
+	// Other are the documents that aren't bills or receipts.
+	Other  []TruthDocument  `json:"other_documents"`
+	Claim  TruthClaim       `json:"claim"`
+	Engine TruthEngineInput `json:"engine"`
+}
+
+// TruthDocument is one claim form, photo ID, discharge summary, OT notes or
+// implant invoice, as printed.
+type TruthDocument struct {
+	Document  string       `json:"document"`
+	Type      DocumentType `json:"type"`
+	File      string       `json:"file"`
+	FirstPage int          `json:"first_page"`
+	LastPage  int          `json:"last_page"`
+	// Number, Date and Patient are printed on every page of the document,
+	// and "Page x of y" too when it has more than one. Patient is the
+	// insured person's name; on a photo ID, the holder's.
+	Number  string       `json:"number"`
+	Date    PrintedDate  `json:"date"`
+	Patient string       `json:"patient"`
+	Fields  []TruthField `json:"fields"`
+}
+
+// TruthField is one other value a document prints, on one page.
+type TruthField struct {
+	Name    string `json:"name"`
+	Page    int    `json:"page"`
+	Printed string `json:"printed"`
+	// Value is what Printed means: YYYY-MM-DD for a date, paise for an
+	// amount, the number for a quantity, and otherwise Printed itself.
+	Value string `json:"value"`
+	// Row names the printed row a field sits on, such as an invoice's item:
+	// a row's fields are on one line of their page. Line is the facts line
+	// the row prints, if any.
+	Row  string `json:"row,omitempty"`
+	Line string `json:"line,omitempty"`
 }
 
 // TruthFile is one file: each page's type and the parts it splits into.

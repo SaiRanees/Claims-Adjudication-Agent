@@ -284,7 +284,11 @@ func goldenSpec(i int, c engine.Case) ([]byte, error) {
 		return nil, err
 	}
 	s.Lines = lines
-	return encodeSpec(c, s)
+	header := fmt.Sprintf("# The packet for golden case %s (evals/engine/golden/%s.yaml).\n", c.ID, c.ID) +
+		"# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and\n" +
+		"# committed. policy, cover and facts are the case's, unchanged, which a test\n" +
+		"# checks; everything else is how the packet presents them, and is invented.\n\n"
+	return encodeSpec(header, s)
 }
 
 // lineFormats prints each facts line.
@@ -401,19 +405,16 @@ func date(d rules.Date) string {
 	return d.String()
 }
 
-// encodeSpec writes the spec as YAML with a header, each list entry on one
-// line, as the golden cases are written.
-func encodeSpec(c engine.Case, s datagen.Spec) ([]byte, error) {
+// encodeSpec writes the spec as YAML after a header comment, each list
+// entry on one line, as the golden cases are written.
+func encodeSpec(header string, s datagen.Spec) ([]byte, error) {
 	var node yaml.Node
 	if err := node.Encode(s); err != nil {
 		return nil, err
 	}
 	flowEntries(&node, map[string]bool{"segments": true, "lines": true, "documents": true, "files": true})
 	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "# The packet for golden case %s (evals/engine/golden/%s.yaml).\n", c.ID, c.ID)
-	buf.WriteString("# Written once by `go run ./cmd/datagen golden-specs`, then reviewed and\n")
-	buf.WriteString("# committed. policy, cover and facts are the case's, unchanged, which a test\n")
-	buf.WriteString("# checks; everything else is how the packet presents them, and is invented.\n\n")
+	buf.WriteString(header)
 	enc := yaml.NewEncoder(&buf)
 	enc.SetIndent(2)
 	if err := enc.Encode(&node); err != nil {

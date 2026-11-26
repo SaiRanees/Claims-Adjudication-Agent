@@ -1,0 +1,109 @@
+# Seeded scenario seeded-surgery-implant-06: surgery with an implant.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-11-01"
+  period_end: "2026-10-31"
+cover:
+  tranches:
+    - sum_insured_paise: 100000000
+      continuous_since: "2020-11-01"
+  cumulative_bonus_paise: 10000000
+facts:
+  admission: "2026-05-21"
+  discharge: "2026-05-24"
+  segments:
+    - {from: "2026-05-21", to: "2026-05-24", kind: room}
+  differential_billing: "yes"
+  condition:
+    listed_group: listed-24-months
+    onset: "2025-11-13"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-05-21", quantity: 3, unit_price_paise: 550000, amount_paise: 1650000}
+    - {id: L02, category: nursing, service_date: "2026-05-21", quantity: 3, unit_price_paise: 50000, amount_paise: 150000}
+    - {id: L03, category: patient-diet, service_date: "2026-05-21", quantity: 3, unit_price_paise: 35000, amount_paise: 105000}
+    - {id: L04, category: professional-fees, service_date: "2026-05-21", quantity: 1, unit_price_paise: 3000000, amount_paise: 3000000}
+    - {id: L05, category: professional-fees, service_date: "2026-05-21", quantity: 1, unit_price_paise: 840000, amount_paise: 840000}
+    - {id: L06, category: operation-theatre, service_date: "2026-05-21", quantity: 1, unit_price_paise: 1800000, amount_paise: 1800000}
+    - {id: L07, category: implants-devices, service_date: "2026-05-21", quantity: 1, unit_price_paise: 350000, amount_paise: 350000}
+    - {id: L08, category: professional-fees, service_date: "2026-05-22", quantity: 2, unit_price_paise: 120000, amount_paise: 240000}
+    - {id: L09, category: diagnostics, service_date: "2026-05-21", quantity: 1, unit_price_paise: 650000, amount_paise: 650000}
+    - {id: L10, category: diagnostics, service_date: "2026-05-21", quantity: 1, unit_price_paise: 25000, amount_paise: 25000}
+    - {id: L11, category: diagnostics, service_date: "2026-05-21", quantity: 1, unit_price_paise: 85000, amount_paise: 85000}
+    - {id: L12, category: diagnostics, service_date: "2026-05-21", quantity: 1, unit_price_paise: 45000, amount_paise: 45000}
+    - {id: L13, category: other-hospital-charges, service_date: "2026-05-22", quantity: 1, unit_price_paise: 80000, amount_paise: 80000}
+    - {id: L14, category: other-hospital-charges, service_date: "2026-05-21", quantity: 1, unit_price_paise: 50000, amount_paise: 50000, item_list: list-ii}
+    - {id: L15, category: pharmacy-consumables, service_date: "2026-05-21", quantity: 1, unit_price_paise: 59000, amount_paise: 59000}
+    - {id: L16, category: pharmacy-consumables, service_date: "2026-05-22", quantity: 1, unit_price_paise: 145000, amount_paise: 145000}
+    - {id: L17, category: pharmacy-consumables, service_date: "2026-05-22", quantity: 2, unit_price_paise: 3900, amount_paise: 7800}
+    - {id: L18, category: pharmacy-consumables, service_date: "2026-05-22", quantity: 3, unit_price_paise: 150, amount_paise: 450}
+insured:
+  name: Hemant Iyengar
+  gender: male
+  age: 69
+  policy_number: SYN-ASG-2025-200014
+  member_id: SYN-M-600014
+  date_of_birth: "1957-02-13"
+hospital:
+  name: Tarangpur City Hospital
+  address: 22 Canal Street
+  city: Tarangpur
+  registration: SYN-HR-2014
+clinical:
+  diagnosis: Left ureteric calculus with hydronephrosis
+  procedure: Ureteroscopic lithotripsy with DJ stenting
+  treating_doctor: Dr. Farhan Siddiqui
+  history: Colicky pain in the left loin radiating to the groin for a week, with vomiting. CT showed an 8 mm stone in the lower ureter.
+  course: Underwent ureteroscopic lithotripsy under spinal anaesthesia; the stone was broken and removed and a DJ stent placed. Pain free after.
+  advice: Drink three litres of water a day. The DJ stent is to be removed after four weeks; do not miss this. Review in the urology clinic.
+  surgery:
+    date: "2026-05-21"
+    surgeon: Dr. Farhan Siddiqui
+    anaesthetist: Dr. Manoj Pillai
+    anaesthesia: Spinal
+    findings: An 8 mm stone impacted in the left lower ureter, broken with a laser and cleared. A 6 Fr DJ stent placed.
+claim_form:
+  admission_type: planned
+  signed_on: "2026-06-01"
+  claimed_amount_paise: 9282250
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200014, date: "2026-06-01"}
+  - {id: ID, type: photo-id, number: SYN-ID-ZXZD-1188, date: "2018-11-23"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200014, date: "2026-05-24"}
+  - {id: OT, type: ot-notes, number: SYN-OT-200014, date: "2026-05-21"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-201401, date: "2026-05-24", layout: compact, lines_per_page: 5}
+  - {id: IV, type: implant-invoice, number: SYN-IV-200014, date: "2026-05-19", vendor: {name: Nayakhet Ortho Devices, address: '40 Industrial Area, Nayakhet', registration: SYN-VR-2014}, implants: [{line: L07, serial: SYN-SN-7MTDXE}]}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-201401, date: "2026-05-24", lines_per_page: 13}
+  - {id: R1, type: payment-receipt, number: SYN-RC-201401, date: "2026-05-24", against: [B1, P1], mode: Cash}
+files:
+  - {name: claim-form.pdf, documents: [CF]}
+  - {name: photo-id.pdf, documents: [ID]}
+  - {name: discharge-summary.pdf, documents: [DS]}
+  - {name: ot-notes.pdf, documents: [OT]}
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: implant-invoice.pdf, documents: [IV]}
+  - {name: pharmacy-bill.pdf, documents: [P1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Ward Charges - General Ward}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Patient Diet Charges}
+  - {line: L04, bill: B1, description: Surgeon Fees}
+  - {line: L05, bill: B1, description: Anaesthetist Fees}
+  - {line: L06, bill: B1, description: Operation Theatre Charges}
+  - {line: L07, bill: B1, description: Double J Ureteric Stent}
+  - {line: L08, bill: B1, description: Consultant Visit Charges}
+  - {line: L09, bill: B1, description: CT Abdomen with Contrast}
+  - {line: L10, bill: B1, description: Urine Routine Examination}
+  - {line: L11, bill: B1, description: Renal Function Test}
+  - {line: L12, bill: B1, description: Complete Blood Count}
+  - {line: L13, bill: B1, description: Bedside Procedure Charges}
+  - {line: L14, bill: B1, description: DISCHARGE PROCEDURE CHARGES, annexure: list-ii/30}
+  - {line: L15, bill: P1, description: Inj. Vancomycin 1 g}
+  - {line: L16, bill: P1, description: Inj. Meropenem 1 g}
+  - {line: L17, bill: P1, description: IV Fluid Dextrose Saline 500 ml}
+  - {line: L18, bill: P1, description: Tab. Aspirin 75 mg}

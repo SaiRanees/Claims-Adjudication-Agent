@@ -1,0 +1,141 @@
+# Seeded scenario seeded-long-pharmacy-01: a long, pharmacy-heavy stay.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-02-01"
+  period_end: "2026-01-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2020-02-01"
+facts:
+  admission: "2025-06-24"
+  discharge: "2025-07-08"
+  segments:
+    - {from: "2025-06-24", to: "2025-07-08", kind: room}
+  differential_billing: "yes"
+  bill_discount_paise: 438700
+  condition:
+    onset: "2025-06-06"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-06-24", quantity: 14, unit_price_paise: 300000, amount_paise: 4200000}
+    - {id: L02, category: nursing, service_date: "2025-06-24", quantity: 14, unit_price_paise: 80000, amount_paise: 1120000}
+    - {id: L03, category: professional-fees, service_date: "2025-06-24", quantity: 14, unit_price_paise: 150000, amount_paise: 2100000}
+    - {id: L04, category: diagnostics, service_date: "2025-07-07", quantity: 1, unit_price_paise: 220000, amount_paise: 220000}
+    - {id: L05, category: diagnostics, service_date: "2025-07-04", quantity: 1, unit_price_paise: 750000, amount_paise: 750000}
+    - {id: L06, category: diagnostics, service_date: "2025-06-28", quantity: 3, unit_price_paise: 45000, amount_paise: 135000}
+    - {id: L07, category: diagnostics, service_date: "2025-06-27", quantity: 1, unit_price_paise: 90000, amount_paise: 90000}
+    - {id: L08, category: diagnostics, service_date: "2025-06-24", quantity: 1, unit_price_paise: 70000, amount_paise: 70000}
+    - {id: L09, category: diagnostics, service_date: "2025-07-04", quantity: 1, unit_price_paise: 60000, amount_paise: 60000}
+    - {id: L10, category: other-hospital-charges, service_date: "2025-06-24", quantity: 1, unit_price_paise: 30000, amount_paise: 30000, item_list: list-iv}
+    - {id: L11, category: pharmacy-consumables, service_date: "2025-06-24", quantity: 1, unit_price_paise: 3500, amount_paise: 3500}
+    - {id: L12, category: pharmacy-consumables, service_date: "2025-06-24", quantity: 6, unit_price_paise: 950, amount_paise: 5700}
+    - {id: L13, category: pharmacy-consumables, service_date: "2025-06-24", quantity: 1, unit_price_paise: 210, amount_paise: 210}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-06-24", quantity: 2, unit_price_paise: 38500, amount_paise: 77000}
+    - {id: L15, category: pharmacy-consumables, service_date: "2025-06-25", quantity: 2, unit_price_paise: 38500, amount_paise: 77000}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-06-26", quantity: 10, unit_price_paise: 850, amount_paise: 8500}
+    - {id: L17, category: pharmacy-consumables, service_date: "2025-06-27", quantity: 9, unit_price_paise: 950, amount_paise: 8550}
+    - {id: L18, category: pharmacy-consumables, service_date: "2025-06-27", quantity: 4, unit_price_paise: 900, amount_paise: 3600}
+    - {id: L19, category: pharmacy-consumables, service_date: "2025-06-27", quantity: 2, unit_price_paise: 9500, amount_paise: 19000}
+    - {id: L20, category: pharmacy-consumables, service_date: "2025-06-27", quantity: 3, unit_price_paise: 38500, amount_paise: 115500}
+    - {id: L21, category: pharmacy-consumables, service_date: "2025-06-29", quantity: 7, unit_price_paise: 1100, amount_paise: 7700}
+    - {id: L22, category: pharmacy-consumables, service_date: "2025-06-30", quantity: 4, unit_price_paise: 9800, amount_paise: 39200}
+    - {id: L23, category: pharmacy-consumables, service_date: "2025-06-30", quantity: 1, unit_price_paise: 9500, amount_paise: 9500}
+    - {id: L24, category: pharmacy-consumables, service_date: "2025-06-30", quantity: 1, unit_price_paise: 145000, amount_paise: 145000}
+    - {id: L25, category: pharmacy-consumables, service_date: "2025-06-30", quantity: 11, unit_price_paise: 210, amount_paise: 2310}
+    - {id: L26, category: pharmacy-consumables, service_date: "2025-07-01", quantity: 2, unit_price_paise: 9800, amount_paise: 19600}
+    - {id: L27, category: pharmacy-consumables, service_date: "2025-07-01", quantity: 5, unit_price_paise: 850, amount_paise: 4250}
+    - {id: L28, category: pharmacy-consumables, service_date: "2025-07-03", quantity: 1, unit_price_paise: 900, amount_paise: 900}
+    - {id: L29, category: pharmacy-consumables, service_date: "2025-07-03", quantity: 2, unit_price_paise: 9500, amount_paise: 19000}
+    - {id: L30, category: pharmacy-consumables, service_date: "2025-07-04", quantity: 4, unit_price_paise: 850, amount_paise: 3400}
+    - {id: L31, category: pharmacy-consumables, service_date: "2025-07-04", quantity: 1, unit_price_paise: 145000, amount_paise: 145000}
+    - {id: L32, category: pharmacy-consumables, service_date: "2025-07-05", quantity: 4, unit_price_paise: 9800, amount_paise: 39200}
+    - {id: L33, category: pharmacy-consumables, service_date: "2025-07-07", quantity: 5, unit_price_paise: 3500, amount_paise: 17500}
+    - {id: L34, category: pharmacy-consumables, service_date: "2025-07-07", quantity: 3, unit_price_paise: 950, amount_paise: 2850}
+    - {id: L35, category: pharmacy-consumables, service_date: "2025-07-07", quantity: 8, unit_price_paise: 1100, amount_paise: 8800}
+    - {id: L36, category: pharmacy-consumables, service_date: "2025-07-07", quantity: 6, unit_price_paise: 210, amount_paise: 1260}
+    - {id: L37, category: pharmacy-consumables, service_date: "2025-07-08", quantity: 3, unit_price_paise: 6200, amount_paise: 18600}
+    - {id: L38, category: pharmacy-consumables, service_date: "2025-07-08", quantity: 2, unit_price_paise: 16500, amount_paise: 33000}
+    - {id: L39, category: pharmacy-consumables, service_date: "2025-07-08", quantity: 4, unit_price_paise: 950, amount_paise: 3800}
+insured:
+  name: Jyoti Bhosale
+  gender: female
+  age: 51
+  policy_number: SYN-ASG-2025-200041
+  member_id: SYN-M-600041
+  date_of_birth: "1974-06-16"
+hospital:
+  name: Chandmora Medical Centre
+  address: Plot 4, Ring Road
+  city: Chandmora
+  registration: SYN-HR-2041
+clinical:
+  diagnosis: Tuberculous meningitis
+  treating_doctor: Dr. Sameer Joshi
+  history: Headache and fever for three weeks, with vomiting and confusion for four days. Neck stiffness on examination.
+  course: CSF showed changes of tuberculosis. Started on anti-tubercular treatment and steroids. Consciousness improved steadily over two weeks.
+  advice: Anti-tubercular medicines daily without a break for twelve months. Liver tests every month. Review in the medicine clinic after two weeks.
+claim_form:
+  admission_type: planned
+  signed_on: "2025-07-11"
+  claimed_amount_paise: 9175730
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200041, date: "2025-07-11"}
+  - {id: ID, type: photo-id, number: SYN-ID-5AKA-9093, date: "2020-01-18"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200041, date: "2025-07-08"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-204101, date: "2025-07-08", layout: compact, lines_per_page: 5, discount_paise: 438700}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-204101, date: "2025-07-08", lines_per_page: 12}
+  - {id: P2, type: pharmacy-bill, number: SYN-PH-204102, date: "2025-07-08", lines_per_page: 16}
+  - {id: R1, type: payment-receipt, number: SYN-RC-204101, date: "2025-07-08", against: [B1, P1, P2], mode: Card}
+files:
+  - {name: claim-form.pdf, documents: [CF]}
+  - {name: photo-id.pdf, documents: [ID]}
+  - {name: discharge-summary.pdf, documents: [DS]}
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: pharmacy-bill.pdf, documents: [P1]}
+  - {name: pharmacy-bill-2.pdf, documents: [P2]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Charges - Private Room}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Consultant Visit Charges}
+  - {line: L04, bill: B1, description: CSF Analysis}
+  - {line: L05, bill: B1, description: MRI Brain}
+  - {line: L06, bill: B1, description: Complete Blood Count}
+  - {line: L07, bill: B1, description: Liver Function Test}
+  - {line: L08, bill: B1, description: Serum Electrolytes}
+  - {line: L09, bill: B1, description: X-Ray Chest PA View}
+  - {line: L10, bill: B1, description: ADMISSION/REGISTRATION CHARGES, annexure: list-iv/1}
+  - {line: L11, bill: P1, description: IV Fluid Normal Saline 500 ml}
+  - {line: L12, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L13, bill: P1, description: Tab. Paracetamol 650 mg}
+  - {line: L14, bill: P1, description: Inj. Enoxaparin 40 mg}
+  - {line: L15, bill: P1, description: Inj. Enoxaparin 40 mg}
+  - {line: L16, bill: P1, description: Salbutamol Respules 2.5 mg}
+  - {line: L17, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L18, bill: P1, description: Inj. Diclofenac 75 mg}
+  - {line: L19, bill: P1, description: Syp. Potassium Chloride 200 ml}
+  - {line: L20, bill: P1, description: Inj. Enoxaparin 40 mg}
+  - {line: L21, bill: P1, description: Tab. Cefixime 200 mg}
+  - {line: L22, bill: P1, description: Inj. Heparin 5000 IU}
+  - {line: L23, bill: P1, description: Syp. Potassium Chloride 200 ml}
+  - {line: L24, bill: P1, description: Inj. Meropenem 1 g}
+  - {line: L25, bill: P1, description: Tab. Paracetamol 650 mg}
+  - {line: L26, bill: P1, description: Inj. Heparin 5000 IU}
+  - {line: L27, bill: P1, description: Salbutamol Respules 2.5 mg}
+  - {line: L28, bill: P1, description: Inj. Diclofenac 75 mg}
+  - {line: L29, bill: P1, description: Syp. Potassium Chloride 200 ml}
+  - {line: L30, bill: P1, description: Salbutamol Respules 2.5 mg}
+  - {line: L31, bill: P1, description: Inj. Meropenem 1 g}
+  - {line: L32, bill: P1, description: Inj. Heparin 5000 IU}
+  - {line: L33, bill: P1, description: IV Fluid Normal Saline 500 ml}
+  - {line: L34, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L35, bill: P1, description: Tab. Cefixime 200 mg}
+  - {line: L36, bill: P1, description: Tab. Paracetamol 650 mg}
+  - {line: L37, bill: P2, description: Inj. Amikacin 500 mg}
+  - {line: L38, bill: P2, description: Inj. Human Insulin 40 IU/ml}
+  - {line: L39, bill: P2, description: Tab. Clopidogrel 75 mg}

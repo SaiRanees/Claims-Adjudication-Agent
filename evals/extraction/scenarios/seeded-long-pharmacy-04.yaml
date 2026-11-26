@@ -1,0 +1,134 @@
+# Seeded scenario seeded-long-pharmacy-04: a long, pharmacy-heavy stay.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-05-01"
+  period_end: "2026-04-30"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2018-05-01"
+facts:
+  admission: "2025-09-10"
+  discharge: "2025-09-25"
+  segments:
+    - {from: "2025-09-10", to: "2025-09-25", kind: room}
+  differential_billing: "yes"
+  condition:
+    onset: "2025-08-22"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-09-10", quantity: 15, unit_price_paise: 450000, amount_paise: 6750000}
+    - {id: L02, category: nursing, service_date: "2025-09-10", quantity: 15, unit_price_paise: 80000, amount_paise: 1200000}
+    - {id: L03, category: professional-fees, service_date: "2025-09-10", quantity: 15, unit_price_paise: 150000, amount_paise: 2250000}
+    - {id: L04, category: diagnostics, service_date: "2025-09-22", quantity: 1, unit_price_paise: 180000, amount_paise: 180000}
+    - {id: L05, category: diagnostics, service_date: "2025-09-15", quantity: 1, unit_price_paise: 90000, amount_paise: 90000}
+    - {id: L06, category: diagnostics, service_date: "2025-09-24", quantity: 2, unit_price_paise: 45000, amount_paise: 90000}
+    - {id: L07, category: diagnostics, service_date: "2025-09-16", quantity: 1, unit_price_paise: 650000, amount_paise: 650000}
+    - {id: L08, category: diagnostics, service_date: "2025-09-18", quantity: 1, unit_price_paise: 95000, amount_paise: 95000}
+    - {id: L09, category: other-hospital-charges, service_date: "2025-09-17", quantity: 1, unit_price_paise: 150000, amount_paise: 150000}
+    - {id: L10, category: other-hospital-charges, service_date: "2025-09-10", quantity: 3, unit_price_paise: 50000, amount_paise: 150000}
+    - {id: L11, category: pharmacy-consumables, service_date: "2025-09-10", quantity: 3, unit_price_paise: 145000, amount_paise: 435000}
+    - {id: L12, category: pharmacy-consumables, service_date: "2025-09-11", quantity: 1, unit_price_paise: 1100, amount_paise: 1100}
+    - {id: L13, category: pharmacy-consumables, service_date: "2025-09-11", quantity: 1, unit_price_paise: 9800, amount_paise: 9800}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-09-12", quantity: 1, unit_price_paise: 9500, amount_paise: 9500}
+    - {id: L15, category: pharmacy-consumables, service_date: "2025-09-12", quantity: 3, unit_price_paise: 1850, amount_paise: 5550}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-09-13", quantity: 2, unit_price_paise: 1600, amount_paise: 3200}
+    - {id: L17, category: pharmacy-consumables, service_date: "2025-09-14", quantity: 1, unit_price_paise: 1600, amount_paise: 1600}
+    - {id: L18, category: pharmacy-consumables, service_date: "2025-09-14", quantity: 3, unit_price_paise: 2900, amount_paise: 8700}
+    - {id: L19, category: pharmacy-consumables, service_date: "2025-09-15", quantity: 1, unit_price_paise: 6200, amount_paise: 6200}
+    - {id: L20, category: pharmacy-consumables, service_date: "2025-09-16", quantity: 6, unit_price_paise: 3900, amount_paise: 23400}
+    - {id: L21, category: pharmacy-consumables, service_date: "2025-09-16", quantity: 3, unit_price_paise: 1100, amount_paise: 3300}
+    - {id: L22, category: pharmacy-consumables, service_date: "2025-09-17", quantity: 2, unit_price_paise: 6200, amount_paise: 12400}
+    - {id: L23, category: pharmacy-consumables, service_date: "2025-09-17", quantity: 2, unit_price_paise: 520000, amount_paise: 1040000}
+    - {id: L24, category: pharmacy-consumables, service_date: "2025-09-18", quantity: 3, unit_price_paise: 3900, amount_paise: 11700}
+    - {id: L25, category: pharmacy-consumables, service_date: "2025-09-18", quantity: 2, unit_price_paise: 9500, amount_paise: 19000}
+    - {id: L26, category: pharmacy-consumables, service_date: "2025-09-18", quantity: 2, unit_price_paise: 9800, amount_paise: 19600}
+    - {id: L27, category: pharmacy-consumables, service_date: "2025-09-19", quantity: 4, unit_price_paise: 1600, amount_paise: 6400}
+    - {id: L28, category: pharmacy-consumables, service_date: "2025-09-20", quantity: 3, unit_price_paise: 145000, amount_paise: 435000}
+    - {id: L29, category: pharmacy-consumables, service_date: "2025-09-20", quantity: 1, unit_price_paise: 9500, amount_paise: 9500}
+    - {id: L30, category: pharmacy-consumables, service_date: "2025-09-21", quantity: 1, unit_price_paise: 21500, amount_paise: 21500}
+    - {id: L31, category: pharmacy-consumables, service_date: "2025-09-22", quantity: 3, unit_price_paise: 6200, amount_paise: 18600}
+    - {id: L32, category: pharmacy-consumables, service_date: "2025-09-22", quantity: 1, unit_price_paise: 21500, amount_paise: 21500}
+    - {id: L33, category: pharmacy-consumables, service_date: "2025-09-22", quantity: 2, unit_price_paise: 9800, amount_paise: 19600}
+    - {id: L34, category: pharmacy-consumables, service_date: "2025-09-22", quantity: 1, unit_price_paise: 520000, amount_paise: 520000}
+    - {id: L35, category: pharmacy-consumables, service_date: "2025-09-23", quantity: 2, unit_price_paise: 145000, amount_paise: 290000}
+    - {id: L36, category: pharmacy-consumables, service_date: "2025-09-23", quantity: 6, unit_price_paise: 2900, amount_paise: 17400}
+    - {id: L37, category: pharmacy-consumables, service_date: "2025-09-24", quantity: 4, unit_price_paise: 1850, amount_paise: 7400}
+insured:
+  name: Kunal Chatterjee
+  gender: male
+  age: 29
+  policy_number: SYN-ASG-2025-200044
+  member_id: SYN-M-600044
+  date_of_birth: "1996-05-17"
+hospital:
+  name: Amberpur General Hospital
+  address: 14 Lakeview Road, Ward 3
+  city: Amberpur
+  registration: SYN-HR-2044
+clinical:
+  diagnosis: Amoebic liver abscess
+  treating_doctor: Dr. Neha Kapadia
+  history: Fever and pain under the right ribs for two weeks, with loss of appetite and weight.
+  course: Ultrasound showed a 9 cm abscess, aspirated under guidance. Treated with intravenous metronidazole. Fever settled and the abscess shrank.
+  advice: Complete the medicines. Boiled water only. Repeat ultrasound after four weeks.
+claim_form:
+  admission_type: planned
+  signed_on: "2025-09-30"
+  claimed_amount_paise: 14581950
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200044, date: "2025-09-30"}
+  - {id: ID, type: photo-id, number: SYN-ID-CNB7-5507, date: "2018-12-30"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200044, date: "2025-09-25"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-204401, date: "2025-09-25", layout: compact, lines_per_page: 5}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-204401, date: "2025-09-25", lines_per_page: 13}
+  - {id: R1, type: payment-receipt, number: SYN-RC-204401, date: "2025-09-25", against: [B1, P1], mode: Card}
+files:
+  - {name: claim-form.pdf, documents: [CF]}
+  - {name: photo-id.pdf, documents: [ID]}
+  - {name: discharge-summary.pdf, documents: [DS]}
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: pharmacy-bill.pdf, documents: [P1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Deluxe Single}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Consultant Visit Charges}
+  - {line: L04, bill: B1, description: Ultrasound Abdomen}
+  - {line: L05, bill: B1, description: Liver Function Test}
+  - {line: L06, bill: B1, description: Complete Blood Count}
+  - {line: L07, bill: B1, description: CT Abdomen with Contrast}
+  - {line: L08, bill: B1, description: Coagulation Profile}
+  - {line: L09, bill: B1, description: Bedside Procedure Charges}
+  - {line: L10, bill: B1, description: Physiotherapy Charges}
+  - {line: L11, bill: P1, description: Inj. Meropenem 1 g}
+  - {line: L12, bill: P1, description: Inj. Furosemide 20 mg}
+  - {line: L13, bill: P1, description: Inj. Heparin 5000 IU}
+  - {line: L14, bill: P1, description: Syp. Potassium Chloride 200 ml}
+  - {line: L15, bill: P1, description: Inj. Ondansetron 4 mg}
+  - {line: L16, bill: P1, description: Inj. Dexamethasone 8 mg}
+  - {line: L17, bill: P1, description: Inj. Dexamethasone 8 mg}
+  - {line: L18, bill: P1, description: Inj. Metronidazole 500 mg}
+  - {line: L19, bill: P1, description: Inj. Amikacin 500 mg}
+  - {line: L20, bill: P1, description: IV Fluid Dextrose Saline 500 ml}
+  - {line: L21, bill: P1, description: Inj. Furosemide 20 mg}
+  - {line: L22, bill: P1, description: Inj. Amikacin 500 mg}
+  - {line: L23, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L24, bill: P1, description: IV Fluid Dextrose Saline 500 ml}
+  - {line: L25, bill: P1, description: Syp. Potassium Chloride 200 ml}
+  - {line: L26, bill: P1, description: Inj. Heparin 5000 IU}
+  - {line: L27, bill: P1, description: Inj. Dexamethasone 8 mg}
+  - {line: L28, bill: P1, description: Inj. Meropenem 1 g}
+  - {line: L29, bill: P1, description: Syp. Potassium Chloride 200 ml}
+  - {line: L30, bill: P1, description: Syp. Lactulose 200 ml}
+  - {line: L31, bill: P1, description: Inj. Amikacin 500 mg}
+  - {line: L32, bill: P1, description: Syp. Lactulose 200 ml}
+  - {line: L33, bill: P1, description: Inj. Heparin 5000 IU}
+  - {line: L34, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L35, bill: P1, description: Inj. Meropenem 1 g}
+  - {line: L36, bill: P1, description: Inj. Metronidazole 500 mg}
+  - {line: L37, bill: P1, description: Inj. Ondansetron 4 mg}

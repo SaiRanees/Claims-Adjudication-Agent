@@ -1,0 +1,126 @@
+# Seeded scenario seeded-long-pharmacy-08: a long, pharmacy-heavy stay.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-01-01"
+  period_end: "2025-12-31"
+cover:
+  tranches:
+    - sum_insured_paise: 100000000
+      continuous_since: "2021-01-01"
+  cumulative_bonus_paise: 10000000
+facts:
+  admission: "2025-10-15"
+  discharge: "2025-10-26"
+  segments:
+    - {from: "2025-10-15", to: "2025-10-26", kind: room}
+  differential_billing: "yes"
+  condition:
+    onset: "2025-10-03"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-10-15", quantity: 11, unit_price_paise: 250000, amount_paise: 2750000}
+    - {id: L02, category: nursing, service_date: "2025-10-15", quantity: 11, unit_price_paise: 60000, amount_paise: 660000}
+    - {id: L03, category: patient-diet, service_date: "2025-10-15", quantity: 11, unit_price_paise: 35000, amount_paise: 385000}
+    - {id: L04, category: professional-fees, service_date: "2025-10-15", quantity: 11, unit_price_paise: 100000, amount_paise: 1100000}
+    - {id: L05, category: diagnostics, service_date: "2025-10-21", quantity: 1, unit_price_paise: 160000, amount_paise: 160000}
+    - {id: L06, category: diagnostics, service_date: "2025-10-18", quantity: 1, unit_price_paise: 650000, amount_paise: 650000}
+    - {id: L07, category: diagnostics, service_date: "2025-10-20", quantity: 1, unit_price_paise: 90000, amount_paise: 90000}
+    - {id: L08, category: diagnostics, service_date: "2025-10-24", quantity: 1, unit_price_paise: 70000, amount_paise: 70000}
+    - {id: L09, category: diagnostics, service_date: "2025-10-20", quantity: 1, unit_price_paise: 65000, amount_paise: 65000}
+    - {id: L10, category: other-hospital-charges, service_date: "2025-10-25", quantity: 1, unit_price_paise: 120000, amount_paise: 120000}
+    - {id: L11, category: pharmacy-consumables, service_date: "2025-10-15", quantity: 1, unit_price_paise: 145000, amount_paise: 145000}
+    - {id: L12, category: pharmacy-consumables, service_date: "2025-10-15", quantity: 1, unit_price_paise: 1250, amount_paise: 1250}
+    - {id: L13, category: pharmacy-consumables, service_date: "2025-10-16", quantity: 2, unit_price_paise: 520000, amount_paise: 1040000}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-10-16", quantity: 3, unit_price_paise: 36500, amount_paise: 109500}
+    - {id: L15, category: pharmacy-consumables, service_date: "2025-10-17", quantity: 7, unit_price_paise: 950, amount_paise: 6650}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-10-18", quantity: 3, unit_price_paise: 38500, amount_paise: 115500}
+    - {id: L17, category: pharmacy-consumables, service_date: "2025-10-18", quantity: 2, unit_price_paise: 145000, amount_paise: 290000}
+    - {id: L18, category: pharmacy-consumables, service_date: "2025-10-19", quantity: 1, unit_price_paise: 24500, amount_paise: 24500}
+    - {id: L19, category: pharmacy-consumables, service_date: "2025-10-19", quantity: 2, unit_price_paise: 21500, amount_paise: 43000}
+    - {id: L20, category: pharmacy-consumables, service_date: "2025-10-20", quantity: 4, unit_price_paise: 24500, amount_paise: 98000}
+    - {id: L21, category: pharmacy-consumables, service_date: "2025-10-20", quantity: 12, unit_price_paise: 950, amount_paise: 11400}
+    - {id: L22, category: pharmacy-consumables, service_date: "2025-10-20", quantity: 4, unit_price_paise: 1850, amount_paise: 7400}
+    - {id: L23, category: pharmacy-consumables, service_date: "2025-10-20", quantity: 1, unit_price_paise: 36500, amount_paise: 36500}
+    - {id: L24, category: pharmacy-consumables, service_date: "2025-10-20", quantity: 1, unit_price_paise: 1250, amount_paise: 1250}
+    - {id: L25, category: pharmacy-consumables, service_date: "2025-10-21", quantity: 2, unit_price_paise: 38500, amount_paise: 77000}
+    - {id: L26, category: pharmacy-consumables, service_date: "2025-10-21", quantity: 4, unit_price_paise: 950, amount_paise: 3800}
+    - {id: L27, category: pharmacy-consumables, service_date: "2025-10-21", quantity: 2, unit_price_paise: 520000, amount_paise: 1040000}
+    - {id: L28, category: pharmacy-consumables, service_date: "2025-10-22", quantity: 4, unit_price_paise: 1850, amount_paise: 7400}
+    - {id: L29, category: pharmacy-consumables, service_date: "2025-10-22", quantity: 1, unit_price_paise: 1250, amount_paise: 1250}
+    - {id: L30, category: pharmacy-consumables, service_date: "2025-10-23", quantity: 2, unit_price_paise: 520000, amount_paise: 1040000}
+    - {id: L31, category: pharmacy-consumables, service_date: "2025-10-24", quantity: 3, unit_price_paise: 38500, amount_paise: 115500}
+    - {id: L32, category: pharmacy-consumables, service_date: "2025-10-24", quantity: 1, unit_price_paise: 21500, amount_paise: 21500}
+    - {id: L33, category: pharmacy-consumables, service_date: "2025-10-25", quantity: 4, unit_price_paise: 24500, amount_paise: 98000}
+    - {id: L34, category: pharmacy-consumables, service_date: "2025-10-25", quantity: 1, unit_price_paise: 21500, amount_paise: 21500}
+    - {id: L35, category: pharmacy-consumables, service_date: "2025-10-25", quantity: 5, unit_price_paise: 1850, amount_paise: 9250}
+insured:
+  name: Naveen Gill
+  gender: male
+  age: 45
+  policy_number: SYN-ASG-2025-200048
+  member_id: SYN-M-600048
+  date_of_birth: "1980-04-25"
+hospital:
+  name: Nayakhet Multispeciality Hospital
+  address: 21 Mandi Road
+  city: Nayakhet
+  registration: SYN-HR-2048
+clinical:
+  diagnosis: Acute on chronic pancreatitis
+  treating_doctor: Dr. Meghna Iyer
+  history: Recurrent upper abdominal pain for two years; a severe attack with vomiting for three days.
+  course: Managed with fluids, pain relief and gradual feeding. A collection near the pancreas was watched and shrank. Tolerating a normal diet.
+  advice: Low-fat diet. No alcohol. Pancreatic enzyme capsules with meals. Review in the gastroenterology clinic after two weeks.
+claim_form:
+  admission_type: planned
+  signed_on: "2025-10-31"
+  claimed_amount_paise: 10415150
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200048, date: "2025-10-31"}
+  - {id: ID, type: photo-id, number: SYN-ID-GELV-1317, date: "2021-04-18"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200048, date: "2025-10-26"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-204801, date: "2025-10-26", layout: ledger, lines_per_page: 5}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-204801, date: "2025-10-26", lines_per_page: 14}
+  - {id: R1, type: payment-receipt, number: SYN-RC-204801, date: "2025-10-26", against: [B1, P1], mode: Cheque}
+files:
+  - {name: claim-packet.pdf, documents: [CF, ID, DS, B1, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Patient Diet Charges}
+  - {line: L04, bill: B1, description: Consultant Visit Charges}
+  - {line: L05, bill: B1, description: Serum Amylase and Lipase}
+  - {line: L06, bill: B1, description: CT Abdomen with Contrast}
+  - {line: L07, bill: B1, description: Liver Function Test}
+  - {line: L08, bill: B1, description: Serum Electrolytes}
+  - {line: L09, bill: B1, description: HbA1c}
+  - {line: L10, bill: B1, description: Bedside Procedure Charges}
+  - {line: L11, bill: P1, description: Inj. Meropenem 1 g}
+  - {line: L12, bill: P1, description: Inj. Tramadol 50 mg}
+  - {line: L13, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L14, bill: P1, description: Inj. Cefoperazone-Sulbactam 1.5 g}
+  - {line: L15, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L16, bill: P1, description: Inj. Enoxaparin 40 mg}
+  - {line: L17, bill: P1, description: Inj. Meropenem 1 g}
+  - {line: L18, bill: P1, description: Inj. Levetiracetam 500 mg}
+  - {line: L19, bill: P1, description: Syp. Lactulose 200 ml}
+  - {line: L20, bill: P1, description: Inj. Levetiracetam 500 mg}
+  - {line: L21, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L22, bill: P1, description: Inj. Ondansetron 4 mg}
+  - {line: L23, bill: P1, description: Inj. Cefoperazone-Sulbactam 1.5 g}
+  - {line: L24, bill: P1, description: Inj. Tramadol 50 mg}
+  - {line: L25, bill: P1, description: Inj. Enoxaparin 40 mg}
+  - {line: L26, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L27, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L28, bill: P1, description: Inj. Ondansetron 4 mg}
+  - {line: L29, bill: P1, description: Inj. Tramadol 50 mg}
+  - {line: L30, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L31, bill: P1, description: Inj. Enoxaparin 40 mg}
+  - {line: L32, bill: P1, description: Syp. Lactulose 200 ml}
+  - {line: L33, bill: P1, description: Inj. Levetiracetam 500 mg}
+  - {line: L34, bill: P1, description: Syp. Lactulose 200 ml}
+  - {line: L35, bill: P1, description: Inj. Ondansetron 4 mg}

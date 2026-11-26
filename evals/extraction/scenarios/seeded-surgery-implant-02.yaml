@@ -1,0 +1,106 @@
+# Seeded scenario seeded-surgery-implant-02: surgery with an implant.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-03-01"
+  period_end: "2026-02-28"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2020-03-01"
+  cumulative_bonus_paise: 5000000
+facts:
+  admission: "2025-04-09"
+  discharge: "2025-04-12"
+  segments:
+    - {from: "2025-04-09", to: "2025-04-12", kind: room}
+  differential_billing: "yes"
+  condition:
+    listed_group: listed-24-months
+    onset: "2024-12-03"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-04-09", quantity: 3, unit_price_paise: 550000, amount_paise: 1650000}
+    - {id: L02, category: nursing, service_date: "2025-04-09", quantity: 3, unit_price_paise: 80000, amount_paise: 240000}
+    - {id: L03, category: patient-diet, service_date: "2025-04-09", quantity: 3, unit_price_paise: 30000, amount_paise: 90000}
+    - {id: L04, category: professional-fees, service_date: "2025-04-09", quantity: 1, unit_price_paise: 3200000, amount_paise: 3200000}
+    - {id: L05, category: professional-fees, service_date: "2025-04-09", quantity: 1, unit_price_paise: 900000, amount_paise: 900000}
+    - {id: L06, category: operation-theatre, service_date: "2025-04-09", quantity: 1, unit_price_paise: 1500000, amount_paise: 1500000}
+    - {id: L07, category: implants-devices, service_date: "2025-04-09", quantity: 1, unit_price_paise: 1270000, amount_paise: 1270000}
+    - {id: L08, category: professional-fees, service_date: "2025-04-10", quantity: 2, unit_price_paise: 80000, amount_paise: 160000}
+    - {id: L09, category: diagnostics, service_date: "2025-04-09", quantity: 1, unit_price_paise: 45000, amount_paise: 45000}
+    - {id: L10, category: diagnostics, service_date: "2025-04-09", quantity: 1, unit_price_paise: 180000, amount_paise: 180000}
+    - {id: L11, category: diagnostics, service_date: "2025-04-09", quantity: 1, unit_price_paise: 30000, amount_paise: 30000}
+    - {id: L12, category: other-hospital-charges, service_date: "2025-04-10", quantity: 1, unit_price_paise: 150000, amount_paise: 150000}
+    - {id: L13, category: pharmacy-consumables, service_date: "2025-04-09", quantity: 4, unit_price_paise: 6200, amount_paise: 24800}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-04-09", quantity: 2, unit_price_paise: 1600, amount_paise: 3200}
+    - {id: L15, category: pharmacy-consumables, service_date: "2025-04-09", quantity: 17, unit_price_paise: 210, amount_paise: 3570}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-04-10", quantity: 4, unit_price_paise: 6850, amount_paise: 27400}
+    - {id: L17, category: pharmacy-consumables, service_date: "2025-04-10", quantity: 3, unit_price_paise: 35000, amount_paise: 105000}
+    - {id: L18, category: pharmacy-consumables, service_date: "2025-04-11", quantity: 3, unit_price_paise: 350, amount_paise: 1050}
+    - {id: L19, category: pharmacy-consumables, service_date: "2025-04-11", quantity: 3, unit_price_paise: 1250, amount_paise: 3750}
+insured:
+  name: Farhan Gill
+  gender: male
+  age: 66
+  policy_number: SYN-ASG-2025-200010
+  member_id: SYN-M-600010
+  date_of_birth: "1959-04-09"
+hospital:
+  name: Pallavigram City Hospital
+  address: 8 Court Lane
+  city: Pallavigram
+  registration: SYN-HR-2010
+clinical:
+  diagnosis: Right inguinal hernia
+  procedure: Open mesh hernioplasty
+  treating_doctor: Dr. Sarita Gokhale
+  history: Swelling in the right groin for eight months, increasing on standing and coughing, with a dragging pain.
+  course: Underwent open mesh hernioplasty under spinal anaesthesia. Recovery was uneventful and the patient was mobilised the next morning.
+  advice: Avoid lifting heavy weights for six weeks. Keep the wound dry. Review in the surgical clinic after one week.
+  surgery:
+    date: "2025-04-09"
+    surgeon: Dr. Sarita Gokhale
+    anaesthetist: Dr. Anjali Dutta
+    anaesthesia: Spinal
+    findings: An indirect inguinal hernia with a 3 cm defect. The sac was reduced and a polypropylene mesh fixed.
+claim_form:
+  admission_type: planned
+  signed_on: "2025-04-14"
+  claimed_amount_paise: 9583770
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200010, date: "2025-04-14"}
+  - {id: ID, type: photo-id, number: SYN-ID-C5UY-4682, date: "2021-08-31"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200010, date: "2025-04-12"}
+  - {id: OT, type: ot-notes, number: SYN-OT-200010, date: "2025-04-09"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-201001, date: "2025-04-12", layout: columnar, lines_per_page: 6}
+  - {id: IV, type: implant-invoice, number: SYN-IV-200010, date: "2025-04-09", vendor: {name: Nayakhet Ortho Devices, address: '40 Industrial Area, Nayakhet', registration: SYN-VR-2010}, implants: [{line: L07, serial: SYN-SN-9774UY}]}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-201001, date: "2025-04-12", lines_per_page: 19}
+  - {id: R1, type: payment-receipt, number: SYN-RC-201001, date: "2025-04-12", against: [B1, P1], mode: NEFT}
+files:
+  - {name: claim-form.pdf, documents: [CF, ID]}
+  - {name: hospital-records.pdf, documents: [DS, OT]}
+  - {name: bills.pdf, documents: [B1, IV, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Patient Diet Charges}
+  - {line: L04, bill: B1, description: Surgeon Fees}
+  - {line: L05, bill: B1, description: Anaesthetist Fees}
+  - {line: L06, bill: B1, description: Operation Theatre Charges}
+  - {line: L07, bill: B1, description: Polypropylene Mesh 15 x 15 cm}
+  - {line: L08, bill: B1, description: Consultant Visit Charges}
+  - {line: L09, bill: B1, description: Complete Blood Count}
+  - {line: L10, bill: B1, description: Ultrasound Abdomen}
+  - {line: L11, bill: B1, description: ECG}
+  - {line: L12, bill: B1, description: Bedside Procedure Charges}
+  - {line: L13, bill: P1, description: Inj. Amikacin 500 mg}
+  - {line: L14, bill: P1, description: Inj. Dexamethasone 8 mg}
+  - {line: L15, bill: P1, description: Tab. Paracetamol 650 mg}
+  - {line: L16, bill: P1, description: Inj. Ceftriaxone 1 g}
+  - {line: L17, bill: P1, description: Inj. Artesunate 60 mg}
+  - {line: L18, bill: P1, description: Tab. Amlodipine 5 mg}
+  - {line: L19, bill: P1, description: Inj. Tramadol 50 mg}

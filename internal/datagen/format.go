@@ -102,6 +102,9 @@ const (
 	FieldQuantity    ColumnField = "quantity"
 	FieldUnitPrice   ColumnField = "unit_price"
 	FieldAmount      ColumnField = "amount"
+	// FieldSerialNumber is an implant's serial number, which only the
+	// implant invoice prints.
+	FieldSerialNumber ColumnField = "serial_number"
 )
 
 // The page is A4 in points, with 40-point margins.
@@ -159,6 +162,14 @@ func StyleOf(d Document) Style {
 		return styles[d.Layout]
 	case DocPharmacyBill:
 		return pharmacyStyle
+	case DocClaimForm:
+		return claimFormStyle
+	case DocPhotoID:
+		return photoIDStyle
+	case DocDischargeSummary, DocOTNotes:
+		return clinicalStyle
+	case DocImplantInvoice:
+		return invoiceStyle
 	case DocPaymentReceipt:
 	}
 	return receiptStyle

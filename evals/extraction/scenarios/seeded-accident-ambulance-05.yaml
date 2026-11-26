@@ -1,0 +1,92 @@
+# Seeded scenario seeded-accident-ambulance-05: an accident brought in by ambulance.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-06-01"
+  period_end: "2026-05-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2018-06-01"
+facts:
+  admission: "2026-03-23"
+  discharge: "2026-03-27"
+  segments:
+    - {from: "2026-03-23", to: "2026-03-27", kind: room}
+  differential_billing: "yes"
+  condition:
+    accident: true
+    onset: "2026-03-23"
+  lines:
+    - {id: L01, category: road-ambulance, service_date: "2026-03-23", quantity: 1, unit_price_paise: 220000, amount_paise: 220000}
+    - {id: L02, category: other-hospital-charges, service_date: "2026-03-23", quantity: 1, unit_price_paise: 150000, amount_paise: 150000}
+    - {id: L03, category: room-rent, service_date: "2026-03-23", quantity: 4, unit_price_paise: 450000, amount_paise: 1800000}
+    - {id: L04, category: nursing, service_date: "2026-03-23", quantity: 4, unit_price_paise: 90000, amount_paise: 360000}
+    - {id: L05, category: professional-fees, service_date: "2026-03-23", quantity: 4, unit_price_paise: 150000, amount_paise: 600000}
+    - {id: L06, category: diagnostics, service_date: "2026-03-23", quantity: 1, unit_price_paise: 550000, amount_paise: 550000}
+    - {id: L07, category: diagnostics, service_date: "2026-03-23", quantity: 1, unit_price_paise: 60000, amount_paise: 60000}
+    - {id: L08, category: diagnostics, service_date: "2026-03-23", quantity: 1, unit_price_paise: 120000, amount_paise: 120000}
+    - {id: L09, category: diagnostics, service_date: "2026-03-23", quantity: 1, unit_price_paise: 45000, amount_paise: 45000}
+    - {id: L10, category: other-hospital-charges, service_date: "2026-03-26", quantity: 1, unit_price_paise: 120000, amount_paise: 120000}
+    - {id: L11, category: pharmacy-consumables, service_date: "2026-03-23", quantity: 1, unit_price_paise: 1100, amount_paise: 1100}
+    - {id: L12, category: pharmacy-consumables, service_date: "2026-03-23", quantity: 5, unit_price_paise: 1450, amount_paise: 7250}
+    - {id: L13, category: pharmacy-consumables, service_date: "2026-03-24", quantity: 5, unit_price_paise: 650, amount_paise: 3250}
+    - {id: L14, category: pharmacy-consumables, service_date: "2026-03-24", quantity: 10, unit_price_paise: 350, amount_paise: 3500}
+    - {id: L15, category: pharmacy-consumables, service_date: "2026-03-24", quantity: 19, unit_price_paise: 210, amount_paise: 3990}
+    - {id: L16, category: pharmacy-consumables, service_date: "2026-03-25", quantity: 5, unit_price_paise: 120, amount_paise: 600}
+    - {id: L17, category: pharmacy-consumables, service_date: "2026-03-26", quantity: 8, unit_price_paise: 1100, amount_paise: 8800}
+insured:
+  name: Hema Nair
+  gender: female
+  age: 48
+  policy_number: SYN-ASG-2025-200037
+  member_id: SYN-M-600037
+  date_of_birth: "1978-01-26"
+hospital:
+  name: Ravikund Multispeciality Hospital
+  address: Plot 7, Station Road
+  city: Ravikund
+  registration: SYN-HR-2037
+clinical:
+  diagnosis: Multiple rib fractures with lung contusion
+  treating_doctor: Dr. Leela Menon
+  history: Thrown from an autorickshaw when it overturned. Pain on breathing over the left chest. Brought by ambulance.
+  course: Treated with pain relief, oxygen and breathing exercises. The lung bruise settled on repeat X-ray and oxygen was stopped.
+  advice: Breathing exercises every hour while awake. Pain medicines as charted. Review in the surgical clinic after one week.
+claim_form:
+  admission_type: emergency
+  signed_on: "2026-03-29"
+  claimed_amount_paise: 4053490
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200037, date: "2026-03-29"}
+  - {id: ID, type: photo-id, number: SYN-ID-RFVK-4782, date: "2020-08-19"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200037, date: "2026-03-27"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-203701, date: "2026-03-27", layout: columnar, lines_per_page: 5}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-203701, date: "2026-03-27", lines_per_page: 16}
+  - {id: R1, type: payment-receipt, number: SYN-RC-203701, date: "2026-03-27", against: [B1, P1], mode: Cash}
+files:
+  - {name: claim-form.pdf, documents: [CF, ID]}
+  - {name: hospital-records.pdf, documents: [DS]}
+  - {name: bills.pdf, documents: [B1, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Road Ambulance Charges}
+  - {line: L02, bill: B1, description: Emergency Room Charges}
+  - {line: L03, bill: B1, description: Room Rent - Deluxe Single}
+  - {line: L04, bill: B1, description: Nursing Charges}
+  - {line: L05, bill: B1, description: Consultant Visit Charges}
+  - {line: L06, bill: B1, description: CT Chest}
+  - {line: L07, bill: B1, description: X-Ray Chest PA View}
+  - {line: L08, bill: B1, description: Arterial Blood Gas}
+  - {line: L09, bill: B1, description: Complete Blood Count}
+  - {line: L10, bill: B1, description: Bedside Procedure Charges}
+  - {line: L11, bill: P1, description: Inj. Furosemide 20 mg}
+  - {line: L12, bill: P1, description: Tab. Atorvastatin 40 mg}
+  - {line: L13, bill: P1, description: Tab. Rifampicin 450 mg}
+  - {line: L14, bill: P1, description: Tab. Amlodipine 5 mg}
+  - {line: L15, bill: P1, description: Tab. Paracetamol 650 mg}
+  - {line: L16, bill: P1, description: Tab. Isoniazid 300 mg}
+  - {line: L17, bill: P1, description: Tab. Cefixime 200 mg}

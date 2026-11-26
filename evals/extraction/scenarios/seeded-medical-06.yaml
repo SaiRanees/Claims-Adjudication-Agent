@@ -1,0 +1,79 @@
+# Seeded scenario seeded-medical-06: a medical admission.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-07-01"
+  period_end: "2026-06-30"
+cover:
+  tranches:
+    - sum_insured_paise: 100000000
+      continuous_since: "2019-07-01"
+  cumulative_bonus_paise: 10000000
+facts:
+  admission: "2025-12-30"
+  discharge: "2026-01-03"
+  segments:
+    - {from: "2025-12-30", to: "2026-01-03", kind: room}
+  differential_billing: "yes"
+  condition:
+    pre_existing: true
+    onset: "2025-12-29"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-12-30", quantity: 4, unit_price_paise: 450000, amount_paise: 1800000}
+    - {id: L02, category: nursing, service_date: "2025-12-30", quantity: 4, unit_price_paise: 80000, amount_paise: 320000}
+    - {id: L03, category: professional-fees, service_date: "2025-12-30", quantity: 4, unit_price_paise: 80000, amount_paise: 320000}
+    - {id: L04, category: diagnostics, service_date: "2025-12-31", quantity: 2, unit_price_paise: 45000, amount_paise: 90000}
+    - {id: L05, category: diagnostics, service_date: "2025-12-31", quantity: 1, unit_price_paise: 60000, amount_paise: 60000}
+    - {id: L06, category: diagnostics, service_date: "2026-01-02", quantity: 1, unit_price_paise: 120000, amount_paise: 120000}
+    - {id: L07, category: pharmacy-consumables, service_date: "2025-12-30", quantity: 5, unit_price_paise: 3500, amount_paise: 17500}
+    - {id: L08, category: pharmacy-consumables, service_date: "2025-12-30", quantity: 5, unit_price_paise: 900, amount_paise: 4500}
+    - {id: L09, category: pharmacy-consumables, service_date: "2025-12-30", quantity: 3, unit_price_paise: 1600, amount_paise: 4800}
+    - {id: L10, category: pharmacy-consumables, service_date: "2025-12-30", quantity: 13, unit_price_paise: 350, amount_paise: 4550}
+    - {id: L11, category: pharmacy-consumables, service_date: "2025-12-31", quantity: 4, unit_price_paise: 1250, amount_paise: 5000}
+insured:
+  name: Chetan Chatterjee
+  gender: male
+  age: 63
+  policy_number: SYN-ASG-2025-200006
+  member_id: SYN-M-600006
+  date_of_birth: "1962-04-05"
+hospital:
+  name: Tarangpur City Hospital
+  address: 22 Canal Street
+  city: Tarangpur
+  registration: SYN-HR-2006
+clinical:
+  diagnosis: Acute exacerbation of bronchial asthma
+  treating_doctor: Dr. Ananya Rao
+  history: Asthmatic since childhood. Wheeze and breathlessness for two days after a cold, not relieved by the inhaler at home.
+  course: Treated with nebulised bronchodilators, intravenous steroids and oxygen. Wheeze settled and the steroid was changed to oral.
+  advice: Inhalers as shown, with the spacer. Tapering course of oral steroid. Avoid dust and smoke. Review in the chest clinic after two weeks.
+claim_form:
+  admission_type: emergency
+  signed_on: "2026-01-07"
+  claimed_amount_paise: 2746350
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200006, date: "2026-01-07"}
+  - {id: ID, type: photo-id, number: SYN-ID-KGNQ-7153, date: "2018-03-02"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200006, date: "2026-01-03"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-200601, date: "2026-01-03", layout: ledger, lines_per_page: 6}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-200601, date: "2026-01-03", lines_per_page: 19}
+  - {id: R1, type: payment-receipt, number: SYN-RC-200601, date: "2026-01-03", against: [B1, P1], mode: NEFT}
+files:
+  - {name: claim-packet.pdf, documents: [CF, ID, DS, B1, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Consultant Visit Charges}
+  - {line: L04, bill: B1, description: Complete Blood Count}
+  - {line: L05, bill: B1, description: X-Ray Chest PA View}
+  - {line: L06, bill: B1, description: Arterial Blood Gas}
+  - {line: L07, bill: P1, description: IV Fluid Normal Saline 500 ml}
+  - {line: L08, bill: P1, description: Inj. Diclofenac 75 mg}
+  - {line: L09, bill: P1, description: Inj. Dexamethasone 8 mg}
+  - {line: L10, bill: P1, description: Tab. Amlodipine 5 mg}
+  - {line: L11, bill: P1, description: Inj. Tramadol 50 mg}
