@@ -1,0 +1,127 @@
+# Seeded scenario seeded-long-pharmacy-02: a long, pharmacy-heavy stay.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-07-01"
+  period_end: "2026-06-30"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2019-07-01"
+facts:
+  admission: "2026-01-04"
+  discharge: "2026-01-15"
+  segments:
+    - {from: "2026-01-04", to: "2026-01-15", kind: room}
+  differential_billing: "yes"
+  condition:
+    onset: "2025-12-29"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-01-04", quantity: 11, unit_price_paise: 450000, amount_paise: 4950000}
+    - {id: L02, category: nursing, service_date: "2026-01-04", quantity: 11, unit_price_paise: 60000, amount_paise: 660000}
+    - {id: L03, category: patient-diet, service_date: "2026-01-04", quantity: 11, unit_price_paise: 30000, amount_paise: 330000}
+    - {id: L04, category: professional-fees, service_date: "2026-01-04", quantity: 11, unit_price_paise: 150000, amount_paise: 1650000}
+    - {id: L05, category: diagnostics, service_date: "2026-01-10", quantity: 1, unit_price_paise: 30000, amount_paise: 30000}
+    - {id: L06, category: diagnostics, service_date: "2026-01-11", quantity: 3, unit_price_paise: 45000, amount_paise: 135000}
+    - {id: L07, category: diagnostics, service_date: "2026-01-07", quantity: 1, unit_price_paise: 85000, amount_paise: 85000}
+    - {id: L08, category: diagnostics, service_date: "2026-01-05", quantity: 1, unit_price_paise: 90000, amount_paise: 90000}
+    - {id: L09, category: diagnostics, service_date: "2026-01-04", quantity: 1, unit_price_paise: 70000, amount_paise: 70000}
+    - {id: L10, category: diagnostics, service_date: "2026-01-07", quantity: 1, unit_price_paise: 25000, amount_paise: 25000}
+    - {id: L11, category: other-hospital-charges, service_date: "2026-01-14", quantity: 1, unit_price_paise: 80000, amount_paise: 80000}
+    - {id: L12, category: pharmacy-consumables, service_date: "2026-01-04", quantity: 1, unit_price_paise: 1600, amount_paise: 1600}
+    - {id: L13, category: pharmacy-consumables, service_date: "2026-01-05", quantity: 1, unit_price_paise: 1450, amount_paise: 1450}
+    - {id: L14, category: pharmacy-consumables, service_date: "2026-01-06", quantity: 4, unit_price_paise: 24500, amount_paise: 98000}
+    - {id: L15, category: pharmacy-consumables, service_date: "2026-01-07", quantity: 1, unit_price_paise: 21500, amount_paise: 21500}
+    - {id: L16, category: pharmacy-consumables, service_date: "2026-01-07", quantity: 1, unit_price_paise: 520000, amount_paise: 520000}
+    - {id: L17, category: pharmacy-consumables, service_date: "2026-01-07", quantity: 7, unit_price_paise: 350, amount_paise: 2450}
+    - {id: L18, category: pharmacy-consumables, service_date: "2026-01-08", quantity: 2, unit_price_paise: 1100, amount_paise: 2200}
+    - {id: L19, category: pharmacy-consumables, service_date: "2026-01-08", quantity: 2, unit_price_paise: 24500, amount_paise: 49000}
+    - {id: L20, category: pharmacy-consumables, service_date: "2026-01-08", quantity: 5, unit_price_paise: 900, amount_paise: 4500}
+    - {id: L21, category: pharmacy-consumables, service_date: "2026-01-09", quantity: 3, unit_price_paise: 1600, amount_paise: 4800}
+    - {id: L22, category: pharmacy-consumables, service_date: "2026-01-09", quantity: 2, unit_price_paise: 1850, amount_paise: 3700}
+    - {id: L23, category: pharmacy-consumables, service_date: "2026-01-09", quantity: 14, unit_price_paise: 1450, amount_paise: 20300}
+    - {id: L24, category: pharmacy-consumables, service_date: "2026-01-09", quantity: 3, unit_price_paise: 59000, amount_paise: 177000}
+    - {id: L25, category: pharmacy-consumables, service_date: "2026-01-10", quantity: 2, unit_price_paise: 21500, amount_paise: 43000}
+    - {id: L26, category: pharmacy-consumables, service_date: "2026-01-10", quantity: 1, unit_price_paise: 1850, amount_paise: 1850}
+    - {id: L27, category: pharmacy-consumables, service_date: "2026-01-11", quantity: 4, unit_price_paise: 1600, amount_paise: 6400}
+    - {id: L28, category: pharmacy-consumables, service_date: "2026-01-11", quantity: 1, unit_price_paise: 59000, amount_paise: 59000}
+    - {id: L29, category: pharmacy-consumables, service_date: "2026-01-12", quantity: 1, unit_price_paise: 520000, amount_paise: 520000}
+    - {id: L30, category: pharmacy-consumables, service_date: "2026-01-12", quantity: 14, unit_price_paise: 350, amount_paise: 4900}
+    - {id: L31, category: pharmacy-consumables, service_date: "2026-01-12", quantity: 3, unit_price_paise: 59000, amount_paise: 177000}
+    - {id: L32, category: pharmacy-consumables, service_date: "2026-01-13", quantity: 1, unit_price_paise: 21500, amount_paise: 21500}
+    - {id: L33, category: pharmacy-consumables, service_date: "2026-01-13", quantity: 5, unit_price_paise: 350, amount_paise: 1750}
+    - {id: L34, category: pharmacy-consumables, service_date: "2026-01-13", quantity: 14, unit_price_paise: 1450, amount_paise: 20300}
+    - {id: L35, category: pharmacy-consumables, service_date: "2026-01-14", quantity: 5, unit_price_paise: 1100, amount_paise: 5500}
+    - {id: L36, category: pharmacy-consumables, service_date: "2026-01-14", quantity: 5, unit_price_paise: 900, amount_paise: 4500}
+insured:
+  name: Jatin Bhosale
+  gender: male
+  age: 28
+  policy_number: SYN-ASG-2025-200042
+  member_id: SYN-M-600042
+  date_of_birth: "1998-01-04"
+hospital:
+  name: Pallavigram City Hospital
+  address: 8 Court Lane
+  city: Pallavigram
+  registration: SYN-HR-2042
+clinical:
+  diagnosis: Severe falciparum malaria with acute kidney injury
+  treating_doctor: Dr. Pooja Venkatesh
+  history: High fever with chills for six days, then yellow eyes and reduced urine. Smear showed falciparum malaria.
+  course: Treated with intravenous artesunate and careful fluids. Kidney function recovered slowly without dialysis. Smear negative on the fourth day.
+  advice: Complete the oral antimalarial course. Mosquito nets. Repeat kidney function tests after one week.
+claim_form:
+  admission_type: emergency
+  signed_on: "2026-01-20"
+  claimed_amount_paise: 9877200
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200042, date: "2026-01-20"}
+  - {id: ID, type: photo-id, number: SYN-ID-NA47-9632, date: "2022-05-23"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200042, date: "2026-01-15"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-204201, date: "2026-01-15", layout: ledger, lines_per_page: 6}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-204201, date: "2026-01-15", lines_per_page: 16}
+  - {id: R1, type: payment-receipt, number: SYN-RC-204201, date: "2026-01-15", against: [B1, P1], mode: Cheque}
+files:
+  - {name: claim-packet.pdf, documents: [CF, ID, DS, B1, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Charges - Private Room}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Patient Diet Charges}
+  - {line: L04, bill: B1, description: Consultant Visit Charges}
+  - {line: L05, bill: B1, description: Peripheral Smear for Malaria}
+  - {line: L06, bill: B1, description: Complete Blood Count}
+  - {line: L07, bill: B1, description: Renal Function Test}
+  - {line: L08, bill: B1, description: Liver Function Test}
+  - {line: L09, bill: B1, description: Serum Electrolytes}
+  - {line: L10, bill: B1, description: Urine Routine Examination}
+  - {line: L11, bill: B1, description: Bedside Procedure Charges}
+  - {line: L12, bill: P1, description: Inj. Dexamethasone 8 mg}
+  - {line: L13, bill: P1, description: Tab. Atorvastatin 40 mg}
+  - {line: L14, bill: P1, description: Inj. Levetiracetam 500 mg}
+  - {line: L15, bill: P1, description: Syp. Lactulose 200 ml}
+  - {line: L16, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L17, bill: P1, description: Tab. Amlodipine 5 mg}
+  - {line: L18, bill: P1, description: Tab. Cefixime 200 mg}
+  - {line: L19, bill: P1, description: Inj. Levetiracetam 500 mg}
+  - {line: L20, bill: P1, description: Inj. Diclofenac 75 mg}
+  - {line: L21, bill: P1, description: Inj. Dexamethasone 8 mg}
+  - {line: L22, bill: P1, description: Inj. Ondansetron 4 mg}
+  - {line: L23, bill: P1, description: Tab. Atorvastatin 40 mg}
+  - {line: L24, bill: P1, description: Inj. Vancomycin 1 g}
+  - {line: L25, bill: P1, description: Syp. Lactulose 200 ml}
+  - {line: L26, bill: P1, description: Inj. Ondansetron 4 mg}
+  - {line: L27, bill: P1, description: Inj. Dexamethasone 8 mg}
+  - {line: L28, bill: P1, description: Inj. Vancomycin 1 g}
+  - {line: L29, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L30, bill: P1, description: Tab. Amlodipine 5 mg}
+  - {line: L31, bill: P1, description: Inj. Vancomycin 1 g}
+  - {line: L32, bill: P1, description: Syp. Lactulose 200 ml}
+  - {line: L33, bill: P1, description: Tab. Amlodipine 5 mg}
+  - {line: L34, bill: P1, description: Tab. Atorvastatin 40 mg}
+  - {line: L35, bill: P1, description: Tab. Cefixime 200 mg}
+  - {line: L36, bill: P1, description: Inj. Diclofenac 75 mg}

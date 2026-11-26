@@ -1,0 +1,98 @@
+# Seeded scenario seeded-icu-step-down-06: an ICU stay with a step-down to the ward.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-07-01"
+  period_end: "2026-06-30"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2019-07-01"
+facts:
+  admission: "2025-12-24"
+  discharge: "2025-12-31"
+  segments:
+    - {from: "2025-12-24", to: "2025-12-27", kind: icu}
+    - {from: "2025-12-28", to: "2025-12-31", kind: room}
+  differential_billing: "yes"
+  bill_discount_paise: 379000
+  condition:
+    pre_existing: true
+    onset: "2025-12-22"
+  lines:
+    - {id: L01, category: icu-charges, service_date: "2025-12-24", quantity: 4, unit_price_paise: 900000, amount_paise: 3600000}
+    - {id: L02, category: icu-charges, service_date: "2025-12-24", quantity: 4, unit_price_paise: 200000, amount_paise: 800000}
+    - {id: L03, category: other-hospital-charges, service_date: "2025-12-24", quantity: 4, unit_price_paise: 150000, amount_paise: 600000}
+    - {id: L04, category: room-rent, service_date: "2025-12-28", quantity: 3, unit_price_paise: 350000, amount_paise: 1050000}
+    - {id: L05, category: nursing, service_date: "2025-12-28", quantity: 3, unit_price_paise: 50000, amount_paise: 150000}
+    - {id: L06, category: patient-diet, service_date: "2025-12-28", quantity: 3, unit_price_paise: 25000, amount_paise: 75000}
+    - {id: L07, category: professional-fees, service_date: "2025-12-24", quantity: 7, unit_price_paise: 120000, amount_paise: 840000}
+    - {id: L08, category: diagnostics, service_date: "2025-12-24", quantity: 1, unit_price_paise: 120000, amount_paise: 120000}
+    - {id: L09, category: diagnostics, service_date: "2025-12-26", quantity: 1, unit_price_paise: 60000, amount_paise: 60000}
+    - {id: L10, category: diagnostics, service_date: "2025-12-27", quantity: 3, unit_price_paise: 45000, amount_paise: 135000}
+    - {id: L11, category: diagnostics, service_date: "2025-12-25", quantity: 1, unit_price_paise: 30000, amount_paise: 30000}
+    - {id: L12, category: other-hospital-charges, service_date: "2025-12-29", quantity: 1, unit_price_paise: 120000, amount_paise: 120000}
+    - {id: L13, category: pharmacy-consumables, service_date: "2025-12-24", quantity: 2, unit_price_paise: 4800, amount_paise: 9600}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-12-24", quantity: 2, unit_price_paise: 145000, amount_paise: 290000}
+    - {id: L15, category: pharmacy-consumables, service_date: "2025-12-25", quantity: 1, unit_price_paise: 1100, amount_paise: 1100}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-12-26", quantity: 1, unit_price_paise: 35000, amount_paise: 35000}
+    - {id: L17, category: pharmacy-consumables, service_date: "2025-12-28", quantity: 8, unit_price_paise: 650, amount_paise: 5200}
+    - {id: L18, category: pharmacy-consumables, service_date: "2025-12-29", quantity: 8, unit_price_paise: 4200, amount_paise: 33600}
+    - {id: L19, category: pharmacy-consumables, service_date: "2025-12-29", quantity: 2, unit_price_paise: 59000, amount_paise: 118000}
+    - {id: L20, category: pharmacy-consumables, service_date: "2025-12-30", quantity: 4, unit_price_paise: 900, amount_paise: 3600}
+insured:
+  name: Chetan Jadhav
+  gender: male
+  age: 40
+  policy_number: SYN-ASG-2025-200030
+  member_id: SYN-M-600030
+  date_of_birth: "1985-08-21"
+hospital:
+  name: Tarangpur City Hospital
+  address: 22 Canal Street
+  city: Tarangpur
+  registration: SYN-HR-2030
+clinical:
+  diagnosis: Acute exacerbation of COPD with respiratory failure
+  treating_doctor: Dr. Ananya Rao
+  history: Known COPD for eight years. Breathlessness at rest and drowsiness for a day; carbon dioxide high on the blood gas.
+  course: Treated in the ICU with non-invasive ventilation, nebulisers, steroids and antibiotics. Weaned off the support and moved to the ward.
+  advice: Inhalers as shown. Stop smoking. Pulmonary rehabilitation. Review in the chest clinic after two weeks.
+claim_form:
+  admission_type: emergency
+  signed_on: "2026-01-09"
+  claimed_amount_paise: 7697100
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200030, date: "2026-01-09"}
+  - {id: ID, type: photo-id, number: SYN-ID-F53Z-1593, date: "2023-03-04"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200030, date: "2025-12-31"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-203001, date: "2025-12-31", layout: ledger, lines_per_page: 6, discount_paise: 379000}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-203001, date: "2025-12-31", lines_per_page: 17}
+  - {id: R1, type: payment-receipt, number: SYN-RC-203001, date: "2025-12-31", against: [B1, P1], mode: NEFT}
+files:
+  - {name: claim-packet.pdf, documents: [CF, ID, DS, B1, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: ICU Bed Charges}
+  - {line: L02, bill: B1, description: Intensivist Charges}
+  - {line: L03, bill: B1, description: Equipment Charges}
+  - {line: L04, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L05, bill: B1, description: Nursing Charges}
+  - {line: L06, bill: B1, description: Patient Diet Charges}
+  - {line: L07, bill: B1, description: Consultant Visit Charges}
+  - {line: L08, bill: B1, description: Arterial Blood Gas}
+  - {line: L09, bill: B1, description: X-Ray Chest PA View}
+  - {line: L10, bill: B1, description: Complete Blood Count}
+  - {line: L11, bill: B1, description: ECG}
+  - {line: L12, bill: B1, description: Bedside Procedure Charges}
+  - {line: L13, bill: P1, description: Inj. Hydrocortisone 100 mg}
+  - {line: L14, bill: P1, description: Inj. Meropenem 1 g}
+  - {line: L15, bill: P1, description: Inj. Furosemide 20 mg}
+  - {line: L16, bill: P1, description: Inj. Artesunate 60 mg}
+  - {line: L17, bill: P1, description: Tab. Rifampicin 450 mg}
+  - {line: L18, bill: P1, description: IV Fluid Ringer Lactate 500 ml}
+  - {line: L19, bill: P1, description: Inj. Vancomycin 1 g}
+  - {line: L20, bill: P1, description: Inj. Diclofenac 75 mg}

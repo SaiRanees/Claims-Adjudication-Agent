@@ -1,0 +1,105 @@
+# Seeded scenario seeded-icu-step-down-03: an ICU stay with a step-down to the ward.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2021-04-01"
+facts:
+  admission: "2025-11-30"
+  discharge: "2025-12-04"
+  segments:
+    - {from: "2025-11-30", to: "2025-12-02", kind: icu}
+    - {from: "2025-12-03", to: "2025-12-04", kind: room}
+  differential_billing: "yes"
+  condition:
+    pre_existing: true
+    onset: "2025-11-29"
+  lines:
+    - {id: L01, category: icu-charges, service_date: "2025-11-30", quantity: 3, unit_price_paise: 750000, amount_paise: 2250000}
+    - {id: L02, category: icu-charges, service_date: "2025-11-30", quantity: 3, unit_price_paise: 250000, amount_paise: 750000}
+    - {id: L03, category: other-hospital-charges, service_date: "2025-11-30", quantity: 3, unit_price_paise: 200000, amount_paise: 600000}
+    - {id: L04, category: room-rent, service_date: "2025-12-03", quantity: 1, unit_price_paise: 300000, amount_paise: 300000}
+    - {id: L05, category: nursing, service_date: "2025-12-03", quantity: 1, unit_price_paise: 90000, amount_paise: 90000}
+    - {id: L06, category: professional-fees, service_date: "2025-11-30", quantity: 4, unit_price_paise: 150000, amount_paise: 600000}
+    - {id: L07, category: diagnostics, service_date: "2025-12-01", quantity: 1, unit_price_paise: 120000, amount_paise: 120000}
+    - {id: L08, category: diagnostics, service_date: "2025-12-01", quantity: 1, unit_price_paise: 70000, amount_paise: 70000}
+    - {id: L09, category: diagnostics, service_date: "2025-11-30", quantity: 1, unit_price_paise: 85000, amount_paise: 85000}
+    - {id: L10, category: diagnostics, service_date: "2025-11-30", quantity: 1, unit_price_paise: 65000, amount_paise: 65000}
+    - {id: L11, category: diagnostics, service_date: "2025-12-02", quantity: 1, unit_price_paise: 25000, amount_paise: 25000}
+    - {id: L12, category: other-hospital-charges, service_date: "2025-12-03", quantity: 2, unit_price_paise: 50000, amount_paise: 100000}
+    - {id: L13, category: other-hospital-charges, service_date: "2025-12-03", quantity: 1, unit_price_paise: 75000, amount_paise: 75000, item_list: list-ii}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-11-30", quantity: 3, unit_price_paise: 1250, amount_paise: 3750}
+    - {id: L15, category: pharmacy-consumables, service_date: "2025-11-30", quantity: 2, unit_price_paise: 1600, amount_paise: 3200}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-12-01", quantity: 1, unit_price_paise: 38500, amount_paise: 38500}
+    - {id: L17, category: pharmacy-consumables, service_date: "2025-12-01", quantity: 2, unit_price_paise: 48500, amount_paise: 97000}
+    - {id: L18, category: pharmacy-consumables, service_date: "2025-12-01", quantity: 1, unit_price_paise: 9500, amount_paise: 9500}
+    - {id: L19, category: pharmacy-consumables, service_date: "2025-12-01", quantity: 9, unit_price_paise: 1100, amount_paise: 9900}
+    - {id: L20, category: pharmacy-consumables, service_date: "2025-12-01", quantity: 4, unit_price_paise: 5200, amount_paise: 20800}
+    - {id: L21, category: pharmacy-consumables, service_date: "2025-12-01", quantity: 4, unit_price_paise: 150, amount_paise: 600}
+    - {id: L22, category: pharmacy-consumables, service_date: "2025-12-02", quantity: 5, unit_price_paise: 950, amount_paise: 4750}
+    - {id: L23, category: pharmacy-consumables, service_date: "2025-12-02", quantity: 1, unit_price_paise: 35000, amount_paise: 35000}
+    - {id: L24, category: pharmacy-consumables, service_date: "2025-12-02", quantity: 6, unit_price_paise: 3900, amount_paise: 23400}
+insured:
+  name: Bhavana Iyengar
+  gender: female
+  age: 51
+  policy_number: SYN-ASG-2025-200027
+  member_id: SYN-M-600027
+  date_of_birth: "1974-11-25"
+hospital:
+  name: Sitarkund Care Hospital
+  address: 17 Lake Road, Sector 2
+  city: Sitarkund
+  registration: SYN-HR-2027
+clinical:
+  diagnosis: Diabetic ketoacidosis
+  treating_doctor: Dr. Arvind Saxena
+  history: Known diabetic for twelve years. Vomiting, abdominal pain and fast breathing for a day after missing insulin.
+  course: Treated in the ICU with an insulin infusion, fluids and potassium. Acidosis cleared in 24 hours. Moved to the ward on subcutaneous insulin.
+  advice: Never stop insulin, even when unwell. Home sugar monitoring four times a day. Review in the diabetes clinic after one week.
+claim_form:
+  admission_type: emergency
+  signed_on: "2025-12-07"
+  claimed_amount_paise: 5376400
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200027, date: "2025-12-07"}
+  - {id: ID, type: photo-id, number: SYN-ID-6R82-0023, date: "2018-09-14"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200027, date: "2025-12-04"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-202701, date: "2025-12-04", layout: ledger, lines_per_page: 7}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-202701, date: "2025-12-04", lines_per_page: 20}
+  - {id: R1, type: payment-receipt, number: SYN-RC-202701, date: "2025-12-04", against: [B1, P1], mode: Cheque}
+files:
+  - {name: claim-packet.pdf, documents: [CF, ID, DS, B1, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: ICU Bed Charges}
+  - {line: L02, bill: B1, description: Intensivist Charges}
+  - {line: L03, bill: B1, description: Equipment Charges}
+  - {line: L04, bill: B1, description: Room Rent - Deluxe Single}
+  - {line: L05, bill: B1, description: Nursing Charges}
+  - {line: L06, bill: B1, description: Consultant Visit Charges}
+  - {line: L07, bill: B1, description: Arterial Blood Gas}
+  - {line: L08, bill: B1, description: Serum Electrolytes}
+  - {line: L09, bill: B1, description: Renal Function Test}
+  - {line: L10, bill: B1, description: HbA1c}
+  - {line: L11, bill: B1, description: Urine Routine Examination}
+  - {line: L12, bill: B1, description: Physiotherapy Charges}
+  - {line: L13, bill: B1, description: ADMISSION KIT, annexure: list-ii/27}
+  - {line: L14, bill: P1, description: Inj. Tramadol 50 mg}
+  - {line: L15, bill: P1, description: Inj. Dexamethasone 8 mg}
+  - {line: L16, bill: P1, description: Inj. Enoxaparin 40 mg}
+  - {line: L17, bill: P1, description: Inj. Piperacillin-Tazobactam 4.5 g}
+  - {line: L18, bill: P1, description: Syp. Potassium Chloride 200 ml}
+  - {line: L19, bill: P1, description: Tab. Cefixime 200 mg}
+  - {line: L20, bill: P1, description: Inj. Pantoprazole 40 mg}
+  - {line: L21, bill: P1, description: Tab. Aspirin 75 mg}
+  - {line: L22, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L23, bill: P1, description: Inj. Artesunate 60 mg}
+  - {line: L24, bill: P1, description: IV Fluid Dextrose Saline 500 ml}

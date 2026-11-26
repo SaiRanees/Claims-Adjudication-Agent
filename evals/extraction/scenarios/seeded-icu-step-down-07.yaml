@@ -1,0 +1,103 @@
+# Seeded scenario seeded-icu-step-down-07: an ICU stay with a step-down to the ward.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-12-01"
+  period_end: "2026-11-30"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2019-12-01"
+  cumulative_bonus_paise: 5000000
+facts:
+  admission: "2026-07-29"
+  discharge: "2026-08-02"
+  segments:
+    - {from: "2026-07-29", to: "2026-07-31", kind: icu}
+    - {from: "2026-08-01", to: "2026-08-02", kind: room}
+  differential_billing: "yes"
+  condition:
+    onset: "2026-07-27"
+  lines:
+    - {id: L01, category: icu-charges, service_date: "2026-07-29", quantity: 3, unit_price_paise: 900000, amount_paise: 2700000}
+    - {id: L02, category: icu-charges, service_date: "2026-07-29", quantity: 3, unit_price_paise: 200000, amount_paise: 600000}
+    - {id: L03, category: other-hospital-charges, service_date: "2026-07-29", quantity: 3, unit_price_paise: 150000, amount_paise: 450000}
+    - {id: L04, category: room-rent, service_date: "2026-08-01", quantity: 1, unit_price_paise: 250000, amount_paise: 250000}
+    - {id: L05, category: nursing, service_date: "2026-08-01", quantity: 1, unit_price_paise: 50000, amount_paise: 50000}
+    - {id: L06, category: professional-fees, service_date: "2026-07-29", quantity: 4, unit_price_paise: 80000, amount_paise: 320000}
+    - {id: L07, category: diagnostics, service_date: "2026-07-29", quantity: 1, unit_price_paise: 45000, amount_paise: 45000}
+    - {id: L08, category: diagnostics, service_date: "2026-07-29", quantity: 1, unit_price_paise: 90000, amount_paise: 90000}
+    - {id: L09, category: diagnostics, service_date: "2026-07-30", quantity: 1, unit_price_paise: 90000, amount_paise: 90000}
+    - {id: L10, category: diagnostics, service_date: "2026-07-31", quantity: 1, unit_price_paise: 95000, amount_paise: 95000}
+    - {id: L11, category: diagnostics, service_date: "2026-07-29", quantity: 1, unit_price_paise: 180000, amount_paise: 180000}
+    - {id: L12, category: other-hospital-charges, service_date: "2026-08-01", quantity: 1, unit_price_paise: 30000, amount_paise: 30000, item_list: list-iv}
+    - {id: L13, category: pharmacy-consumables, service_date: "2026-07-29", quantity: 15, unit_price_paise: 950, amount_paise: 14250}
+    - {id: L14, category: pharmacy-consumables, service_date: "2026-07-29", quantity: 1, unit_price_paise: 1850, amount_paise: 1850}
+    - {id: L15, category: pharmacy-consumables, service_date: "2026-07-29", quantity: 4, unit_price_paise: 1100, amount_paise: 4400}
+    - {id: L16, category: pharmacy-consumables, service_date: "2026-07-30", quantity: 6, unit_price_paise: 1100, amount_paise: 6600}
+    - {id: L17, category: pharmacy-consumables, service_date: "2026-07-30", quantity: 7, unit_price_paise: 120, amount_paise: 840}
+    - {id: L18, category: pharmacy-consumables, service_date: "2026-07-30", quantity: 9, unit_price_paise: 180, amount_paise: 1620}
+    - {id: L19, category: pharmacy-consumables, service_date: "2026-07-30", quantity: 6, unit_price_paise: 1250, amount_paise: 7500}
+    - {id: L20, category: pharmacy-consumables, service_date: "2026-07-31", quantity: 1, unit_price_paise: 48500, amount_paise: 48500}
+    - {id: L21, category: pharmacy-consumables, service_date: "2026-07-31", quantity: 7, unit_price_paise: 850, amount_paise: 5950}
+    - {id: L22, category: pharmacy-consumables, service_date: "2026-08-01", quantity: 8, unit_price_paise: 650, amount_paise: 5200}
+insured:
+  name: Deepika Kamath
+  gender: female
+  age: 37
+  policy_number: SYN-ASG-2025-200031
+  member_id: SYN-M-600031
+  date_of_birth: "1989-03-24"
+hospital:
+  name: Kesarvan Heart and General Hospital
+  address: 3 Fort Road
+  city: Kesarvan
+  registration: SYN-HR-2031
+clinical:
+  diagnosis: Dengue shock syndrome
+  treating_doctor: Dr. Kavin Raman
+  history: Fever for five days, then cold hands, abdominal pain and low blood pressure as the fever came down.
+  course: Resuscitated with fluids in the ICU with close monitoring of blood counts. Shock resolved in 24 hours and platelets recovered. Moved to the ward.
+  advice: Plenty of oral fluids. Tab. Paracetamol only, when needed. Repeat the blood count after three days.
+claim_form:
+  admission_type: emergency
+  signed_on: "2026-08-07"
+  claimed_amount_paise: 4996710
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200031, date: "2026-08-07"}
+  - {id: ID, type: photo-id, number: SYN-ID-J7E3-0432, date: "2022-05-17"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200031, date: "2026-08-02"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-203101, date: "2026-08-02", layout: columnar, lines_per_page: 6}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-203101, date: "2026-08-02", lines_per_page: 16}
+  - {id: R1, type: payment-receipt, number: SYN-RC-203101, date: "2026-08-02", against: [B1, P1], mode: Cheque}
+files:
+  - {name: claim-form.pdf, documents: [CF, ID]}
+  - {name: hospital-records.pdf, documents: [DS]}
+  - {name: bills.pdf, documents: [B1, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: ICU Bed Charges}
+  - {line: L02, bill: B1, description: Intensivist Charges}
+  - {line: L03, bill: B1, description: Equipment Charges}
+  - {line: L04, bill: B1, description: Ward Charges - General Ward}
+  - {line: L05, bill: B1, description: Nursing Charges}
+  - {line: L06, bill: B1, description: Consultant Visit Charges}
+  - {line: L07, bill: B1, description: Complete Blood Count}
+  - {line: L08, bill: B1, description: Dengue NS1 Antigen}
+  - {line: L09, bill: B1, description: Liver Function Test}
+  - {line: L10, bill: B1, description: Coagulation Profile}
+  - {line: L11, bill: B1, description: Ultrasound Abdomen}
+  - {line: L12, bill: B1, description: ADMISSION/REGISTRATION CHARGES, annexure: list-iv/1}
+  - {line: L13, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L14, bill: P1, description: Inj. Ondansetron 4 mg}
+  - {line: L15, bill: P1, description: Tab. Cefixime 200 mg}
+  - {line: L16, bill: P1, description: Inj. Furosemide 20 mg}
+  - {line: L17, bill: P1, description: Tab. Isoniazid 300 mg}
+  - {line: L18, bill: P1, description: Tab. Metformin 500 mg}
+  - {line: L19, bill: P1, description: Inj. Tramadol 50 mg}
+  - {line: L20, bill: P1, description: Inj. Piperacillin-Tazobactam 4.5 g}
+  - {line: L21, bill: P1, description: Salbutamol Respules 2.5 mg}
+  - {line: L22, bill: P1, description: Tab. Rifampicin 450 mg}

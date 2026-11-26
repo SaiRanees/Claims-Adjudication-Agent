@@ -1,0 +1,81 @@
+# Seeded scenario seeded-cataract-day-care-05: cataract surgery as day care.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-10-01"
+  period_end: "2026-09-30"
+cover:
+  tranches:
+    - sum_insured_paise: 100000000
+      continuous_since: "2019-10-01"
+facts:
+  admission: "2026-06-23"
+  discharge: "2026-06-23"
+  segments:
+    - {from: "2026-06-23", to: "2026-06-23", kind: room}
+  differential_billing: "no"
+  condition:
+    listed_group: listed-24-months
+    onset: "2025-07-12"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-06-23", quantity: 1, unit_price_paise: 200000, amount_paise: 200000, treatment: {kind: cataract, eye: right}}
+    - {id: L02, category: diagnostics, service_date: "2026-06-23", quantity: 1, unit_price_paise: 150000, amount_paise: 150000, treatment: {kind: cataract, eye: right}}
+    - {id: L03, category: professional-fees, service_date: "2026-06-23", quantity: 1, unit_price_paise: 2000000, amount_paise: 2000000, treatment: {kind: cataract, eye: right}}
+    - {id: L04, category: operation-theatre, service_date: "2026-06-23", quantity: 1, unit_price_paise: 500000, amount_paise: 500000, treatment: {kind: cataract, eye: right}}
+    - {id: L05, category: implants-devices, service_date: "2026-06-23", quantity: 1, unit_price_paise: 2200000, amount_paise: 2200000, treatment: {kind: cataract, eye: right}}
+    - {id: L06, category: pharmacy-consumables, service_date: "2026-06-23", quantity: 1, unit_price_paise: 16500, amount_paise: 16500, treatment: {kind: cataract, eye: right}}
+    - {id: L07, category: pharmacy-consumables, service_date: "2026-06-23", quantity: 1, unit_price_paise: 14500, amount_paise: 14500, treatment: {kind: cataract, eye: right}}
+    - {id: L08, category: pharmacy-consumables, service_date: "2026-06-23", quantity: 1, unit_price_paise: 21500, amount_paise: 21500, treatment: {kind: cataract, eye: right}}
+insured:
+  name: Lata Mistry
+  gender: female
+  age: 70
+  policy_number: SYN-ASG-2025-200021
+  member_id: SYN-M-600021
+  date_of_birth: "1956-04-21"
+hospital:
+  name: Nayanpur Eye Care Centre
+  address: 12 Temple Street
+  city: Nayanpur
+  registration: SYN-HR-2021
+clinical:
+  diagnosis: Immature senile cataract, right eye
+  procedure: Phacoemulsification with foldable IOL, right eye
+  treating_doctor: Dr. Vivek Rathore
+  history: Gradually blurring vision in the eye for a year, with glare at night. Unable to read or recognise faces at a distance.
+  course: Underwent phacoemulsification with a foldable lens implant under topical anaesthesia as a day care procedure. The eye was quiet and vision improved on the first check.
+  advice: Eye drops as charted for four weeks. Wear the protective glasses outdoors. Do not rub the eye or wash the head for a week. Review the next day and after one week.
+  surgery:
+    date: "2026-06-23"
+    surgeon: Dr. Vivek Rathore
+    anaesthetist: Dr. Ravi Shenoy
+    anaesthesia: Topical
+    findings: A dense cataract of the right eye. The lens was removed by phacoemulsification through a 2.8 mm incision and a foldable lens placed in the bag.
+claim_form:
+  admission_type: planned
+  signed_on: "2026-06-27"
+  claimed_amount_paise: 5102500
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200021, date: "2026-06-27"}
+  - {id: ID, type: photo-id, number: SYN-ID-K2WJ-1741, date: "2023-07-26"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200021, date: "2026-06-23"}
+  - {id: OT, type: ot-notes, number: SYN-OT-200021, date: "2026-06-23"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-202101, date: "2026-06-23", layout: ledger, lines_per_page: 5}
+  - {id: IV, type: implant-invoice, number: SYN-IV-200021, date: "2026-06-21", vendor: {name: Drishti Lens Distributors, address: '2 Market Road, Drishtipur', registration: SYN-VR-2021}, implants: [{line: L05, serial: SYN-SN-HV9VB8}]}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-202101, date: "2026-06-23", lines_per_page: 18}
+  - {id: R1, type: payment-receipt, number: SYN-RC-202101, date: "2026-06-23", against: [B1, P1], mode: Card}
+files:
+  - {name: claim-packet.pdf, documents: [CF, ID, DS, OT, B1, IV, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Day Care Bed Charges - Right Eye}
+  - {line: L02, bill: B1, description: Biometry and A-Scan - Right Eye}
+  - {line: L03, bill: B1, description: Cataract Surgery - Surgeon Fees - Right Eye}
+  - {line: L04, bill: B1, description: OT Charges - Cataract - Right Eye}
+  - {line: L05, bill: B1, description: Foldable IOL - Right Eye}
+  - {line: L06, bill: P1, description: Carboxymethylcellulose Eye Drops 10 ml}
+  - {line: L07, bill: P1, description: Moxifloxacin Eye Drops 5 ml}
+  - {line: L08, bill: P1, description: Nepafenac Eye Drops 5 ml}

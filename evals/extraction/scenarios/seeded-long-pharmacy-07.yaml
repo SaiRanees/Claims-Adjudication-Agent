@@ -1,0 +1,147 @@
+# Seeded scenario seeded-long-pharmacy-07: a long, pharmacy-heavy stay.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-08-01"
+  period_end: "2026-07-31"
+cover:
+  tranches:
+    - sum_insured_paise: 100000000
+      continuous_since: "2021-08-01"
+facts:
+  admission: "2026-03-11"
+  discharge: "2026-03-24"
+  segments:
+    - {from: "2026-03-11", to: "2026-03-24", kind: room}
+  differential_billing: "yes"
+  bill_discount_paise: 439500
+  condition:
+    onset: "2026-02-23"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-03-11", quantity: 13, unit_price_paise: 450000, amount_paise: 5850000}
+    - {id: L02, category: nursing, service_date: "2026-03-11", quantity: 13, unit_price_paise: 50000, amount_paise: 650000}
+    - {id: L03, category: professional-fees, service_date: "2026-03-11", quantity: 13, unit_price_paise: 100000, amount_paise: 1300000}
+    - {id: L04, category: diagnostics, service_date: "2026-03-17", quantity: 1, unit_price_paise: 550000, amount_paise: 550000}
+    - {id: L05, category: diagnostics, service_date: "2026-03-17", quantity: 1, unit_price_paise: 60000, amount_paise: 60000}
+    - {id: L06, category: diagnostics, service_date: "2026-03-15", quantity: 3, unit_price_paise: 45000, amount_paise: 135000}
+    - {id: L07, category: diagnostics, service_date: "2026-03-19", quantity: 1, unit_price_paise: 140000, amount_paise: 140000}
+    - {id: L08, category: diagnostics, service_date: "2026-03-19", quantity: 1, unit_price_paise: 90000, amount_paise: 90000}
+    - {id: L09, category: other-hospital-charges, service_date: "2026-03-11", quantity: 1, unit_price_paise: 15000, amount_paise: 15000, item_list: list-i}
+    - {id: L10, category: pharmacy-consumables, service_date: "2026-03-11", quantity: 4, unit_price_paise: 350, amount_paise: 1400}
+    - {id: L11, category: pharmacy-consumables, service_date: "2026-03-12", quantity: 11, unit_price_paise: 650, amount_paise: 7150}
+    - {id: L12, category: pharmacy-consumables, service_date: "2026-03-12", quantity: 2, unit_price_paise: 16500, amount_paise: 33000}
+    - {id: L13, category: pharmacy-consumables, service_date: "2026-03-12", quantity: 6, unit_price_paise: 350, amount_paise: 2100}
+    - {id: L14, category: pharmacy-consumables, service_date: "2026-03-13", quantity: 1, unit_price_paise: 6850, amount_paise: 6850}
+    - {id: L15, category: pharmacy-consumables, service_date: "2026-03-14", quantity: 9, unit_price_paise: 120, amount_paise: 1080}
+    - {id: L16, category: pharmacy-consumables, service_date: "2026-03-14", quantity: 1, unit_price_paise: 16500, amount_paise: 16500}
+    - {id: L17, category: pharmacy-consumables, service_date: "2026-03-14", quantity: 1, unit_price_paise: 1850, amount_paise: 1850}
+    - {id: L18, category: pharmacy-consumables, service_date: "2026-03-15", quantity: 8, unit_price_paise: 3500, amount_paise: 28000}
+    - {id: L19, category: pharmacy-consumables, service_date: "2026-03-15", quantity: 3, unit_price_paise: 1600, amount_paise: 4800}
+    - {id: L20, category: pharmacy-consumables, service_date: "2026-03-15", quantity: 2, unit_price_paise: 16500, amount_paise: 33000}
+    - {id: L21, category: pharmacy-consumables, service_date: "2026-03-16", quantity: 2, unit_price_paise: 6850, amount_paise: 13700}
+    - {id: L22, category: pharmacy-consumables, service_date: "2026-03-16", quantity: 1, unit_price_paise: 520000, amount_paise: 520000}
+    - {id: L23, category: pharmacy-consumables, service_date: "2026-03-17", quantity: 1, unit_price_paise: 21500, amount_paise: 21500}
+    - {id: L24, category: pharmacy-consumables, service_date: "2026-03-17", quantity: 1, unit_price_paise: 520000, amount_paise: 520000}
+    - {id: L25, category: pharmacy-consumables, service_date: "2026-03-17", quantity: 13, unit_price_paise: 350, amount_paise: 4550}
+    - {id: L26, category: pharmacy-consumables, service_date: "2026-03-18", quantity: 14, unit_price_paise: 650, amount_paise: 9100}
+    - {id: L27, category: pharmacy-consumables, service_date: "2026-03-18", quantity: 4, unit_price_paise: 650, amount_paise: 2600}
+    - {id: L28, category: pharmacy-consumables, service_date: "2026-03-19", quantity: 1, unit_price_paise: 21500, amount_paise: 21500}
+    - {id: L29, category: pharmacy-consumables, service_date: "2026-03-19", quantity: 12, unit_price_paise: 120, amount_paise: 1440}
+    - {id: L30, category: pharmacy-consumables, service_date: "2026-03-20", quantity: 5, unit_price_paise: 120, amount_paise: 600}
+    - {id: L31, category: pharmacy-consumables, service_date: "2026-03-20", quantity: 3, unit_price_paise: 1850, amount_paise: 5550}
+    - {id: L32, category: pharmacy-consumables, service_date: "2026-03-21", quantity: 4, unit_price_paise: 3500, amount_paise: 14000}
+    - {id: L33, category: pharmacy-consumables, service_date: "2026-03-21", quantity: 3, unit_price_paise: 48500, amount_paise: 145500}
+    - {id: L34, category: pharmacy-consumables, service_date: "2026-03-22", quantity: 4, unit_price_paise: 6850, amount_paise: 27400}
+    - {id: L35, category: pharmacy-consumables, service_date: "2026-03-22", quantity: 8, unit_price_paise: 650, amount_paise: 5200}
+    - {id: L36, category: pharmacy-consumables, service_date: "2026-03-23", quantity: 11, unit_price_paise: 650, amount_paise: 7150}
+    - {id: L37, category: pharmacy-consumables, service_date: "2026-03-23", quantity: 3, unit_price_paise: 1600, amount_paise: 4800}
+    - {id: L38, category: pharmacy-consumables, service_date: "2026-03-23", quantity: 5, unit_price_paise: 1850, amount_paise: 9250}
+    - {id: L39, category: pharmacy-consumables, service_date: "2026-03-23", quantity: 3, unit_price_paise: 48500, amount_paise: 145500}
+    - {id: L40, category: pharmacy-consumables, service_date: "2026-03-24", quantity: 5, unit_price_paise: 3900, amount_paise: 19500}
+    - {id: L41, category: pharmacy-consumables, service_date: "2026-03-24", quantity: 15, unit_price_paise: 650, amount_paise: 9750}
+    - {id: L42, category: pharmacy-consumables, service_date: "2026-03-24", quantity: 8, unit_price_paise: 950, amount_paise: 7600}
+insured:
+  name: Madhavi Gill
+  gender: female
+  age: 49
+  policy_number: SYN-ASG-2025-200047
+  member_id: SYN-M-600047
+  date_of_birth: "1977-02-02"
+hospital:
+  name: Kesarvan Heart and General Hospital
+  address: 3 Fort Road
+  city: Kesarvan
+  registration: SYN-HR-2047
+clinical:
+  diagnosis: Lung abscess
+  treating_doctor: Dr. Kavin Raman
+  history: Cough with foul-smelling sputum and fever for three weeks, with weight loss.
+  course: CT showed an abscess in the right lower lobe. Treated with intravenous antibiotics and postural drainage. Fever and sputum settled.
+  advice: Complete six weeks of oral antibiotics. Breathing exercises. Repeat chest X-ray after four weeks.
+claim_form:
+  admission_type: planned
+  signed_on: "2026-03-28"
+  claimed_amount_paise: 10002420
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200047, date: "2026-03-28"}
+  - {id: ID, type: photo-id, number: SYN-ID-3KBV-0315, date: "2018-07-05"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200047, date: "2026-03-24"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-204701, date: "2026-03-24", layout: compact, lines_per_page: 5, discount_paise: 439500}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-204701, date: "2026-03-24", lines_per_page: 16}
+  - {id: P2, type: pharmacy-bill, number: SYN-PH-204702, date: "2026-03-24", lines_per_page: 13}
+  - {id: R1, type: payment-receipt, number: SYN-RC-204701, date: "2026-03-24", against: [B1, P1, P2], mode: Cash}
+files:
+  - {name: claim-form.pdf, documents: [CF]}
+  - {name: photo-id.pdf, documents: [ID]}
+  - {name: discharge-summary.pdf, documents: [DS]}
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: pharmacy-bill.pdf, documents: [P1]}
+  - {name: pharmacy-bill-2.pdf, documents: [P2]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Charges - Private Room}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Consultant Visit Charges}
+  - {line: L04, bill: B1, description: CT Chest}
+  - {line: L05, bill: B1, description: X-Ray Chest PA View}
+  - {line: L06, bill: B1, description: Complete Blood Count}
+  - {line: L07, bill: B1, description: Blood Culture and Sensitivity}
+  - {line: L08, bill: B1, description: Liver Function Test}
+  - {line: L09, bill: B1, description: TELEPHONE CHARGES, annexure: list-i/14}
+  - {line: L10, bill: P1, description: Tab. Amlodipine 5 mg}
+  - {line: L11, bill: P1, description: Tab. Rifampicin 450 mg}
+  - {line: L12, bill: P1, description: Inj. Human Insulin 40 IU/ml}
+  - {line: L13, bill: P1, description: Tab. Amlodipine 5 mg}
+  - {line: L14, bill: P1, description: Inj. Ceftriaxone 1 g}
+  - {line: L15, bill: P1, description: Tab. Isoniazid 300 mg}
+  - {line: L16, bill: P1, description: Inj. Human Insulin 40 IU/ml}
+  - {line: L17, bill: P1, description: Inj. Ondansetron 4 mg}
+  - {line: L18, bill: P1, description: IV Fluid Normal Saline 500 ml}
+  - {line: L19, bill: P1, description: Inj. Dexamethasone 8 mg}
+  - {line: L20, bill: P1, description: Inj. Human Insulin 40 IU/ml}
+  - {line: L21, bill: P1, description: Inj. Ceftriaxone 1 g}
+  - {line: L22, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L23, bill: P1, description: Syp. Lactulose 200 ml}
+  - {line: L24, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L25, bill: P1, description: Tab. Amlodipine 5 mg}
+  - {line: L26, bill: P1, description: Tab. Rifampicin 450 mg}
+  - {line: L27, bill: P1, description: Tab. Pantoprazole 40 mg}
+  - {line: L28, bill: P1, description: Syp. Lactulose 200 ml}
+  - {line: L29, bill: P1, description: Tab. Isoniazid 300 mg}
+  - {line: L30, bill: P1, description: Tab. Isoniazid 300 mg}
+  - {line: L31, bill: P1, description: Inj. Ondansetron 4 mg}
+  - {line: L32, bill: P1, description: IV Fluid Normal Saline 500 ml}
+  - {line: L33, bill: P1, description: Inj. Piperacillin-Tazobactam 4.5 g}
+  - {line: L34, bill: P1, description: Inj. Ceftriaxone 1 g}
+  - {line: L35, bill: P1, description: Tab. Pantoprazole 40 mg}
+  - {line: L36, bill: P1, description: Tab. Rifampicin 450 mg}
+  - {line: L37, bill: P1, description: Inj. Dexamethasone 8 mg}
+  - {line: L38, bill: P1, description: Inj. Ondansetron 4 mg}
+  - {line: L39, bill: P1, description: Inj. Piperacillin-Tazobactam 4.5 g}
+  - {line: L40, bill: P2, description: IV Fluid Dextrose Saline 500 ml}
+  - {line: L41, bill: P2, description: Tab. Pantoprazole 40 mg}
+  - {line: L42, bill: P2, description: Tab. Clopidogrel 75 mg}

@@ -1,0 +1,100 @@
+# Seeded scenario seeded-surgery-implant-01: surgery with an implant.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-10-01"
+  period_end: "2026-09-30"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2019-10-01"
+  cumulative_bonus_paise: 5000000
+facts:
+  admission: "2026-02-26"
+  discharge: "2026-03-02"
+  segments:
+    - {from: "2026-02-26", to: "2026-03-02", kind: room}
+  differential_billing: "yes"
+  condition:
+    listed_group: listed-36-months
+    onset: "2025-06-19"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-02-26", quantity: 4, unit_price_paise: 550000, amount_paise: 2200000}
+    - {id: L02, category: nursing, service_date: "2026-02-26", quantity: 4, unit_price_paise: 60000, amount_paise: 240000}
+    - {id: L03, category: professional-fees, service_date: "2026-02-26", quantity: 1, unit_price_paise: 6300000, amount_paise: 6300000}
+    - {id: L04, category: professional-fees, service_date: "2026-02-26", quantity: 1, unit_price_paise: 1800000, amount_paise: 1800000}
+    - {id: L05, category: operation-theatre, service_date: "2026-02-26", quantity: 1, unit_price_paise: 2500000, amount_paise: 2500000}
+    - {id: L06, category: implants-devices, service_date: "2026-02-26", quantity: 1, unit_price_paise: 10010000, amount_paise: 10010000}
+    - {id: L07, category: professional-fees, service_date: "2026-02-27", quantity: 3, unit_price_paise: 150000, amount_paise: 450000}
+    - {id: L08, category: diagnostics, service_date: "2026-02-26", quantity: 1, unit_price_paise: 70000, amount_paise: 70000}
+    - {id: L09, category: diagnostics, service_date: "2026-02-26", quantity: 1, unit_price_paise: 45000, amount_paise: 45000}
+    - {id: L10, category: diagnostics, service_date: "2026-02-26", quantity: 1, unit_price_paise: 95000, amount_paise: 95000}
+    - {id: L11, category: diagnostics, service_date: "2026-02-26", quantity: 1, unit_price_paise: 30000, amount_paise: 30000}
+    - {id: L12, category: other-hospital-charges, service_date: "2026-02-26", quantity: 2, unit_price_paise: 50000, amount_paise: 100000}
+    - {id: L13, category: pharmacy-consumables, service_date: "2026-02-26", quantity: 2, unit_price_paise: 4800, amount_paise: 9600}
+    - {id: L14, category: pharmacy-consumables, service_date: "2026-02-26", quantity: 1, unit_price_paise: 21500, amount_paise: 21500}
+    - {id: L15, category: pharmacy-consumables, service_date: "2026-02-26", quantity: 1, unit_price_paise: 38500, amount_paise: 38500}
+    - {id: L16, category: pharmacy-consumables, service_date: "2026-03-01", quantity: 1, unit_price_paise: 35000, amount_paise: 35000}
+    - {id: L17, category: pharmacy-consumables, service_date: "2026-03-01", quantity: 3, unit_price_paise: 145000, amount_paise: 435000}
+insured:
+  name: Farzana Gill
+  gender: female
+  age: 64
+  policy_number: SYN-ASG-2025-200009
+  member_id: SYN-M-600009
+  date_of_birth: "1962-02-21"
+hospital:
+  name: Chandmora Medical Centre
+  address: Plot 4, Ring Road
+  city: Chandmora
+  registration: SYN-HR-2009
+clinical:
+  diagnosis: Primary osteoarthritis of the right knee
+  procedure: Total knee replacement, right
+  treating_doctor: Dr. Vivek Rathore
+  history: Pain in the right knee for six years, worse over the last year, with difficulty climbing stairs. No relief from medicines and physiotherapy.
+  course: Underwent total knee replacement under spinal anaesthesia. Mobilised with a walker on the first day after surgery. The wound is healthy.
+  advice: Walk with the walker and do the knee exercises as taught. Stitches to be removed after twelve days. Review in the orthopaedic clinic after two weeks.
+  surgery:
+    date: "2026-02-26"
+    surgeon: Dr. Vivek Rathore
+    anaesthetist: Dr. Manoj Pillai
+    anaesthesia: Spinal
+    findings: Advanced arthritis of all three compartments with a varus deformity. A cemented prosthesis was fixed.
+claim_form:
+  admission_type: planned
+  signed_on: "2026-03-07"
+  claimed_amount_paise: 24379600
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200009, date: "2026-03-07"}
+  - {id: ID, type: photo-id, number: SYN-ID-J92Z-2668, date: "2024-01-10"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200009, date: "2026-03-02"}
+  - {id: OT, type: ot-notes, number: SYN-OT-200009, date: "2026-02-26"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-200901, date: "2026-03-02", layout: ledger, lines_per_page: 6}
+  - {id: IV, type: implant-invoice, number: SYN-IV-200009, date: "2026-02-24", vendor: {name: Chandmora Cardio Supplies, address: '11 Ring Road, Chandmora', registration: SYN-VR-2009}, implants: [{line: L06, serial: SYN-SN-RUTDXH}]}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-200901, date: "2026-03-02", lines_per_page: 17}
+  - {id: R1, type: payment-receipt, number: SYN-RC-200901, date: "2026-03-02", against: [B1, P1], mode: NEFT}
+files:
+  - {name: claim-packet.pdf, documents: [CF, ID, DS, OT, B1, IV, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Deluxe Single}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Surgeon Fees}
+  - {line: L04, bill: B1, description: Anaesthetist Fees}
+  - {line: L05, bill: B1, description: Operation Theatre Charges}
+  - {line: L06, bill: B1, description: Knee Prosthesis - Cemented}
+  - {line: L07, bill: B1, description: Consultant Visit Charges}
+  - {line: L08, bill: B1, description: X-Ray Right Knee AP and Lateral}
+  - {line: L09, bill: B1, description: Complete Blood Count}
+  - {line: L10, bill: B1, description: Coagulation Profile}
+  - {line: L11, bill: B1, description: ECG}
+  - {line: L12, bill: B1, description: Physiotherapy Charges}
+  - {line: L13, bill: P1, description: Inj. Hydrocortisone 100 mg}
+  - {line: L14, bill: P1, description: Syp. Lactulose 200 ml}
+  - {line: L15, bill: P1, description: Inj. Enoxaparin 40 mg}
+  - {line: L16, bill: P1, description: Inj. Artesunate 60 mg}
+  - {line: L17, bill: P1, description: Inj. Meropenem 1 g}

@@ -1,0 +1,101 @@
+# Seeded scenario seeded-surgery-implant-07: surgery with an implant.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2020-04-01"
+facts:
+  admission: "2025-07-01"
+  discharge: "2025-07-06"
+  segments:
+    - {from: "2025-07-01", to: "2025-07-06", kind: room}
+  differential_billing: "no"
+  condition:
+    listed_group: listed-36-months
+    onset: "2024-12-08"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2025-07-01", quantity: 5, unit_price_paise: 450000, amount_paise: 2250000}
+    - {id: L02, category: nursing, service_date: "2025-07-01", quantity: 5, unit_price_paise: 90000, amount_paise: 450000}
+    - {id: L03, category: professional-fees, service_date: "2025-07-02", quantity: 1, unit_price_paise: 6100000, amount_paise: 6100000}
+    - {id: L04, category: professional-fees, service_date: "2025-07-02", quantity: 1, unit_price_paise: 1800000, amount_paise: 1800000}
+    - {id: L05, category: operation-theatre, service_date: "2025-07-02", quantity: 1, unit_price_paise: 2500000, amount_paise: 2500000}
+    - {id: L06, category: implants-devices, service_date: "2025-07-02", quantity: 1, unit_price_paise: 9830000, amount_paise: 9830000}
+    - {id: L07, category: professional-fees, service_date: "2025-07-02", quantity: 4, unit_price_paise: 100000, amount_paise: 400000}
+    - {id: L08, category: diagnostics, service_date: "2025-07-01", quantity: 1, unit_price_paise: 65000, amount_paise: 65000}
+    - {id: L09, category: diagnostics, service_date: "2025-07-01", quantity: 1, unit_price_paise: 45000, amount_paise: 45000}
+    - {id: L10, category: diagnostics, service_date: "2025-07-01", quantity: 1, unit_price_paise: 95000, amount_paise: 95000}
+    - {id: L11, category: diagnostics, service_date: "2025-07-01", quantity: 1, unit_price_paise: 30000, amount_paise: 30000}
+    - {id: L12, category: other-hospital-charges, service_date: "2025-07-02", quantity: 1, unit_price_paise: 150000, amount_paise: 150000}
+    - {id: L13, category: other-hospital-charges, service_date: "2025-07-01", quantity: 1, unit_price_paise: 50000, amount_paise: 50000, item_list: list-ii}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-07-01", quantity: 3, unit_price_paise: 9800, amount_paise: 29400}
+    - {id: L15, category: pharmacy-consumables, service_date: "2025-07-03", quantity: 9, unit_price_paise: 650, amount_paise: 5850}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-07-03", quantity: 13, unit_price_paise: 1100, amount_paise: 14300}
+    - {id: L17, category: pharmacy-consumables, service_date: "2025-07-05", quantity: 6, unit_price_paise: 2900, amount_paise: 17400}
+    - {id: L18, category: pharmacy-consumables, service_date: "2025-07-05", quantity: 1, unit_price_paise: 6200, amount_paise: 6200}
+insured:
+  name: Ishita Jadhav
+  gender: female
+  age: 65
+  policy_number: SYN-ASG-2025-200015
+  member_id: SYN-M-600015
+  date_of_birth: "1960-01-10"
+hospital:
+  name: Kesarvan Heart and General Hospital
+  address: 3 Fort Road
+  city: Kesarvan
+  registration: SYN-HR-2015
+clinical:
+  diagnosis: Primary osteoarthritis of the left knee
+  procedure: Total knee replacement, left
+  treating_doctor: Dr. Vivek Rathore
+  history: Pain and stiffness in the left knee for five years, now unable to walk more than a hundred metres.
+  course: Underwent total knee replacement under spinal anaesthesia. Knee bending reached 90 degrees before discharge. The wound is healthy.
+  advice: Knee exercises as taught, three times a day. Stitches to be removed after twelve days. Review in the orthopaedic clinic after two weeks.
+  surgery:
+    date: "2025-07-02"
+    surgeon: Dr. Vivek Rathore
+    anaesthetist: Dr. Ravi Shenoy
+    anaesthesia: Spinal
+    findings: Severe arthritis of the inner and kneecap compartments. A cemented prosthesis was fixed.
+claim_form:
+  admission_type: planned
+  signed_on: "2025-07-08"
+  claimed_amount_paise: 23838150
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200015, date: "2025-07-08"}
+  - {id: ID, type: photo-id, number: SYN-ID-ZMBG-1762, date: "2023-09-21"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200015, date: "2025-07-06"}
+  - {id: OT, type: ot-notes, number: SYN-OT-200015, date: "2025-07-02"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-201501, date: "2025-07-06", layout: ledger, lines_per_page: 7}
+  - {id: IV, type: implant-invoice, number: SYN-IV-200015, date: "2025-06-30", vendor: {name: Chandmora Cardio Supplies, address: '11 Ring Road, Chandmora', registration: SYN-VR-2015}, implants: [{line: L06, serial: SYN-SN-HHYKA4}]}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-201501, date: "2025-07-06", lines_per_page: 17}
+  - {id: R1, type: payment-receipt, number: SYN-RC-201501, date: "2025-07-06", against: [B1, P1], mode: Cash}
+files:
+  - {name: claim-packet.pdf, documents: [CF, ID, DS, OT, B1, IV, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Semi Private}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Surgeon Fees}
+  - {line: L04, bill: B1, description: Anaesthetist Fees}
+  - {line: L05, bill: B1, description: Operation Theatre Charges}
+  - {line: L06, bill: B1, description: Knee Prosthesis - Cemented}
+  - {line: L07, bill: B1, description: Consultant Visit Charges}
+  - {line: L08, bill: B1, description: X-Ray of the Injured Part}
+  - {line: L09, bill: B1, description: Complete Blood Count}
+  - {line: L10, bill: B1, description: Coagulation Profile}
+  - {line: L11, bill: B1, description: ECG}
+  - {line: L12, bill: B1, description: Bedside Procedure Charges}
+  - {line: L13, bill: B1, description: DISCHARGE PROCEDURE CHARGES, annexure: list-ii/30}
+  - {line: L14, bill: P1, description: Inj. Heparin 5000 IU}
+  - {line: L15, bill: P1, description: Tab. Rifampicin 450 mg}
+  - {line: L16, bill: P1, description: Tab. Cefixime 200 mg}
+  - {line: L17, bill: P1, description: Inj. Metronidazole 500 mg}
+  - {line: L18, bill: P1, description: Inj. Amikacin 500 mg}

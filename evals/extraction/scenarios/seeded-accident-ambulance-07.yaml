@@ -1,0 +1,99 @@
+# Seeded scenario seeded-accident-ambulance-07: an accident brought in by ambulance.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-04-01"
+  period_end: "2026-03-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2025-04-01"
+facts:
+  admission: "2025-04-11"
+  discharge: "2025-04-13"
+  segments:
+    - {from: "2025-04-11", to: "2025-04-13", kind: room}
+  differential_billing: "yes"
+  bill_discount_paise: 193200
+  condition:
+    accident: true
+    onset: "2025-04-11"
+  lines:
+    - {id: L01, category: road-ambulance, service_date: "2025-04-11", quantity: 1, unit_price_paise: 150000, amount_paise: 150000}
+    - {id: L02, category: other-hospital-charges, service_date: "2025-04-11", quantity: 1, unit_price_paise: 150000, amount_paise: 150000}
+    - {id: L03, category: room-rent, service_date: "2025-04-11", quantity: 2, unit_price_paise: 250000, amount_paise: 500000}
+    - {id: L04, category: nursing, service_date: "2025-04-11", quantity: 2, unit_price_paise: 80000, amount_paise: 160000}
+    - {id: L05, category: professional-fees, service_date: "2025-04-11", quantity: 1, unit_price_paise: 1600000, amount_paise: 1600000}
+    - {id: L06, category: professional-fees, service_date: "2025-04-11", quantity: 1, unit_price_paise: 360000, amount_paise: 360000}
+    - {id: L07, category: operation-theatre, service_date: "2025-04-11", quantity: 1, unit_price_paise: 600000, amount_paise: 600000}
+    - {id: L08, category: professional-fees, service_date: "2025-04-11", quantity: 2, unit_price_paise: 80000, amount_paise: 160000}
+    - {id: L09, category: diagnostics, service_date: "2025-04-11", quantity: 1, unit_price_paise: 65000, amount_paise: 65000}
+    - {id: L10, category: diagnostics, service_date: "2025-04-11", quantity: 1, unit_price_paise: 45000, amount_paise: 45000}
+    - {id: L11, category: other-hospital-charges, service_date: "2025-04-11", quantity: 1, unit_price_paise: 75000, amount_paise: 75000, item_list: list-ii}
+    - {id: L12, category: pharmacy-consumables, service_date: "2025-04-11", quantity: 4, unit_price_paise: 120, amount_paise: 480}
+    - {id: L13, category: pharmacy-consumables, service_date: "2025-04-11", quantity: 3, unit_price_paise: 36500, amount_paise: 109500}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-04-11", quantity: 3, unit_price_paise: 38500, amount_paise: 115500}
+    - {id: L15, category: pharmacy-consumables, service_date: "2025-04-11", quantity: 3, unit_price_paise: 24500, amount_paise: 73500}
+    - {id: L16, category: pharmacy-consumables, service_date: "2025-04-12", quantity: 2, unit_price_paise: 9500, amount_paise: 19000}
+    - {id: L17, category: pharmacy-consumables, service_date: "2025-04-12", quantity: 1, unit_price_paise: 35000, amount_paise: 35000}
+insured:
+  name: Ishita Acharya
+  gender: female
+  age: 69
+  policy_number: SYN-ASG-2025-200039
+  member_id: SYN-M-600039
+  date_of_birth: "1956-02-15"
+hospital:
+  name: Kesarvan Heart and General Hospital
+  address: 3 Fort Road
+  city: Kesarvan
+  registration: SYN-HR-2039
+clinical:
+  diagnosis: Lacerated wound of the right forearm
+  procedure: Wound debridement and suturing
+  treating_doctor: Dr. Vivek Rathore
+  history: Cut on the right forearm by broken glass when a bus window shattered in a collision. Brought by ambulance.
+  course: The wound was cleaned and the damaged tissue removed under regional anaesthesia, then sutured. No injury to tendons or nerves.
+  advice: Keep the dressing dry. Antibiotics and tetanus cover given. Sutures to be removed after ten days.
+  surgery:
+    date: "2025-04-11"
+    surgeon: Dr. Vivek Rathore
+    anaesthetist: Dr. Anjali Dutta
+    anaesthesia: Regional block
+    findings: A 9 cm wound through skin and fat with no tendon, nerve or vessel injury. Debrided and closed in layers.
+claim_form:
+  admission_type: emergency
+  signed_on: "2025-04-17"
+  claimed_amount_paise: 4024780
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200039, date: "2025-04-17"}
+  - {id: ID, type: photo-id, number: SYN-ID-FABR-2408, date: "2021-04-15"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200039, date: "2025-04-13"}
+  - {id: OT, type: ot-notes, number: SYN-OT-200039, date: "2025-04-11"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-203901, date: "2025-04-13", layout: ledger, lines_per_page: 6, discount_paise: 193200}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-203901, date: "2025-04-13", lines_per_page: 18}
+  - {id: R1, type: payment-receipt, number: SYN-RC-203901, date: "2025-04-13", against: [B1, P1], mode: Cheque}
+files:
+  - {name: claim-packet.pdf, documents: [CF, ID, DS, OT, B1, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Road Ambulance Charges}
+  - {line: L02, bill: B1, description: Emergency Room Charges}
+  - {line: L03, bill: B1, description: Room Charges - Private Room}
+  - {line: L04, bill: B1, description: Nursing Charges}
+  - {line: L05, bill: B1, description: Surgeon Fees}
+  - {line: L06, bill: B1, description: Anaesthetist Fees}
+  - {line: L07, bill: B1, description: Minor OT Charges}
+  - {line: L08, bill: B1, description: Consultant Visit Charges}
+  - {line: L09, bill: B1, description: X-Ray of the Injured Part}
+  - {line: L10, bill: B1, description: Complete Blood Count}
+  - {line: L11, bill: B1, description: ADMISSION KIT, annexure: list-ii/27}
+  - {line: L12, bill: P1, description: Tab. Isoniazid 300 mg}
+  - {line: L13, bill: P1, description: Inj. Cefoperazone-Sulbactam 1.5 g}
+  - {line: L14, bill: P1, description: Inj. Enoxaparin 40 mg}
+  - {line: L15, bill: P1, description: Inj. Levetiracetam 500 mg}
+  - {line: L16, bill: P1, description: Syp. Potassium Chloride 200 ml}
+  - {line: L17, bill: P1, description: Inj. Artesunate 60 mg}

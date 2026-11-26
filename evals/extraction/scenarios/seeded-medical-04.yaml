@@ -1,0 +1,93 @@
+# Seeded scenario seeded-medical-04: a medical admission.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-09-01"
+  period_end: "2026-08-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2019-09-01"
+facts:
+  admission: "2026-06-14"
+  discharge: "2026-06-18"
+  segments:
+    - {from: "2026-06-14", to: "2026-06-18", kind: room}
+  differential_billing: "yes"
+  condition:
+    onset: "2026-06-08"
+  lines:
+    - {id: L01, category: room-rent, service_date: "2026-06-14", quantity: 4, unit_price_paise: 350000, amount_paise: 1400000}
+    - {id: L02, category: nursing, service_date: "2026-06-14", quantity: 4, unit_price_paise: 90000, amount_paise: 360000}
+    - {id: L03, category: professional-fees, service_date: "2026-06-14", quantity: 4, unit_price_paise: 150000, amount_paise: 600000}
+    - {id: L04, category: diagnostics, service_date: "2026-06-15", quantity: 3, unit_price_paise: 45000, amount_paise: 135000}
+    - {id: L05, category: diagnostics, service_date: "2026-06-17", quantity: 1, unit_price_paise: 25000, amount_paise: 25000}
+    - {id: L06, category: diagnostics, service_date: "2026-06-14", quantity: 1, unit_price_paise: 180000, amount_paise: 180000}
+    - {id: L07, category: diagnostics, service_date: "2026-06-15", quantity: 1, unit_price_paise: 85000, amount_paise: 85000}
+    - {id: L08, category: other-hospital-charges, service_date: "2026-06-16", quantity: 1, unit_price_paise: 120000, amount_paise: 120000}
+    - {id: L09, category: other-hospital-charges, service_date: "2026-06-14", quantity: 1, unit_price_paise: 40000, amount_paise: 40000, item_list: list-i}
+    - {id: L10, category: pharmacy-consumables, service_date: "2026-06-14", quantity: 2, unit_price_paise: 145000, amount_paise: 290000}
+    - {id: L11, category: pharmacy-consumables, service_date: "2026-06-15", quantity: 1, unit_price_paise: 1250, amount_paise: 1250}
+    - {id: L12, category: pharmacy-consumables, service_date: "2026-06-15", quantity: 5, unit_price_paise: 2900, amount_paise: 14500}
+    - {id: L13, category: pharmacy-consumables, service_date: "2026-06-15", quantity: 3, unit_price_paise: 650, amount_paise: 1950}
+    - {id: L14, category: pharmacy-consumables, service_date: "2026-06-16", quantity: 9, unit_price_paise: 350, amount_paise: 3150}
+    - {id: L15, category: pharmacy-consumables, service_date: "2026-06-16", quantity: 8, unit_price_paise: 210, amount_paise: 1680}
+    - {id: L16, category: pharmacy-consumables, service_date: "2026-06-17", quantity: 3, unit_price_paise: 950, amount_paise: 2850}
+    - {id: L17, category: pharmacy-consumables, service_date: "2026-06-17", quantity: 6, unit_price_paise: 120, amount_paise: 720}
+    - {id: L18, category: pharmacy-consumables, service_date: "2026-06-17", quantity: 2, unit_price_paise: 48500, amount_paise: 97000}
+insured:
+  name: Bharat Bhosale
+  gender: male
+  age: 62
+  policy_number: SYN-ASG-2025-200004
+  member_id: SYN-M-600004
+  date_of_birth: "1964-05-17"
+hospital:
+  name: Amberpur General Hospital
+  address: 14 Lakeview Road, Ward 3
+  city: Amberpur
+  registration: SYN-HR-2004
+clinical:
+  diagnosis: Acute pyelonephritis
+  treating_doctor: Dr. Neha Kapadia
+  history: Fever with chills, pain in the left flank and burning on passing urine for three days.
+  course: Treated with intravenous antibiotics, changed to oral after the urine culture report. Flank pain and fever resolved.
+  advice: Complete the antibiotic course. Drink at least three litres of water a day. Repeat the urine examination after two weeks.
+claim_form:
+  admission_type: emergency
+  signed_on: "2026-06-20"
+  claimed_amount_paise: 3358100
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200004, date: "2026-06-20"}
+  - {id: ID, type: photo-id, number: SYN-ID-A2SX-1508, date: "2020-08-03"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200004, date: "2026-06-18"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-200401, date: "2026-06-18", layout: columnar, lines_per_page: 5}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-200401, date: "2026-06-18", lines_per_page: 19}
+  - {id: R1, type: payment-receipt, number: SYN-RC-200401, date: "2026-06-18", against: [B1, P1], mode: Cheque}
+files:
+  - {name: claim-form.pdf, documents: [CF, ID]}
+  - {name: hospital-records.pdf, documents: [DS]}
+  - {name: bills.pdf, documents: [B1, P1, R1]}
+lines:
+  - {line: L01, bill: B1, description: Room Charges - Private Room}
+  - {line: L02, bill: B1, description: Nursing Charges}
+  - {line: L03, bill: B1, description: Consultant Visit Charges}
+  - {line: L04, bill: B1, description: Complete Blood Count}
+  - {line: L05, bill: B1, description: Urine Routine Examination}
+  - {line: L06, bill: B1, description: Ultrasound Abdomen}
+  - {line: L07, bill: B1, description: Renal Function Test}
+  - {line: L08, bill: B1, description: Bedside Procedure Charges}
+  - {line: L09, bill: B1, description: LAUNDRY CHARGES, annexure: list-i/11}
+  - {line: L10, bill: P1, description: Inj. Meropenem 1 g}
+  - {line: L11, bill: P1, description: Inj. Tramadol 50 mg}
+  - {line: L12, bill: P1, description: Inj. Metronidazole 500 mg}
+  - {line: L13, bill: P1, description: Tab. Pantoprazole 40 mg}
+  - {line: L14, bill: P1, description: Tab. Amlodipine 5 mg}
+  - {line: L15, bill: P1, description: Tab. Paracetamol 650 mg}
+  - {line: L16, bill: P1, description: Tab. Clopidogrel 75 mg}
+  - {line: L17, bill: P1, description: Tab. Isoniazid 300 mg}
+  - {line: L18, bill: P1, description: Inj. Piperacillin-Tazobactam 4.5 g}

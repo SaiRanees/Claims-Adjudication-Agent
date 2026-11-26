@@ -1,0 +1,89 @@
+# Seeded scenario seeded-accident-ambulance-03: an accident brought in by ambulance.
+# Written once by `go run ./cmd/datagen scenarios`, then reviewed and
+# committed like a golden case. Everything in it is invented, and the
+# engine adjudicates its facts without a flag that would mean the
+# generator erred.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: "2025-08-01"
+  period_end: "2026-07-31"
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: "2025-08-01"
+facts:
+  admission: "2025-08-21"
+  discharge: "2025-08-24"
+  segments:
+    - {from: "2025-08-21", to: "2025-08-24", kind: room}
+  differential_billing: "yes"
+  condition:
+    accident: true
+    onset: "2025-08-21"
+  lines:
+    - {id: L01, category: road-ambulance, service_date: "2025-08-21", quantity: 1, unit_price_paise: 150000, amount_paise: 150000}
+    - {id: L02, category: other-hospital-charges, service_date: "2025-08-21", quantity: 1, unit_price_paise: 150000, amount_paise: 150000}
+    - {id: L03, category: room-rent, service_date: "2025-08-21", quantity: 3, unit_price_paise: 300000, amount_paise: 900000}
+    - {id: L04, category: nursing, service_date: "2025-08-21", quantity: 3, unit_price_paise: 50000, amount_paise: 150000}
+    - {id: L05, category: patient-diet, service_date: "2025-08-21", quantity: 3, unit_price_paise: 25000, amount_paise: 75000}
+    - {id: L06, category: professional-fees, service_date: "2025-08-21", quantity: 3, unit_price_paise: 100000, amount_paise: 300000}
+    - {id: L07, category: diagnostics, service_date: "2025-08-21", quantity: 1, unit_price_paise: 350000, amount_paise: 350000}
+    - {id: L08, category: diagnostics, service_date: "2025-08-21", quantity: 1, unit_price_paise: 65000, amount_paise: 65000}
+    - {id: L09, category: diagnostics, service_date: "2025-08-21", quantity: 1, unit_price_paise: 45000, amount_paise: 45000}
+    - {id: L10, category: other-hospital-charges, service_date: "2025-08-21", quantity: 3, unit_price_paise: 50000, amount_paise: 150000}
+    - {id: L11, category: pharmacy-consumables, service_date: "2025-08-22", quantity: 4, unit_price_paise: 1100, amount_paise: 4400}
+    - {id: L12, category: pharmacy-consumables, service_date: "2025-08-22", quantity: 1, unit_price_paise: 520000, amount_paise: 520000}
+    - {id: L13, category: pharmacy-consumables, service_date: "2025-08-22", quantity: 1, unit_price_paise: 350, amount_paise: 350}
+    - {id: L14, category: pharmacy-consumables, service_date: "2025-08-23", quantity: 2, unit_price_paise: 145000, amount_paise: 290000}
+insured:
+  name: Gauri Mistry
+  gender: female
+  age: 43
+  policy_number: SYN-ASG-2025-200035
+  member_id: SYN-M-600035
+  date_of_birth: "1982-07-09"
+hospital:
+  name: Sitarkund Care Hospital
+  address: 17 Lake Road, Sector 2
+  city: Sitarkund
+  registration: SYN-HR-2035
+clinical:
+  diagnosis: Head injury with scalp laceration
+  treating_doctor: Dr. Nikhil Bansal
+  history: Hit by a car while crossing the road. Brief loss of consciousness and a bleeding cut on the scalp. Brought by ambulance.
+  course: CT of the brain showed no bleeding. The scalp wound was cleaned and sutured. Observed for 48 hours with no worsening.
+  advice: Return at once for vomiting, drowsiness or a fit. Sutures to be removed after seven days. Rest for a week.
+claim_form:
+  admission_type: emergency
+  signed_on: "2025-08-26"
+  claimed_amount_paise: 3149750
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-200035, date: "2025-08-26"}
+  - {id: ID, type: photo-id, number: SYN-ID-VXEE-2064, date: "2017-08-21"}
+  - {id: DS, type: discharge-summary, number: SYN-DS-200035, date: "2025-08-24"}
+  - {id: B1, type: hospital-bill, number: SYN-IP-203501, date: "2025-08-24", layout: compact, lines_per_page: 5}
+  - {id: P1, type: pharmacy-bill, number: SYN-PH-203501, date: "2025-08-24", lines_per_page: 20}
+  - {id: R1, type: payment-receipt, number: SYN-RC-203501, date: "2025-08-24", against: [B1, P1], mode: NEFT}
+files:
+  - {name: claim-form.pdf, documents: [CF]}
+  - {name: photo-id.pdf, documents: [ID]}
+  - {name: discharge-summary.pdf, documents: [DS]}
+  - {name: hospital-bill.pdf, documents: [B1]}
+  - {name: pharmacy-bill.pdf, documents: [P1]}
+  - {name: payment-receipt.pdf, documents: [R1]}
+lines:
+  - {line: L01, bill: B1, description: Road Ambulance Charges}
+  - {line: L02, bill: B1, description: Emergency Room Charges}
+  - {line: L03, bill: B1, description: Room Charges - Private Room}
+  - {line: L04, bill: B1, description: Nursing Charges}
+  - {line: L05, bill: B1, description: Patient Diet Charges}
+  - {line: L06, bill: B1, description: Consultant Visit Charges}
+  - {line: L07, bill: B1, description: CT Brain Plain}
+  - {line: L08, bill: B1, description: X-Ray of the Injured Part}
+  - {line: L09, bill: B1, description: Complete Blood Count}
+  - {line: L10, bill: B1, description: Physiotherapy Charges}
+  - {line: L11, bill: P1, description: Inj. Furosemide 20 mg}
+  - {line: L12, bill: P1, description: Inj. Human Albumin 20% 100 ml}
+  - {line: L13, bill: P1, description: Tab. Amlodipine 5 mg}
+  - {line: L14, bill: P1, description: Inj. Meropenem 1 g}

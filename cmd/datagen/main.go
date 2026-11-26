@@ -3,6 +3,7 @@
 //
 //	go run ./cmd/datagen render [-specs dir] [-out dir] [-only id] [-check]
 //	go run ./cmd/datagen golden-specs [-out dir]
+//	go run ./cmd/datagen scenarios [-out dir]
 //
 // render writes each packet's PDFs and truth.json into <out>/<scenario>/.
 // With -check it reads every page back with PDFium and runs the
@@ -11,6 +12,10 @@
 // golden-specs writes a spec for each golden case in evals/engine that has
 // none, with the case's policy, cover and facts unchanged. It never
 // overwrites a spec: specs are reviewed and committed like golden cases.
+//
+// scenarios writes the 48 seeded specs, eight for each of six claim types,
+// the same way: once, each checked to parse, render and adjudicate
+// without a flag that would mean the generator erred.
 package main
 
 import (
@@ -37,6 +42,8 @@ const usage = `Usage:
       Render each scenario's PDFs and truth.json into <out>/<scenario>/
   datagen golden-specs [-out dir]
       Write a spec for each golden case that has none; never overwrites
+  datagen scenarios [-out dir]
+      Write each seeded scenario spec that doesn't exist; never overwrites
 `
 
 // The default places, relative to the repository's root.
@@ -60,6 +67,8 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		err = render(ctx, args[1:], stdout, stderr)
 	case "golden-specs":
 		err = goldenSpecs(args[1:], stdout, stderr)
+	case "scenarios":
+		err = seededSpecs(args[1:], stdout, stderr)
 	case "help", "-h", "--help":
 		fmt.Fprint(stdout, usage)
 		return exitOK
