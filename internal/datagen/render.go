@@ -123,6 +123,7 @@ func newRenderer(s Spec) (*renderer, error) {
 		Documents:        r.truth.Documents,
 		Bills:            []TruthBill{},
 		Receipts:         []TruthReceipt{},
+		Other:            []TruthDocument{},
 		Claim: TruthClaim{
 			Admission: s.Facts.Admission, Discharge: s.Facts.Discharge, Segments: s.Facts.Segments,
 			Diagnosis: s.Clinical.Diagnosis, Procedure: s.Clinical.Procedure, TreatingDoctor: s.Clinical.TreatingDoctor,
@@ -151,6 +152,16 @@ func (r *renderer) file(f FileSpec) ([]byte, TruthFile, error) {
 			err = r.bill(pg, f.Name, d)
 		case DocPaymentReceipt:
 			err = r.receipt(pg, f.Name, d)
+		case DocClaimForm:
+			err = r.claimForm(pg, f.Name, d)
+		case DocPhotoID:
+			err = r.photoID(pg, f.Name, d)
+		case DocDischargeSummary:
+			err = r.dischargeSummary(pg, f.Name, d)
+		case DocOTNotes:
+			err = r.otNotes(pg, f.Name, d)
+		case DocImplantInvoice:
+			err = r.implantInvoice(pg, f.Name, d)
 		}
 		if err != nil {
 			return nil, TruthFile{}, fmt.Errorf("document %s: %w", id, err)
@@ -303,6 +314,8 @@ func (r *renderer) row(pg *pager, st Style, lf LineFormat, serial int, y float64
 			v = tl.UnitPrice.Printed
 		case FieldAmount:
 			v = tl.Amount.Printed
+		case FieldSerialNumber:
+			return TruthLine{}, fmt.Errorf("line %s: a bill has no serial-number column", l.ID)
 		}
 		if err := pg.cell(fontRegular, sizeTable, c, y, v); err != nil {
 			return TruthLine{}, fmt.Errorf("line %s: %w", l.ID, err)
@@ -401,7 +414,17 @@ func (p *pager) add() {
 	p.page++
 }
 
+// errOffPage means text runs into the footer. A spec has to shorten what it
+// prints.
+var errOffPage = errors.New("runs into the footer")
+
+// bottomLimit is the lowest baseline text may sit on, well above the footer.
+const bottomLimit = pageHeight - 48
+
 func (p *pager) text(font string, size, x, y float64, s string) error {
+	if y > bottomLimit {
+		return fmt.Errorf("%q at %.0f points: %w", s, y, errOffPage)
+	}
 	if err := p.pdf.SetFont(font, "", size); err != nil {
 		return err
 	}
@@ -416,7 +439,52 @@ func (p *pager) text(font string, size, x, y float64, s string) error {
 	return p.pdf.Text(s)
 }
 
+// paragraph word-wraps s to width from (x, y), a line every lead points,
+// and returns the baseline below its last line.
+func (p *pager) paragraph(font string, size, x, y, width, lead float64, s string) (float64, error) {
+	if err := p.pdf.SetFont(font, "", size); err != nil {
+		return 0, err
+	}
+	var line string
+	flush := func() error {
+		if line == "" {
+			return nil
+		}
+		err := p.text(font, size, x, y, line)
+		y += lead
+		line = ""
+		return err
+	}
+	for _, word := range strings.Fields(s) {
+		next := word
+		if line != "" {
+			next = line + " " + word
+		}
+		w, err := p.pdf.MeasureTextWidth(next)
+		if err != nil {
+			return 0, err
+		}
+		if w > width && line != "" {
+			if err := flush(); err != nil {
+				return 0, err
+			}
+			next = word
+		}
+		line = next
+	}
+	return y, flush()
+}
+
+// box draws a rectangle's outline from its upper left corner.
+func (p *pager) box(x, y, w, h float64) {
+	p.pdf.SetLineWidth(0.8)
+	p.pdf.RectFromUpperLeftWithStyle(x, y, w, h, "D")
+}
+
 func (p *pager) right(font string, size, xRight, y float64, s string) error {
+	if y > bottomLimit {
+		return fmt.Errorf("%q at %.0f points: %w", s, y, errOffPage)
+	}
 	if err := p.pdf.SetFont(font, "", size); err != nil {
 		return err
 	}
@@ -455,9 +523,12 @@ func (p *pager) cell(font string, size float64, c Column, y float64, s string) e
 	return p.pdf.Text(s)
 }
 
-func (p *pager) rule(y float64) {
+func (p *pager) rule(y float64) { p.ruleBetween(marginLeft, marginRight, y) }
+
+// ruleBetween draws a horizontal rule from x0 to x1.
+func (p *pager) ruleBetween(x0, x1, y float64) {
 	p.pdf.SetLineWidth(0.5)
-	p.pdf.Line(marginLeft, y, marginRight, y)
+	p.pdf.Line(x0, y, x1, y)
 }
 
 func (p *pager) footer() error {

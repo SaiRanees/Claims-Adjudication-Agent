@@ -1,0 +1,92 @@
+# A surgery packet for the generator's own tests: every document the
+# generator draws but the pharmacy bill, in three files. Invented.
+
+policy:
+  wording_uin: GODHLIP24179V022324
+  period_start: 2025-04-01
+  period_end: 2026-03-31
+
+cover:
+  tranches:
+    - sum_insured_paise: 50000000
+      continuous_since: 2021-04-01
+
+facts:
+  admission: 2025-10-06
+  discharge: 2025-10-08
+  segments:
+    - {from: 2025-10-06, to: 2025-10-08, kind: room}
+  differential_billing: yes
+  condition:
+    listed_group: listed-24-months
+    onset: 2025-08-20
+  lines:
+    - {id: L01, category: room-rent, service_date: 2025-10-06, quantity: 2, unit_price_paise: 400000, amount_paise: 800000}
+    - {id: L02, category: professional-fees, service_date: 2025-10-07, quantity: 1, unit_price_paise: 3500000, amount_paise: 3500000}
+    - {id: L03, category: operation-theatre, service_date: 2025-10-07, quantity: 1, unit_price_paise: 1800000, amount_paise: 1800000}
+    - {id: L04, category: implants-devices, service_date: 2025-10-07, quantity: 1, unit_price_paise: 1250000, amount_paise: 1250000}
+    - {id: L05, category: pharmacy-consumables, service_date: 2025-10-07, quantity: 4, unit_price_paise: 37550, amount_paise: 150200}
+
+insured:
+  name: Harish Nambiar
+  gender: male
+  age: 52
+  policy_number: SYN-ASG-2025-000002
+  member_id: SYN-M-000002
+  date_of_birth: 1973-03-14
+
+hospital:
+  name: Ravikund Multispeciality Hospital
+  address: Plot 7, Station Road
+  city: Ravikund
+  registration: SYN-HR-0002
+
+clinical:
+  diagnosis: Right inguinal hernia
+  procedure: Open mesh hernioplasty
+  treating_doctor: Dr. Rohit Bhalla
+  history: Swelling in the right groin for six weeks, painful on lifting. No vomiting or fever.
+  course: >-
+    Admitted for elective repair. He underwent open mesh hernioplasty under
+    spinal anaesthesia and was mobilised the next morning. Recovery was
+    uneventful.
+  advice: >-
+    Avoid lifting heavy weights for six weeks. Tab. Paracetamol 650 mg when
+    needed for pain. Review in the surgical clinic after one week.
+  surgery:
+    date: 2025-10-07
+    surgeon: Dr. Rohit Bhalla
+    anaesthetist: Dr. Sunita Kher
+    anaesthesia: Spinal
+    findings: A right indirect inguinal hernia with a 3 cm defect. The sac was reduced and a polypropylene mesh fixed.
+
+claim_form:
+  admission_type: planned
+  signed_on: 2025-10-10
+  claimed_amount_paise: 7500200
+
+documents:
+  - {id: CF, type: claim-form, number: SYN-CF-000002, date: 2025-10-10}
+  - {id: ID, type: photo-id, number: SYN-ID-K7Q2-0461, date: 2019-06-01}
+  - {id: DS, type: discharge-summary, number: SYN-DS-000002, date: 2025-10-08}
+  - {id: OT, type: ot-notes, number: SYN-OT-000002, date: 2025-10-07}
+  - {id: B1, type: hospital-bill, layout: compact, number: SYN-IP-000002, date: 2025-10-08, lines_per_page: 12}
+  - id: IV
+    type: implant-invoice
+    number: SYN-IV-000002
+    date: 2025-10-05
+    vendor: {name: Kesarvan Surgical Supplies, address: "5 Mill Road, Ravikund", registration: SYN-VR-0002}
+    implants: [{line: L04, serial: SYN-SN-M3X91K}]
+  - {id: R1, type: payment-receipt, number: SYN-RC-000002, date: 2025-10-08, against: [B1], mode: Card}
+
+files:
+  - {name: claim-form.pdf, documents: [CF, ID]}
+  - {name: hospital-records.pdf, documents: [DS, OT]}
+  - {name: bills.pdf, documents: [B1, IV, R1]}
+
+lines:
+  - {line: L01, bill: B1, description: Room Rent - Twin Sharing}
+  - {line: L02, bill: B1, description: Surgeon Fees}
+  - {line: L03, bill: B1, description: OT Charges}
+  - {line: L04, bill: B1, description: Polypropylene Mesh 15 x 15 cm}
+  - {line: L05, bill: B1, description: Surgical Consumables Kit}
