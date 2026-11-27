@@ -102,6 +102,8 @@ func tasks() []task {
 			help: "Run what CI runs on the code: vet, lint and test"},
 		{name: "golden", group: groupGo, run: goTool("run", "./cmd/evalrunner", "engine"),
 			help: "Report every golden case as pass, fail or unchecked; fails unless all are checked and passing"},
+		{name: "smoke", group: groupGo, run: smoke,
+			help: "Call Gemini once per job with GEMINI_API_KEY from .env, recording any missing smoke cassette (never in CI)"},
 
 		{name: "images", group: groupApp, run: compose("--profile", "app", "build"),
 			help: "Build the api, relay and worker images"},
