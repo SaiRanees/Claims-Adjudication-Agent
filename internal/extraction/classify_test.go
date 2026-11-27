@@ -92,7 +92,9 @@ func (f *fakeProvider) Name() string { return "gemini" }
 func (f *fakeProvider) Capabilities() llm.Capabilities {
 	return llm.Capabilities{PDFInput: true, JSONSchemaOutput: true, ThinkingLevels: []string{"minimal", "low"}}
 }
-func (f *fakeProvider) Generate(context.Context, llm.Request) (llm.Response, error) { return f.resp, nil }
+func (f *fakeProvider) Generate(context.Context, llm.Request) (llm.Response, error) {
+	return f.resp, nil
+}
 
 func TestClassify(t *testing.T) {
 	cfg, err := llm.DefaultConfig()
