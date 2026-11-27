@@ -41,6 +41,31 @@ func pdfObjects(objs []string) []byte {
 	return b.Bytes()
 }
 
+// LinesPDF has one A4 page per entry, each printing that entry as one line
+// of Helvetica (no line at all for ""). Entries must be printable ASCII
+// without parentheses or backslashes.
+func LinesPDF(lines ...string) []byte {
+	kids := make([]string, len(lines))
+	for i := range lines {
+		kids[i] = fmt.Sprintf("%d 0 R", 4+2*i)
+	}
+	objs := []string{
+		"<< /Type /Catalog /Pages 2 0 R >>",
+		fmt.Sprintf("<< /Type /Pages /Kids [%s] /Count %d >>", strings.Join(kids, " "), len(lines)),
+		"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+	}
+	for i, l := range lines {
+		content := ""
+		if l != "" {
+			content = fmt.Sprintf("BT /F1 12 Tf 72 770 Td (%s) Tj ET", l)
+		}
+		objs = append(objs,
+			fmt.Sprintf("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents %d 0 R >>", 5+2*i),
+			fmt.Sprintf("<< /Length %d >>\nstream\n%s\nendstream", len(content), content))
+	}
+	return pdfObjects(objs)
+}
+
 // TextPDF has n A4 pages, each with a line of text in Helvetica.
 func TextPDF(n int) []byte {
 	// 1 catalog, 2 pages, 3 font, then a page and its content per page.
