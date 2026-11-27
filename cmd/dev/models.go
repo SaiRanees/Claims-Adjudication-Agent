@@ -21,6 +21,24 @@ var smokeRun = []string{
 	"./internal/extraction/",
 }
 
+// recordPagesRun records page classification on the dev half. It calls
+// only for pages without a cassette, so a run stopped by the day's limit
+// continues where it stopped when it runs again. No timeout: the free
+// tier's 15 a minute make a full pass take over half an hour.
+var recordPagesRun = []string{
+	"test", "-tags", "live", "-count=1", "-v", "-timeout", "0",
+	"-run", "^TestRecordClassification$",
+	"./evals/extraction/",
+}
+
+// recordPages runs the classification record with the key from .env.
+func recordPages(ctx context.Context, _ []string) error {
+	if err := useModelKey(); err != nil {
+		return err
+	}
+	return run(ctx, nil, "go", recordPagesRun...)
+}
+
 // smoke runs the live smoke tests with the key from .env.
 func smoke(ctx context.Context, _ []string) error {
 	if err := useModelKey(); err != nil {

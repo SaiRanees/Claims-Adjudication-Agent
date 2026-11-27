@@ -104,6 +104,8 @@ func tasks() []task {
 			help: "Report every golden case as pass, fail or unchecked; fails unless all are checked and passing"},
 		{name: "smoke", group: groupGo, run: smoke,
 			help: "Call Gemini once per job with GEMINI_API_KEY from .env, recording any missing smoke cassette (never in CI)"},
+		{name: "record-pages", group: groupGo, run: recordPages,
+			help: "Record page classification on the dev half, calling Gemini only for pages without a cassette; stops at the day's limit (never in CI)"},
 
 		{name: "images", group: groupApp, run: compose("--profile", "app", "build"),
 			help: "Build the api, relay and worker images"},
