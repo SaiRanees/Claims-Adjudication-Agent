@@ -1,0 +1,47 @@
+{
+  "format": 1,
+  "hash": "53f73d14ac11929e3571acb0794cfccdabe14825370b6d788504691b62110cef",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-4-hydrogen",
+    "job": "line_items",
+    "prompt": {
+      "id": "line_items",
+      "version": "v1",
+      "sha256": "d5cb18bf84171aae3d64cbffe6f08d87405a1ea932bea8093837c08cff73db1e"
+    },
+    "schema": {
+      "id": "line_items",
+      "version": "v1",
+      "sha256": "9e5293da415d446ce5e674d1f4f2645de5243b9cfee8850fc48c1406d0af747c"
+    },
+    "max_output_tokens": 16384,
+    "thinking": "low",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "44abac72cdf81e1ba614dd7836491d5865ce081e0db016e2c330176775593177",
+          "pages": null,
+          "derivation": 0
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\"bill\": {\"bill_date\": \"11-Dec-2025\", \"bill_number\": \"SYN-IP-201101\", \"discount\": null, \"gross_total\": \"1,32,350.00\", \"hospital_name\": \"Sitarkund Care Hospital\", \"net_total\": \"1,32,350.00\", \"patient_name\": \"Gauri Hegde\"}, \"instruction_like_text\": [], \"lines\": [{\"amount\": \"9,000.00\", \"description\": \"Room Rent - Twin Sharing\", \"page\": 1, \"quantity\": \"2\", \"service_date\": \"09-Dec-2025\", \"unit_price\": \"4,500.00\"}, {\"amount\": \"1,200.00\", \"description\": \"Nursing Charges\", \"page\": 1, \"quantity\": \"2\", \"service_date\": \"09-Dec-2025\", \"unit_price\": \"600.00\"}, {\"amount\": \"43,000.00\", \"description\": \"Surgeon Fees\", \"page\": 1, \"quantity\": \"1\", \"service_date\": \"10-Dec-2025\", \"unit_price\": \"43,000.00\"}, {\"amount\": \"30,000.00\", \"description\": \"Cath Lab Charges\", \"page\": 1, \"quantity\": \"1\", \"service_date\": \"10-Dec-2025\", \"unit_price\": \"30,000.00\"}, {\"amount\": \"29,900.00\", \"description\": \"Drug Eluting Coronary Stent\", \"page\": 1, \"quantity\": \"1\", \"service_date\": \"10-Dec-2025\", \"unit_price\": \"29,900.00\"}, {\"amount\": \"1,000.00\", \"description\": \"Consultant Visit Charges\", \"page\": 1, \"quantity\": \"1\", \"service_date\": \"10-Dec-2025\", \"unit_price\": \"1,000.00\"}, {\"amount\": \"300.00\", \"description\": \"ECG\", \"page\": 1, \"quantity\": \"1\", \"service_date\": \"09-Dec-2025\", \"unit_price\": \"300.00\"}, {\"amount\": \"1,500.00\", \"description\": \"Troponin I\", \"page\": 2, \"quantity\": \"1\", \"service_date\": \"09-Dec-2025\", \"unit_price\": \"1,500.00\"}, {\"amount\": \"2,500.00\", \"description\": \"2D Echocardiography\", \"page\": 2, \"quantity\": \"1\", \"service_date\": \"09-Dec-2025\", \"unit_price\": \"2,500.00\"}, {\"amount\": \"12,000.00\", \"description\": \"Coronary Angiography\", \"page\": 2, \"quantity\": \"1\", \"service_date\": \"09-Dec-2025\", \"unit_price\": \"12,000.00\"}, {\"amount\": \"850.00\", \"description\": \"Renal Function Test\", \"page\": 2, \"quantity\": \"1\", \"service_date\": \"09-Dec-2025\", \"unit_price\": \"850.00\"}, {\"amount\": \"800.00\", \"description\": \"Bedside Procedure Charges\", \"page\": 2, \"quantity\": \"1\", \"service_date\": \"10-Dec-2025\", \"unit_price\": \"800.00\"}, {\"amount\": \"300.00\", \"description\": \"ADMISSION/REGISTRATION CHARGES\", \"page\": 2, \"quantity\": \"1\", \"service_date\": \"09-Dec-2025\", \"unit_price\": \"300.00\"}]}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 3199,
+    "cached_input_tokens": 0,
+    "output_tokens": 958,
+    "thinking_tokens": 846
+  },
+  "model_version": "gemini-4-hydrogen",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T10:29:37Z"
+}

@@ -3,6 +3,11 @@
 # Published rule packs are pinned by SHA-256 (rulepacks/rulepacks_test.go), so
 # they are text with LF endings everywhere, never left to auto-detection.
 rulepacks/**/*.yaml text eol=lf
+# Prompts and cassettes are hashed or compared byte for byte, so they are
+# LF everywhere, never left to auto-detection (ADR 0014).
+prompts/**/*.md text eol=lf
+internal/extraction/testdata/cassettes/** text eol=lf
+evals/cassettes/** text eol=lf
 *.pdf binary
 *.png binary
 *.jpg binary

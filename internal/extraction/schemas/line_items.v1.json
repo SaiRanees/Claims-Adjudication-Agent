@@ -1,0 +1,50 @@
+{
+  "type": "object",
+  "properties": {
+    "bill": {
+      "type": "object",
+      "properties": {
+        "bill_number": {"type": ["string", "null"]},
+        "bill_date": {"type": ["string", "null"]},
+        "patient_name": {"type": ["string", "null"]},
+        "hospital_name": {"type": ["string", "null"]},
+        "gross_total": {"type": ["string", "null"]},
+        "discount": {"type": ["string", "null"]},
+        "net_total": {"type": ["string", "null"]}
+      },
+      "required": [
+        "bill_number",
+        "bill_date",
+        "patient_name",
+        "hospital_name",
+        "gross_total",
+        "discount",
+        "net_total"
+      ],
+      "additionalProperties": false
+    },
+    "lines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "page": {"type": "integer"},
+          "service_date": {"type": ["string", "null"]},
+          "description": {"type": "string"},
+          "quantity": {"type": ["string", "null"]},
+          "unit_price": {"type": ["string", "null"]},
+          "amount": {"type": ["string", "null"]}
+        },
+        "required": ["page", "service_date", "description", "quantity", "unit_price", "amount"],
+        "additionalProperties": false
+      }
+    },
+    "instruction_like_text": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {"type": "string"}
+    }
+  },
+  "required": ["bill", "lines", "instruction_like_text"],
+  "additionalProperties": false
+}

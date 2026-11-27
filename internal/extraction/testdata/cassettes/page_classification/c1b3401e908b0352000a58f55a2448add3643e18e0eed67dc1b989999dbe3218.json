@@ -1,0 +1,47 @@
+{
+  "format": 1,
+  "hash": "c1b3401e908b0352000a58f55a2448add3643e18e0eed67dc1b989999dbe3218",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "job": "page_classification",
+    "prompt": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "c37a99659cc84a6aecd1f8a64e13e16229214e9bc017bafb90a3f7001137ac9a"
+    },
+    "schema": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "85b60f5ba2bbfcc4e7b07c5c6c3a6354f391e00e23b768a625a4da0efed95091"
+    },
+    "max_output_tokens": 2048,
+    "thinking": "minimal",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "47ce455e6f144a452d071692d54a7b5c07bead44f7e035bbd34319ddece4b164",
+          "pages": null,
+          "derivation": 0
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\n  \"document_date\": \"12-Dec-2021\",\n  \"document_number\": \"SYN-ID-G2XC-7550\",\n  \"instruction_like_text\": [],\n  \"page_marker\": null,\n  \"page_type\": \"photo_id\",\n  \"patient_name\": \"Gauri Hegde\"\n}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 1096,
+    "cached_input_tokens": 0,
+    "output_tokens": 86,
+    "thinking_tokens": 0
+  },
+  "model_version": "gemini-3.5-flash-lite",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T10:24:38Z"
+}

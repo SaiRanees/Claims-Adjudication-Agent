@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/llm"
 	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/platform"
 )
 
@@ -199,10 +200,11 @@ func TestLoadWorkerConfig(t *testing.T) {
 				S3:          s3,
 				LogLevel:    slog.LevelWarn,
 				Telemetry:   platform.TelemetryConfig{ServiceName: "worker"},
+				LLMMode:     llm.ModeLive,
 			},
 		},
 		{
-			name: "needs no public S3 endpoint and defaults the log level",
+			name: "needs no public S3 endpoint and defaults the log level and model mode",
 			vars: unsetVar(full, "LOG_LEVEL"),
 			want: platform.WorkerConfig{
 				DatabaseURL: "postgres://claims_app@db:5432/claims",
@@ -210,7 +212,23 @@ func TestLoadWorkerConfig(t *testing.T) {
 				S3:          s3,
 				LogLevel:    slog.LevelInfo,
 				Telemetry:   platform.TelemetryConfig{ServiceName: "worker"},
+				LLMMode:     llm.ModeLive,
 			},
+		},
+		{
+			name:     "refuses record mode: the worker is live only",
+			vars:     setVar(full, "LLM_MODE", "record"),
+			errNames: []string{"LLM_MODE"},
+		},
+		{
+			name:     "refuses replay mode",
+			vars:     setVar(full, "LLM_MODE", "replay"),
+			errNames: []string{"LLM_MODE"},
+		},
+		{
+			name:     "refuses an unknown mode",
+			vars:     setVar(full, "LLM_MODE", "mock"),
+			errNames: []string{"LLM_MODE"},
 		},
 		{
 			name: "names every missing variable",

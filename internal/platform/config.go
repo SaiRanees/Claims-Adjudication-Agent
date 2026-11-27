@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+
+	"github.com/SaiRanees/Claims-Adjudication-Agent/internal/llm"
 )
 
 // APIConfig is the API's configuration, read from the environment (compose.yaml sets it
@@ -63,6 +65,9 @@ type WorkerConfig struct {
 	// LogLevel is debug, info, warn or error. Default info.
 	LogLevel  slog.Level
 	Telemetry TelemetryConfig
+	// LLMMode is LLM_MODE, and only live is accepted (ADR 0014): the worker
+	// never writes a cassette from real data or replays one into a claim.
+	LLMMode llm.Mode
 }
 
 // TemporalConfig says where Temporal is. Both values are required: the claims namespace
@@ -147,7 +152,26 @@ func LoadWorkerConfig(getenv func(string) string) (WorkerConfig, error) {
 	if cfg.Telemetry, err = telemetry(getenv, "worker"); err != nil {
 		return WorkerConfig{}, err
 	}
+	if cfg.LLMMode, err = workerLLMMode(getenv); err != nil {
+		return WorkerConfig{}, err
+	}
 	return cfg, nil
+}
+
+// workerLLMMode reads LLM_MODE, default live, and refuses any other mode.
+func workerLLMMode(getenv func(string) string) (llm.Mode, error) {
+	v := getenv("LLM_MODE")
+	if v == "" {
+		return llm.ModeLive, nil
+	}
+	m, err := llm.ParseMode(v)
+	if err == nil {
+		err = llm.RequireLive(m)
+	}
+	if err != nil {
+		return "", fmt.Errorf("LLM_MODE: %w", err)
+	}
+	return m, nil
 }
 
 // environment reads variables and remembers which required ones were missing.

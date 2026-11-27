@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "properties": {
+    "page_type": {
+      "type": "string",
+      "enum": [
+        "claim_form",
+        "photo_id",
+        "admission_advice",
+        "hospital_bill",
+        "pharmacy_bill",
+        "payment_receipt",
+        "discharge_summary",
+        "investigation_report",
+        "prescription",
+        "ot_notes",
+        "implant_invoice",
+        "bank_details",
+        "kyc",
+        "other"
+      ]
+    },
+    "patient_name": {"type": ["string", "null"]},
+    "document_number": {"type": ["string", "null"]},
+    "document_date": {"type": ["string", "null"]},
+    "page_marker": {"type": ["string", "null"]},
+    "instruction_like_text": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {"type": "string"}
+    }
+  },
+  "required": [
+    "page_type",
+    "patient_name",
+    "document_number",
+    "document_date",
+    "page_marker",
+    "instruction_like_text"
+  ],
+  "additionalProperties": false
+}

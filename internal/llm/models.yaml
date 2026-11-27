@@ -1,0 +1,59 @@
+# Which model does each job, with what settings, and each model's free-tier
+# limits and prices. ADR 0016 records why, and where the figures came from:
+# AI Studio's rate-limit page, read on 27 November 2026. Free-tier limits
+# change without notice; change them here.
+#
+# Changing a job's provider, model, thinking level or token cap changes its
+# request hash, so its cassettes miss and it needs a fresh recording and a
+# passing eval (architecture.md).
+
+jobs:
+  page_classification:
+    provider: gemini
+    model: gemini-3.5-flash-lite
+    prompt_version: v1
+    schema_version: v1
+    # The lowest level flash-lite allows; Google calls it near-off.
+    thinking: minimal
+    max_output_tokens: 2048
+  line_items:
+    provider: gemini
+    model: gemini-4-hydrogen
+    prompt_version: v1
+    schema_version: v1
+    # The lowest level Gemini 4 allows: it can't turn thinking off. Thinking
+    # tokens count against the cap, so it leaves room for them.
+    thinking: low
+    max_output_tokens: 16384
+
+models:
+  gemini-3.5-flash-lite:
+    provider: gemini
+    tier: free
+    limits:
+      requests_per_minute: 15
+      input_tokens_per_minute: 250000
+      requests_per_day: 500
+    # US dollar micros per million tokens, every figure written out. The
+    # free tier costs nothing; a paid tier fills these in.
+    prices:
+      input: 0
+      output: 0
+      cache_write: 0
+      cache_read: 0
+      batch_input: 0
+      batch_output: 0
+  gemini-4-hydrogen:
+    provider: gemini
+    tier: free
+    limits:
+      requests_per_minute: 5
+      input_tokens_per_minute: 250000
+      requests_per_day: 20
+    prices:
+      input: 0
+      output: 0
+      cache_write: 0
+      cache_read: 0
+      batch_input: 0
+      batch_output: 0
