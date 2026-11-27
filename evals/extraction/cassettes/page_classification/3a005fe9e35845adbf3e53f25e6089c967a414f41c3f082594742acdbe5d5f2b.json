@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "hash": "3a005fe9e35845adbf3e53f25e6089c967a414f41c3f082594742acdbe5d5f2b",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "job": "page_classification",
+    "prompt": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "9730ab505fdb91187deaa4b294daebcfd2eb1700a8b46dbbfc78f9a92b715d4a"
+    },
+    "schema": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "85b60f5ba2bbfcc4e7b07c5c6c3a6354f391e00e23b768a625a4da0efed95091"
+    },
+    "max_output_tokens": 2048,
+    "thinking": "minimal",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "9f5fd4cd9ce9405134069adaa40b411800fc2d6103431aa2afeeda8b91897d0f",
+          "pages": [
+            1
+          ],
+          "derivation": 1
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\n  \"document_date\": \"08-Nov-2025\",\n  \"document_number\": \"SYN-IP-202901\",\n  \"instruction_like_text\": [],\n  \"page_marker\": \"Page 1 of 2\",\n  \"page_type\": \"hospital_bill\",\n  \"patient_name\": \"Chitra Jadhav\"\n}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 1208,
+    "cached_input_tokens": 0,
+    "output_tokens": 90,
+    "thinking_tokens": 0
+  },
+  "model_version": "gemini-3.5-flash-lite",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T11:35:50Z"
+}

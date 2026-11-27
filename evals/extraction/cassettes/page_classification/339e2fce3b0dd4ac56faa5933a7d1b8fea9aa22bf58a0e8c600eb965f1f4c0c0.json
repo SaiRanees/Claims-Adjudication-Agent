@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "hash": "339e2fce3b0dd4ac56faa5933a7d1b8fea9aa22bf58a0e8c600eb965f1f4c0c0",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "job": "page_classification",
+    "prompt": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "9730ab505fdb91187deaa4b294daebcfd2eb1700a8b46dbbfc78f9a92b715d4a"
+    },
+    "schema": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "85b60f5ba2bbfcc4e7b07c5c6c3a6354f391e00e23b768a625a4da0efed95091"
+    },
+    "max_output_tokens": 2048,
+    "thinking": "minimal",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "1451a302495be188623332a08edf6f337d15b74190252386e97a747658ddb77d",
+          "pages": [
+            3
+          ],
+          "derivation": 1
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\n  \"document_date\": \"21/07/2026\",\n  \"document_number\": \"SYN-PH-201901\",\n  \"instruction_like_text\": [],\n  \"page_marker\": \"Page 1 of 1\",\n  \"page_type\": \"pharmacy_bill\",\n  \"patient_name\": \"Kiran Lobo\"\n}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 1208,
+    "cached_input_tokens": 0,
+    "output_tokens": 91,
+    "thinking_tokens": 0
+  },
+  "model_version": "gemini-3.5-flash-lite",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T11:31:37Z"
+}

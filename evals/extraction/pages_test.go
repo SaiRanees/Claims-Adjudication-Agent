@@ -31,7 +31,7 @@ const cassetteDir = "cassettes"
 // The replay test needs exactly this many misses: more means a request's
 // hash moved, fewer that this count is out of date. It reaches 0 when the
 // recording is complete (go run ./cmd/dev record-pages).
-const pendingClassification = 267
+const pendingClassification = 0
 
 // devPacket is one dev-half packet, rendered and prepared.
 type devPacket struct {

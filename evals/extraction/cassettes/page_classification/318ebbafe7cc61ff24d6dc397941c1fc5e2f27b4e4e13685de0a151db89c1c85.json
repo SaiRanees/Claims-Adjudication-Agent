@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "hash": "318ebbafe7cc61ff24d6dc397941c1fc5e2f27b4e4e13685de0a151db89c1c85",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "job": "page_classification",
+    "prompt": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "9730ab505fdb91187deaa4b294daebcfd2eb1700a8b46dbbfc78f9a92b715d4a"
+    },
+    "schema": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "85b60f5ba2bbfcc4e7b07c5c6c3a6354f391e00e23b768a625a4da0efed95091"
+    },
+    "max_output_tokens": 2048,
+    "thinking": "minimal",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "ee93f6a2e3ae45844a49c264df7238aa1f92ca9daede843eb353c23ede35ce47",
+          "pages": [
+            4
+          ],
+          "derivation": 1
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\n  \"document_date\": \"04/12/2025\",\n  \"document_number\": \"SYN-DS-200027\",\n  \"instruction_like_text\": [],\n  \"page_marker\": \"Page 1 of 2\",\n  \"page_type\": \"discharge_summary\",\n  \"patient_name\": \"Bhavana Iyengar\"\n}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 1208,
+    "cached_input_tokens": 0,
+    "output_tokens": 92,
+    "thinking_tokens": 0
+  },
+  "model_version": "gemini-3.5-flash-lite",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T11:34:35Z"
+}

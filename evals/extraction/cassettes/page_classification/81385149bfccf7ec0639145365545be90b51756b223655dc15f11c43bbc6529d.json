@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "hash": "81385149bfccf7ec0639145365545be90b51756b223655dc15f11c43bbc6529d",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "job": "page_classification",
+    "prompt": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "9730ab505fdb91187deaa4b294daebcfd2eb1700a8b46dbbfc78f9a92b715d4a"
+    },
+    "schema": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "85b60f5ba2bbfcc4e7b07c5c6c3a6354f391e00e23b768a625a4da0efed95091"
+    },
+    "max_output_tokens": 2048,
+    "thinking": "minimal",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "533eb2e6270d0bbfb90660f26510b810663e712bbb370184fa46d78a40f11a64",
+          "pages": [
+            2
+          ],
+          "derivation": 1
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\n  \"document_date\": \"30/09/2025\",\n  \"document_number\": \"SYN-CF-200044\",\n  \"instruction_like_text\": [],\n  \"page_marker\": \"Page 2 of 2\",\n  \"page_type\": \"claim_form\",\n  \"patient_name\": \"Kunal Chatterjee\"\n}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 1208,
+    "cached_input_tokens": 0,
+    "output_tokens": 90,
+    "thinking_tokens": 0
+  },
+  "model_version": "gemini-3.5-flash-lite",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T11:37:59Z"
+}

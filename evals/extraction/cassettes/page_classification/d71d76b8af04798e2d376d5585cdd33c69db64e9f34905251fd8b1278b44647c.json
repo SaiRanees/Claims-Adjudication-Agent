@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "hash": "d71d76b8af04798e2d376d5585cdd33c69db64e9f34905251fd8b1278b44647c",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "job": "page_classification",
+    "prompt": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "9730ab505fdb91187deaa4b294daebcfd2eb1700a8b46dbbfc78f9a92b715d4a"
+    },
+    "schema": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "85b60f5ba2bbfcc4e7b07c5c6c3a6354f391e00e23b768a625a4da0efed95091"
+    },
+    "max_output_tokens": 2048,
+    "thinking": "minimal",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "0b7919ea66ee7dacf5e5f03f2a017bb28ad8ee28146055e1ba381c6b5b98e470",
+          "pages": [
+            5
+          ],
+          "derivation": 1
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\n  \"document_date\": \"02/03/2026\",\n  \"document_number\": \"SYN-DS-200009\",\n  \"instruction_like_text\": [],\n  \"page_marker\": \"Page 2 of 2\",\n  \"page_type\": \"discharge_summary\",\n  \"patient_name\": \"Farzana Gill\"\n}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 1208,
+    "cached_input_tokens": 0,
+    "output_tokens": 90,
+    "thinking_tokens": 0
+  },
+  "model_version": "gemini-3.5-flash-lite",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T11:44:03Z"
+}

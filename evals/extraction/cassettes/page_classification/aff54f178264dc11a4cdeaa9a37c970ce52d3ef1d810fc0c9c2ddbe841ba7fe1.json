@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "hash": "aff54f178264dc11a4cdeaa9a37c970ce52d3ef1d810fc0c9c2ddbe841ba7fe1",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "job": "page_classification",
+    "prompt": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "9730ab505fdb91187deaa4b294daebcfd2eb1700a8b46dbbfc78f9a92b715d4a"
+    },
+    "schema": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "85b60f5ba2bbfcc4e7b07c5c6c3a6354f391e00e23b768a625a4da0efed95091"
+    },
+    "max_output_tokens": 2048,
+    "thinking": "minimal",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "cde558cdd8122a1136c5fb813daa6b6f3545b3bd3ed927c8086d0bc6f2870991",
+          "pages": [
+            4
+          ],
+          "derivation": 1
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\n  \"document_date\": \"31/12/2025\",\n  \"document_number\": \"SYN-DS-200030\",\n  \"instruction_like_text\": [],\n  \"page_marker\": \"Page 1 of 2\",\n  \"page_type\": \"discharge_summary\",\n  \"patient_name\": \"Chetan Jadhav\"\n}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 1208,
+    "cached_input_tokens": 0,
+    "output_tokens": 92,
+    "thinking_tokens": 0
+  },
+  "model_version": "gemini-3.5-flash-lite",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T11:36:06Z"
+}

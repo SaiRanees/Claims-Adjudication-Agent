@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "hash": "70cab83b4c377c08e52a61052e3d3021ca9104142f62b5f3f66b22ea54c9425a",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "job": "page_classification",
+    "prompt": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "9730ab505fdb91187deaa4b294daebcfd2eb1700a8b46dbbfc78f9a92b715d4a"
+    },
+    "schema": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "85b60f5ba2bbfcc4e7b07c5c6c3a6354f391e00e23b768a625a4da0efed95091"
+    },
+    "max_output_tokens": 2048,
+    "thinking": "minimal",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "79ee52ca3352ac94a82898f85fb2aefaa1a60c40691ea43e40ceadd450f7964f",
+          "pages": [
+            3
+          ],
+          "derivation": 1
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\n  \"document_date\": \"24-Dec-2023\",\n  \"document_number\": \"SYN-ID-QTQN-8223\",\n  \"instruction_like_text\": [],\n  \"page_marker\": null,\n  \"page_type\": \"photo_id\",\n  \"patient_name\": \"Gopal Hegde\"\n}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 1208,
+    "cached_input_tokens": 0,
+    "output_tokens": 85,
+    "thinking_tokens": 0
+  },
+  "model_version": "gemini-3.5-flash-lite",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T11:45:30Z"
+}

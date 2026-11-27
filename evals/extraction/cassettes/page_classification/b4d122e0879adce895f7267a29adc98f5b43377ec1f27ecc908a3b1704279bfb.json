@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "hash": "b4d122e0879adce895f7267a29adc98f5b43377ec1f27ecc908a3b1704279bfb",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "job": "page_classification",
+    "prompt": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "9730ab505fdb91187deaa4b294daebcfd2eb1700a8b46dbbfc78f9a92b715d4a"
+    },
+    "schema": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "85b60f5ba2bbfcc4e7b07c5c6c3a6354f391e00e23b768a625a4da0efed95091"
+    },
+    "max_output_tokens": 2048,
+    "thinking": "minimal",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "004d35fdd319de3585ee4b67a4d0e47281563cb8422cbf23102d518815302bb4",
+          "pages": [
+            1
+          ],
+          "derivation": 1
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\n  \"document_date\": \"05/05/2025\",\n  \"document_number\": \"SYN-CF-200005\",\n  \"instruction_like_text\": [],\n  \"page_marker\": \"Page 1 of 2\",\n  \"page_type\": \"claim_form\",\n  \"patient_name\": \"Chitra Chatterjee\"\n}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 1208,
+    "cached_input_tokens": 0,
+    "output_tokens": 90,
+    "thinking_tokens": 0
+  },
+  "model_version": "gemini-3.5-flash-lite",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T11:42:00Z"
+}
