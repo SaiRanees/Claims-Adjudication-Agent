@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "hash": "2b1f0f7dd085625d7bc4abf5854f867b357b3008937d434c094b5aa6d720d9d1",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "job": "page_classification",
+    "prompt": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "9730ab505fdb91187deaa4b294daebcfd2eb1700a8b46dbbfc78f9a92b715d4a"
+    },
+    "schema": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "85b60f5ba2bbfcc4e7b07c5c6c3a6354f391e00e23b768a625a4da0efed95091"
+    },
+    "max_output_tokens": 2048,
+    "thinking": "minimal",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "6ff9a0a56a568437870093e24f7a6f05726529d49333323312c6b30bf255da73",
+          "pages": [
+            2
+          ],
+          "derivation": 1
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\n  \"document_date\": \"08/11/2025\",\n  \"document_number\": \"SYN-DS-200029\",\n  \"instruction_like_text\": [],\n  \"page_marker\": \"Page 2 of 2\",\n  \"page_type\": \"discharge_summary\",\n  \"patient_name\": \"Chitra Jadhav\"\n}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 1208,
+    "cached_input_tokens": 0,
+    "output_tokens": 91,
+    "thinking_tokens": 0
+  },
+  "model_version": "gemini-3.5-flash-lite",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T11:35:47Z"
+}

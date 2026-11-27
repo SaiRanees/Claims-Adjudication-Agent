@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "hash": "4bea209dd79f0e60579bae101cef310af6ee6f34494ffef2fecb5057898c423c",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "job": "page_classification",
+    "prompt": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "9730ab505fdb91187deaa4b294daebcfd2eb1700a8b46dbbfc78f9a92b715d4a"
+    },
+    "schema": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "85b60f5ba2bbfcc4e7b07c5c6c3a6354f391e00e23b768a625a4da0efed95091"
+    },
+    "max_output_tokens": 2048,
+    "thinking": "minimal",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "b2da7e0fb133ef41576d62ab7a491c72e4a3d8bf1bdece79cd72a8f428457ba4",
+          "pages": [
+            2
+          ],
+          "derivation": 1
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\n  \"document_date\": \"27/06/2026\",\n  \"document_number\": \"SYN-CF-200021\",\n  \"instruction_like_text\": [],\n  \"page_marker\": \"Page 2 of 2\",\n  \"page_type\": \"claim_form\",\n  \"patient_name\": \"Lata Mistry\"\n}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 1208,
+    "cached_input_tokens": 0,
+    "output_tokens": 91,
+    "thinking_tokens": 0
+  },
+  "model_version": "gemini-3.5-flash-lite",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T11:31:47Z"
+}

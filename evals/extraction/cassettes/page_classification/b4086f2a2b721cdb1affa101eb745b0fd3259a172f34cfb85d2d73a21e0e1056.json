@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "hash": "b4086f2a2b721cdb1affa101eb745b0fd3259a172f34cfb85d2d73a21e0e1056",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "job": "page_classification",
+    "prompt": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "9730ab505fdb91187deaa4b294daebcfd2eb1700a8b46dbbfc78f9a92b715d4a"
+    },
+    "schema": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "85b60f5ba2bbfcc4e7b07c5c6c3a6354f391e00e23b768a625a4da0efed95091"
+    },
+    "max_output_tokens": 2048,
+    "thinking": "minimal",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "ed7b6d3925f5fa657d88144cfa51abb290d650dc090282cd42d48bd5d9134534",
+          "pages": [
+            3
+          ],
+          "derivation": 1
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\n  \"document_date\": \"11-Apr-2023\",\n  \"document_number\": \"SYN-ID-4QRM-0567\",\n  \"instruction_like_text\": [],\n  \"page_marker\": null,\n  \"page_type\": \"photo_id\",\n  \"patient_name\": \"Gopal Mistry\"\n}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 1208,
+    "cached_input_tokens": 0,
+    "output_tokens": 86,
+    "thinking_tokens": 0
+  },
+  "model_version": "gemini-3.5-flash-lite",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T11:25:58Z"
+}

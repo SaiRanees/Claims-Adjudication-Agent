@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "hash": "a2eee672e2b683113dd439b3e18d9b29c1059a09baab8defc2d43feb1a70fc8a",
+  "request": {
+    "hash_version": 1,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "job": "page_classification",
+    "prompt": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "9730ab505fdb91187deaa4b294daebcfd2eb1700a8b46dbbfc78f9a92b715d4a"
+    },
+    "schema": {
+      "id": "page_classification",
+      "version": "v1",
+      "sha256": "85b60f5ba2bbfcc4e7b07c5c6c3a6354f391e00e23b768a625a4da0efed95091"
+    },
+    "max_output_tokens": 2048,
+    "thinking": "minimal",
+    "effort": "",
+    "parts": [
+      {
+        "mime_type": "application/pdf",
+        "text_sha256": "",
+        "origin": {
+          "file_sha256": "ed7b6d3925f5fa657d88144cfa51abb290d650dc090282cd42d48bd5d9134534",
+          "pages": [
+            4
+          ],
+          "derivation": 1
+        }
+      }
+    ],
+    "sample": 0
+  },
+  "output": "{\n  \"document_date\": \"17/03/2025\",\n  \"document_number\": \"SYN-DS-200036\",\n  \"instruction_like_text\": [],\n  \"page_marker\": \"Page 1 of 2\",\n  \"page_type\": \"discharge_summary\",\n  \"patient_name\": \"Gopal Mistry\"\n}",
+  "stop": "end",
+  "stop_detail": "STOP",
+  "usage": {
+    "input_tokens": 1208,
+    "cached_input_tokens": 0,
+    "output_tokens": 91,
+    "thinking_tokens": 0
+  },
+  "model_version": "gemini-3.5-flash-lite",
+  "cost_usd_micros": 0,
+  "recorded_at": "2026-11-27T11:26:00Z"
+}
